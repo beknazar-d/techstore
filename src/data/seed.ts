@@ -2,7 +2,7 @@
 // Цены в рублях. Фото нет — интерфейс показывает заглушку.
 
 import type { Db } from '../api/db'
-import type { Category, Product, ProductSpecs, SpecField, UsedInfo } from '../types'
+import type { Category, Order, OrderEvent, Product, ProductSpecs, SpecField, TradeInEvent, TradeInRequest, UsedInfo } from '../types'
 
 const MEMORY = ['64 ГБ', '128 ГБ', '256 ГБ', '512 ГБ', '1 ТБ']
 const RAM = ['4 ГБ', '6 ГБ', '8 ГБ', '12 ГБ', '16 ГБ', '24 ГБ', '32 ГБ']
@@ -637,14 +637,101 @@ export function createSeed(): Db {
     }
   })
 
+  const demo = createDemoRequests(seededProducts, base)
+
   return {
     categories: structuredClone(categories),
     products: seededProducts,
-    orders: [],
-    orderEvents: [],
-    tradeIns: [],
-    tradeInEvents: [],
-    nextOrderNumber: 1001,
-    nextTradeInNumber: 501,
+    orders: demo.orders,
+    orderEvents: demo.orderEvents,
+    tradeIns: demo.tradeIns,
+    tradeInEvents: demo.tradeInEvents,
+    nextOrderNumber: 1001 + demo.orders.length,
+    nextTradeInNumber: 501 + demo.tradeIns.length,
   }
+}
+
+/**
+ * Несколько демо-заказов и заявок trade-in, чтобы админка не была пустой при показе.
+ * Остатки в `products` уже считаются «после» этих заказов — склад здесь не трогаем.
+ */
+function createDemoRequests(seeded: Product[], base: number) {
+  const ago = (minutes: number) => new Date(base - minutes * 60_000).toISOString()
+  const day = (offsetDays: number) => new Date(base + offsetDays * 86_400_000).toISOString().slice(0, 10)
+  const bySlug = (slug: string) => {
+    const product = seeded.find((item) => item.slug === slug)
+    if (!product) throw new Error(`seed: нет товара ${slug}`)
+    return product
+  }
+
+  const s24 = bySlug('samsung-galaxy-s24-8-256')
+  const airpods = bySlug('apple-airpods-pro-2-usb-c')
+  const dyson = bySlug('dyson-supersonic-hd15')
+  const iphone15 = bySlug('apple-iphone-15-128')
+
+  const orders: Order[] = [
+    {
+      id: 'order-demo-1003', number: 1003, status: 'new', source: 'site',
+      productId: s24.id, productName: s24.name, price: s24.price, quantity: 1,
+      customerName: 'Алексей Смирнов', customerPhone: '+79161234567',
+      deliveryType: 'delivery', address: 'Москва, ул. Профсоюзная, 45, кв. 12',
+      location: { lat: 55.6705, lng: 37.5537 },
+      desiredDate: day(1), desiredTime: '18:30',
+      comment: 'Позвоните за час до приезда', adminNote: '',
+      createdAt: ago(25), updatedAt: ago(25),
+    },
+    {
+      id: 'order-demo-1002', number: 1002, status: 'confirmed', source: 'site',
+      productId: airpods.id, productName: airpods.name, price: airpods.price, quantity: 2,
+      customerName: 'Мария Иванова', customerPhone: '+79035557788',
+      deliveryType: 'pickup', address: '', location: null,
+      desiredDate: day(0), desiredTime: '15:00',
+      comment: '', adminNote: 'Подтвердила по телефону, отложили 2 шт.',
+      createdAt: ago(180), updatedAt: ago(150),
+    },
+    {
+      id: 'order-demo-1001', number: 1001, status: 'completed', source: 'site',
+      productId: dyson.id, productName: dyson.name, price: dyson.price, quantity: 1,
+      customerName: 'Ольга Кузнецова', customerPhone: '+79257001020',
+      deliveryType: 'delivery', address: 'Москва, Ленинский проспект, 32',
+      location: null, desiredDate: day(-1), desiredTime: '12:00',
+      comment: 'Домофон 32К', adminNote: 'Доставлено, оплата наличными',
+      createdAt: ago(1500), updatedAt: ago(1300),
+    },
+  ]
+
+  const orderEvents: OrderEvent[] = [
+    { id: 'oe-demo-1', orderId: 'order-demo-1003', type: 'created', fromStatus: null, toStatus: 'new', message: 'Заявка создана, со склада списано 1 шт.', createdAt: ago(25) },
+    { id: 'oe-demo-2', orderId: 'order-demo-1002', type: 'created', fromStatus: null, toStatus: 'new', message: 'Заявка создана, со склада списано 2 шт.', createdAt: ago(180) },
+    { id: 'oe-demo-3', orderId: 'order-demo-1002', type: 'status_changed', fromStatus: 'new', toStatus: 'confirmed', message: 'Статус: Новый → Подтверждён', createdAt: ago(150) },
+    { id: 'oe-demo-4', orderId: 'order-demo-1001', type: 'created', fromStatus: null, toStatus: 'new', message: 'Заявка создана, со склада списано 1 шт.', createdAt: ago(1500) },
+    { id: 'oe-demo-5', orderId: 'order-demo-1001', type: 'status_changed', fromStatus: 'new', toStatus: 'completed', message: 'Статус: Новый → Выполнен', createdAt: ago(1300) },
+  ]
+
+  const tradeIns: TradeInRequest[] = [
+    {
+      id: 'tradein-demo-502', number: 502, status: 'new',
+      customerName: 'Дмитрий Павлов', customerPhone: '+79998887766',
+      device: { category: 'smartphone', brand: 'Apple', model: 'iPhone 11', memory: '128 ГБ', grade: 'good', batteryHealth: 81, defects: 'Царапина на задней крышке', kit: 'Только телефон' },
+      photos: [], desiredProductId: iphone15.id, desiredProductName: iphone15.name, desiredProductPrice: iphone15.price,
+      comment: 'Хочу обменять с доплатой', adminEstimate: null, adminNote: '',
+      createdAt: ago(60), updatedAt: ago(60),
+    },
+    {
+      id: 'tradein-demo-501', number: 501, status: 'evaluated',
+      customerName: 'Игорь Соколов', customerPhone: '+79260001122',
+      device: { category: 'smartphone', brand: 'Samsung', model: 'Galaxy S21', memory: '256 ГБ', grade: 'excellent', batteryHealth: 88, defects: '', kit: 'Коробка, кабель' },
+      photos: [], desiredProductId: s24.id, desiredProductName: s24.name, desiredProductPrice: s24.price,
+      comment: '', adminEstimate: 18000, adminNote: 'Предложили 18 000 ₽, клиент думает',
+      createdAt: ago(600), updatedAt: ago(400),
+    },
+  ]
+
+  const tradeInEvents: TradeInEvent[] = [
+    { id: 'te-demo-1', tradeInId: 'tradein-demo-502', type: 'created', fromStatus: null, toStatus: 'new', message: 'Заявка создана', createdAt: ago(60) },
+    { id: 'te-demo-2', tradeInId: 'tradein-demo-501', type: 'created', fromStatus: null, toStatus: 'new', message: 'Заявка создана', createdAt: ago(600) },
+    { id: 'te-demo-3', tradeInId: 'tradein-demo-501', type: 'evaluated', fromStatus: 'new', toStatus: 'evaluated', message: 'Оценка: 18 000 ₽', createdAt: ago(400) },
+  ]
+
+  return { orders, orderEvents, tradeIns, tradeInEvents }
 }

@@ -8,7 +8,7 @@ import type { Category, Order, OrderEvent, Product, TradeInEvent, TradeInRequest
 import { ApiError } from './errors'
 
 /** Версия в ключе: при несовместимом изменении структуры меняем v1 → v2, и данные пересоздаются. */
-const DB_KEY = 'phone-market:db:v1'
+const DB_KEY = 'phone-market:db:v2'
 
 export interface Db {
   categories: Category[]

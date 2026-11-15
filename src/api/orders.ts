@@ -20,7 +20,7 @@ import { notifyStock } from './products'
 
 /** Допустимые переходы статусов. Из «Выполнен» и «Отменён» пути назад нет. */
 const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
-  new: ['confirmed', 'cancelled'],
+  new: ['confirmed', 'completed', 'cancelled'],
   confirmed: ['completed', 'cancelled'],
   completed: [],
   cancelled: [],
@@ -191,7 +191,7 @@ export async function cancelOrder(id: string): Promise<Order> {
 }
 
 /**
- * Меняет статус: new → confirmed → completed. Статус `cancelled` работает как `cancelOrder`.
+ * Меняет статус: new → confirmed → completed (можно и сразу new → completed). Статус `cancelled` работает как `cancelOrder`.
  * Недопустимый переход → `ApiError('invalid_transition')`.
  */
 export async function updateOrderStatus(id: string, status: OrderStatus): Promise<Order> {

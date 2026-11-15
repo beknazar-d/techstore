@@ -2,6 +2,15 @@
 
 Новые записи — сверху. Формат: дата, раздел, что сделано, ключевые файлы, решения, что дальше.
 
+## 2026-11-15 — UI-кит (часть 1) и ответы владельца
+
+- Готово (neurogate + правки): `src/components/ui/` — Button/LinkButton, Input, Textarea, Select, Checkbox, Modal (хуки вынесены в ModalContent, фокус и Esc), Badge, StatusBadge, StockBadge, ConditionBadge.
+- Не сделано из волны 1 (кончились лимиты neurogate): 06 Spinner/EmptyState, 07 ProductImage, 08 Chips, 09 ImagePicker.
+- Решения владельца: город Москва, телефоны +7; заказ можно закрыть сразу из «нового»; trade-in на всех новых товарах (`shop.tradeInCategorySlugs` удалён); ссылки на админку в подвале нет; «(Б/У)» в названиях оставляем.
+- Демо-данные: 3 заказа (№1001–1003) и 2 заявки trade-in (№501–502) в `src/data/seed.ts`; ключ хранилища поднят до `phone-market:db:v2`.
+- Задания для исполнителей лежат в scratchpad сессии (`tasks/NN-*.md`). Если сессия новая и их нет — задания нужно написать заново по `AGENTS.md`.
+- Дальше: волна 1 (06–09), затем волны 2–4.
+
 ## 2026-11-15 — Архитектура, слой данных, маршруты
 
 - Типы: `src/types/index.ts` (Category/SpecField, Product с condition/usedInfo, Order/OrderEvent, TradeInRequest/TradeInEvent, input-типы).

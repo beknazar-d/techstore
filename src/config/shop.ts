@@ -4,7 +4,7 @@
 export const shop = {
   name: 'Phone Market',
   tagline: 'Смартфоны, ноутбуки, гаджеты и техника для дома',
-  city: 'Ош',
+  city: 'Москва',
   currency: '₽',
 
   /** Телефон в международном формате, без пробелов. */
@@ -14,7 +14,7 @@ export const shop = {
   /** Имя пользователя или канала в Telegram, без «@». */
   telegram: 'phone_market_demo',
 
-  pickupAddress: 'ул. Ленина, 1 (адрес-заглушка)',
+  pickupAddress: 'Москва, ул. Тверская, 1 (адрес-заглушка)',
   workingHours: 'Ежедневно с 10:00 до 20:00',
 
   /** При таком остатке и меньше показываем «Осталось N шт.» и шлём уведомление. */
@@ -23,8 +23,6 @@ export const shop = {
   maxProductImages: 5,
   /** Максимум фото в заявке на trade-in. */
   maxTradeInPhotos: 5,
-  /** Slug-и категорий, на странице новых товаров которых показываем ссылку «Обменять старый (trade-in)». */
-  tradeInCategorySlugs: ['smartfony'] as readonly string[],
 
   /** Демо-вход в админку. Только для локальной версии — потом Supabase Auth. */
   demoAdminEmail: 'admin@phone-market.local',
