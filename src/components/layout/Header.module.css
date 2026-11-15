@@ -1,0 +1,157 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  height: var(--header-height);
+  background: var(--color-bg-translucent);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inner {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 var(--page-padding);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+}
+
+.logoName {
+  font-size: 18px;
+  line-height: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.logoCity {
+  display: none;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: var(--space-2);
+  min-width: 0;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 40px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+
+.navLink:hover {
+  background: var(--color-surface-recessed);
+}
+
+.active {
+  color: var(--color-primary);
+}
+
+.navIcon {
+  display: none;
+  font-size: 20px;
+}
+
+.contacts {
+  display: none;
+}
+
+.callButton {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.callButton :global(.material-symbols-outlined) {
+  font-size: 20px;
+}
+
+.logo:focus-visible,
+.navLink:focus-visible,
+.phone:focus-visible,
+.callButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (min-width: 400px) {
+  .logoCity {
+    display: block;
+  }
+}
+
+@media (min-width: 480px) {
+  .navIcon {
+    display: inline-block;
+  }
+
+  .navLink {
+    padding: 0 var(--space-3);
+  }
+}
+
+@media (min-width: 768px) {
+  .inner {
+    gap: var(--space-4);
+  }
+
+  .nav {
+    margin-left: var(--space-4);
+  }
+
+  .contacts {
+    margin-left: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .phone {
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+  }
+
+  .hours {
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--color-text-secondary);
+  }
+
+  .callButton {
+    display: none;
+  }
+}

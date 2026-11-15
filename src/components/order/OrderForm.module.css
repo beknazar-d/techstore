@@ -1,0 +1,212 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--space-6) 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-secondary);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.groupLabel {
+  padding: 0;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.quantity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.quantityRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.stepper {
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.stepper:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.stepper:focus-visible,
+.linkButton:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.quantityValue {
+  min-width: var(--space-6);
+  text-align: center;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.stockNote {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-secondary);
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
+.option:has(.radio:focus-visible) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.optionSelected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.radio {
+  margin: 2px 0 0;
+  accent-color: var(--color-primary);
+}
+
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optionTitle {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.optionHint {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-secondary);
+}
+
+.geoOk {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text);
+}
+
+.geoOkIcon {
+  font-size: 20px;
+  color: var(--color-success);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.geoError {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-error);
+}
+
+.dateTime {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.submitError {
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  background: var(--color-error-soft);
+  color: var(--color-error-text);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.payNote {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-text-secondary);
+}
+
+.payIcon {
+  font-size: 18px;
+}
+
+@media (min-width: 768px) {
+  .options {
+    flex-direction: row;
+  }
+
+  .option {
+    flex: 1;
+  }
+}

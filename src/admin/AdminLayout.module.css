@@ -1,0 +1,227 @@
+.layout {
+  min-height: 100dvh;
+  background: var(--color-bg);
+}
+
+.shopName {
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.caption {
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.counter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
+}
+
+/* Телефон: верхняя полоса */
+.topBar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  height: var(--header-height);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.iconButton {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text);
+}
+
+.iconButton:hover {
+  background: var(--color-surface-recessed);
+}
+
+.iconButton:focus-visible,
+.sideItem:focus-visible,
+.bottomItem:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.sidebar {
+  display: none;
+}
+
+.main {
+  min-width: 0;
+  padding: var(--space-4);
+  padding-bottom: calc(var(--admin-nav-height) + var(--space-6) + env(safe-area-inset-bottom));
+}
+
+/* Телефон: нижняя панель */
+.bottomNav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-header);
+  height: var(--admin-nav-height);
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding-bottom: env(safe-area-inset-bottom);
+  box-sizing: content-box;
+}
+
+.bottomItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.bottomActive {
+  color: var(--color-primary);
+}
+
+.bottomIconWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.bottomIcon {
+  font-size: 24px;
+}
+
+.bottomCounter {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+}
+
+@media (min-width: 768px) {
+  .layout {
+    display: grid;
+    grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .topBar,
+  .bottomNav {
+    display: none;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    position: sticky;
+    top: 0;
+    width: var(--admin-sidebar-width);
+    height: 100dvh;
+    border-right: 1px solid var(--color-border);
+    background: var(--color-bg);
+    padding: var(--space-4);
+  }
+
+  .brand {
+    margin-bottom: var(--space-4);
+  }
+
+  .sideNav,
+  .sideFooter {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .sideFooter {
+    margin-top: auto;
+  }
+
+  .sideItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    width: 100%;
+    height: 40px;
+    padding: 0 var(--space-3);
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 500;
+    color: var(--color-text);
+    transition: background var(--transition);
+  }
+
+  .sideItem:hover {
+    background: var(--color-surface-recessed);
+  }
+
+  .active,
+  .active:hover {
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+  }
+
+  .sideButton {
+    border: 0;
+    background: transparent;
+    font-family: inherit;
+    text-align: left;
+  }
+
+  .sideIcon {
+    font-size: 20px;
+  }
+
+  .sideCounter {
+    margin-left: auto;
+  }
+
+  .email {
+    padding: 0 var(--space-3);
+    margin-bottom: var(--space-1);
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--color-text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .main {
+    width: 100%;
+    max-width: 1100px;
+    padding: var(--space-6);
+  }
+}

@@ -1,10 +1,118 @@
-import { Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
+import { listOrders, listTradeIns, logout } from '../api'
+import { shop } from '../config/shop'
+import { useAdminSession } from '../hooks/useAdminSession'
+import { useApiQuery } from '../hooks/useApiQuery'
+import { cn } from '../utils/cn'
+import styles from './AdminLayout.module.css'
 
-// ЗАГЛУШКА: каркас админки (меню, выход) сверстает исполнитель. Имя экспорта не менять.
+type CounterKey = 'orders' | 'tradeIns'
+
+interface NavItem {
+  label: string
+  to: string
+  icon: string
+  counter?: CounterKey
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { label: 'Заказы', to: '/admin/orders', icon: 'receipt_long', counter: 'orders' },
+  { label: 'Trade-in', to: '/admin/trade-in', icon: 'swap_horiz', counter: 'tradeIns' },
+  { label: 'Товары', to: '/admin/products', icon: 'inventory_2' },
+  { label: 'Категории', to: '/admin/categories', icon: 'category' },
+]
+
 export function AdminLayout() {
+  const { session } = useAdminSession()
+  const newOrders = useApiQuery(() => listOrders({ status: 'new' }), [], ['orders'])
+  const newTradeIns = useApiQuery(() => listTradeIns({ status: 'new' }), [], ['tradeIns'])
+  const counters: Record<CounterKey, number> = {
+    orders: newOrders.data?.length ?? 0,
+    tradeIns: newTradeIns.data?.length ?? 0,
+  }
+
+  function handleLogout() {
+    void logout()
+  }
+
   return (
-    <main>
-      <Outlet />
-    </main>
+    <div className={styles.layout}>
+      <header className={styles.topBar}>
+        <div>
+          <div className={styles.shopName}>{shop.name}</div>
+          <div className={styles.caption}>Админка</div>
+        </div>
+        <button type="button" className={styles.iconButton} aria-label="Выйти" onClick={handleLogout}>
+          <span className="material-symbols-outlined" aria-hidden="true">
+            logout
+          </span>
+        </button>
+      </header>
+
+      <aside className={styles.sidebar}>
+        <div className={styles.brand}>
+          <div className={styles.shopName}>{shop.name}</div>
+          <div className={styles.caption}>Админка</div>
+        </div>
+        <nav aria-label="Разделы админки" className={styles.sideNav}>
+          {NAV_ITEMS.map((item) => {
+            const count = item.counter ? counters[item.counter] : 0
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => cn(styles.sideItem, isActive && styles.active)}
+              >
+                <span className={cn('material-symbols-outlined', styles.sideIcon)} aria-hidden="true">
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+                {count > 0 && <span className={cn(styles.counter, styles.sideCounter)}>{count}</span>}
+              </NavLink>
+            )
+          })}
+        </nav>
+        <div className={styles.sideFooter}>
+          {session && <div className={styles.email}>{session.email}</div>}
+          <Link to="/" className={styles.sideItem}>
+            <span className={cn('material-symbols-outlined', styles.sideIcon)} aria-hidden="true">
+              storefront
+            </span>
+            <span>На сайт</span>
+          </Link>
+          <button type="button" className={cn(styles.sideItem, styles.sideButton)} onClick={handleLogout}>
+            <span className={cn('material-symbols-outlined', styles.sideIcon)} aria-hidden="true">
+              logout
+            </span>
+            <span>Выйти</span>
+          </button>
+        </div>
+      </aside>
+
+      <main className={styles.main}>
+        <Outlet />
+      </main>
+
+      <nav aria-label="Разделы админки" className={styles.bottomNav}>
+        {NAV_ITEMS.map((item) => {
+          const count = item.counter ? counters[item.counter] : 0
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => cn(styles.bottomItem, isActive && styles.bottomActive)}
+            >
+              <span className={styles.bottomIconWrap}>
+                <span className={cn('material-symbols-outlined', styles.bottomIcon)} aria-hidden="true">
+                  {item.icon}
+                </span>
+                {count > 0 && <span className={cn(styles.counter, styles.bottomCounter)}>{count}</span>}
+              </span>
+              <span>{item.label}</span>
+            </NavLink>
+          )
+        })}
+      </nav>
+    </div>
   )
 }
