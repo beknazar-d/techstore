@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html lang="ru"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "outline-variant": "#c3c6d7", "error-container": "#ffdad6", "on-secondary-fixed-variant": "#3f465c", "tertiary-container": "#007d55", "on-secondary": "#ffffff", "surface-container": "#e5eeff", "secondary-fixed": "#dae2fd", "inverse-primary": "#b4c5ff", "inverse-on-surface": "#eaf1ff", "surface-dim": "#cbdbf5", "on-tertiary-fixed": "#002113", "tertiary-fixed": "#6ffbbe", "primary-fixed-dim": "#b4c5ff", "surface-tint": "#0053db", "on-tertiary": "#ffffff", "background": "#f8f9ff", "primary-fixed": "#dbe1ff", "error": "#ba1a1a", "on-primary-fixed": "#00174b", "on-tertiary-fixed-variant": "#005236", "on-secondary-fixed": "#131b2e", "primary": "#004ac6", "on-error-container": "#93000a", "surface-bright": "#f8f9ff", "surface-container-lowest": "#ffffff", "surface": "#f8f9ff", "on-error": "#ffffff", "on-surface": "#0b1c30", "secondary-container": "#dae2fd", "on-background": "#0b1c30", "outline": "#737686", "on-surface-variant": "#434655", "tertiary-fixed-dim": "#4edea3", "on-tertiary-container": "#bdffdb", "tertiary": "#006242", "surface-container-low": "#eff4ff", "on-secondary-container": "#5c647a", "surface-container-high": "#dce9ff", "secondary": "#565e74", "on-primary": "#ffffff", "primary-container": "#2563eb", "surface-container-highest": "#d3e4fe", "on-primary-fixed-variant": "#003ea8", "on-primary-container": "#eeefff", "inverse-surface": "#213145", "surface-variant": "#d3e4fe", "secondary-fixed-dim": "#bec6e0" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-xl": "2.5rem", "gutter-mobile": "0.75rem", "gutter": "1rem", "margin-mobile": "1rem", "space-lg": "1.5rem", "margin": "1.5rem", "space-sm": "0.5rem", "space-md": "1rem", "space-xs": "0.25rem" }, fontFamily: { "label-ui": ["Inter"], "headline-lg-mobile": ["Inter"], "price-hero": ["Inter"], "display-hero": ["Inter"], "display-hero-mobile": ["Inter"], "body-sm": ["Inter"], "price-card": ["Inter"], "headline-sm": ["Inter"], "body-lg": ["Inter"], "price-installment": ["Inter"], "headline-md": ["Inter"], "body-md": ["Inter"], "label-caps": ["Inter"], "headline-lg": ["Inter"] }, fontSize: { "label-ui": ["13px", { "lineHeight": "18px", "letterSpacing": "-0.005em", "fontWeight": "500" }], "headline-lg-mobile": ["24px", { "lineHeight": "30px", "letterSpacing": "-0.02em", "fontWeight": "600" }], "price-hero": ["28px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "display-hero": ["44px", { "lineHeight": "52px", "letterSpacing": "-0.03em", "fontWeight": "700" }], "display-hero-mobile": ["32px", { "lineHeight": "38px", "letterSpacing": "-0.025em", "fontWeight": "700" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0", "fontWeight": "400" }], "price-card": ["18px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "headline-sm": ["16px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" }], "price-installment": ["13px", { "lineHeight": "16px", "letterSpacing": "0", "fontWeight": "500" }], "headline-md": ["20px", { "lineHeight": "26px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400" }], "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }], "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }] } } } };</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-surface font-body-md text-on-surface flex flex-col antialiased selection:bg-primary-fixed"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-14 px-margin-mobile flex items-center justify-between gap-space-sm"><div class="flex items-center gap-space-sm"><img alt="A7Store Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/ALJJyrAml3_g5p7lCrDNQCA4mHbeZocSM8YbSODPoC1E63_7JA6qTkRsZlbrP1K-E3an695Bee0iBCNbpFAUfCsYHs_zsxemppkHPUeu_ZdUbdCogppoJJeyKSLssUGRQVbMp24jYDlz-Yg7YxhNXtGM18385BXNTvvpMMqym_dMSASf-Ic8l20-emHv_6nuWnvm16k97NXKzNmByFTSCsBi4pNA-InUtSaJs_BMICVdd7M1Ag"/><div class="flex flex-col"><span class="font-label-caps text-label-caps text-on-surface uppercase tracking-wider leading-none">A7Store</span><span class="font-body-sm text-[10px] leading-tight text-on-surface-variant flex items-center gap-0.5"><span class="material-symbols-outlined text-[11px] text-tertiary">location_on</span>Ош</span></div></div><div class="flex items-center gap-1.5"><div class="flex items-center bg-surface-container-high rounded-full p-0.5"><span class="font-label-caps text-[10px] leading-none px-1.5 py-1 rounded-full bg-surface-container-lowest text-primary font-bold shadow-[0_1px_3px_rgba(0,0,0,0.08)]">РУ</span><span class="font-label-caps text-[10px] leading-none px-1.5 py-1 text-on-surface-variant font-medium">КЫР</span></div><button aria-label="Поиск" class="w-11 h-11 flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container transition-colors" type="button"><span class="material-symbols-outlined text-[22px]">search</span></button><a aria-label="Корзина" class="w-11 h-11 relative flex items-center justify-center rounded-full text-on-surface hover:bg-surface-container transition-colors" data-path="корзина" href="#"><span class="material-symbols-outlined text-[22px]">shopping_bag</span><span class="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 bg-primary text-on-primary font-label-caps text-[10px] font-bold rounded-full flex items-center justify-center leading-none">2</span></a><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-14 pb-28 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<div class="px-margin-mobile pt-3 pb-2 flex items-center justify-between">
+<div class="flex items-baseline gap-space-xs">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Корзина</h1>
+<span class="font-body-md text-body-md text-on-surface-variant font-medium" id="cart-item-count">(2 товара)</span>
+</div>
+<button class="font-label-ui text-label-ui text-primary flex items-center gap-1 active:opacity-70 transition-opacity" id="clear-cart-btn" type="button">
+<span class="material-symbols-outlined text-[17px]">delete_sweep</span>
+<span>Очистить</span>
+</button>
+</div>
+<div class="mx-margin-mobile mb-4 px-3 py-2.5 rounded-xl bg-surface-container flex items-center justify-between text-on-surface">
+<div class="flex items-center gap-2 min-w-0">
+<div class="w-7 h-7 rounded-full bg-tertiary-container text-on-tertiary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px]">local_shipping</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-label-ui text-label-ui font-semibold truncate">Бесплатная экспресс-доставка</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">По г. Ош за 1–2 часа при заказе от 30 000 сом</span>
+</div>
+</div>
+<span class="shrink-0 font-label-caps text-label-caps font-bold px-2 py-1 rounded-full bg-surface-container-lowest text-tertiary shadow-sm">
+      АКТИВНО
+    </span>
+</div>
+<div class="flex flex-col gap-3 px-margin-mobile" id="cart-items-container">
+<div class="p-3.5 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-3 transition-all duration-300" id="cart-item-1">
+<div class="flex gap-3">
+<div class="w-20 h-20 rounded-lg bg-surface-container-low flex items-center justify-center p-1.5 shrink-0 relative overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="High-end Apple iPhone 16 Pro in Natural Titanium finish against a pure neutral high-key studio background, pristine metallic reflections, ultra crisp authorized retail product render, centered commercial tech photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJx5hvtsWkyDbAklFY1MwhflcqKO9DGXpr7yXHDb00waj6cL6rH8SuhNYsdAlUAZVc8B1-rO_gI-mmKQgEthLjMBUAN9qt_JZdX_gFwycteWDzB8WM9heUqsHkpN_AZGv0xCEjMyDP9DI1EPlUtBN0Y-bE6pRj3a-UG0CxQlnJBkAp7OZUeuQrQyFRRkDIGUIAuYr24-YjXmwbNezlYXaHgeWorkLZPoZ42itDTgbC"/>
+<span class="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-surface-container-highest font-label-caps text-[9px] font-bold text-on-surface-variant">256GB</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0 justify-between">
+<div class="flex items-start justify-between gap-1">
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-primary font-bold">Apple</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface leading-tight truncate">iPhone 16 Pro 256GB</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Цвет: Натуральный титан</span>
+</div>
+<button aria-label="Удалить товар" class="w-8 h-8 rounded-full flex items-center justify-center text-outline hover:text-error active:scale-95 transition-colors shrink-0" onclick="removeItem('cart-item-1', 116500)" type="button">
+<span class="material-symbols-outlined text-[19px]">delete_outline</span>
+</button>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse shrink-0"></span>
+<span class="font-body-sm text-body-sm text-tertiary font-medium">В наличии в Оше (Шоурум A7)</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-transparent bg-surface-container-low/50 px-2.5 py-2 rounded-lg">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-on-surface font-bold" id="price-val-1">116 500 сом</span>
+<span class="font-price-installment text-price-installment text-secondary">от 9 708 сом/мес</span>
+</div>
+<div class="flex items-center bg-surface-container rounded-full p-0.5">
+<button class="w-7 h-7 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-highest active:scale-90 transition-transform" onclick="updateQty(1, -1, 116500)" type="button">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<span class="font-headline-sm text-headline-sm w-7 text-center font-bold text-on-surface" id="qty-val-1">1</span>
+<button class="w-7 h-7 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-highest active:scale-90 transition-transform" onclick="updateQty(1, 1, 116500)" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-3 transition-all duration-300" id="cart-item-2">
+<div class="flex gap-3">
+<div class="w-20 h-20 rounded-lg bg-surface-container-low flex items-center justify-center p-1.5 shrink-0 relative overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="Official Apple 20W USB-C Power Adapter plug in original minimalist packaging view, clean white studio lighting, flawless hardware perspective, authorized Apple accessory aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmI9YehG3icU_Uai_NNJ7VKkkKIGP3xPPsCgv_Gyi_ZxVsejlLkTXWMe0N3gQVkH52pMnVO2lrahLWR2-XzSs9E4lG5Kuef_tsSvAxrH9_WzA7A-SFTINM9VAf0DRUUUzSUJevut0O2Gknkss7G-kUerRRQZgRGNhKE5Pi7yLzW3HRmXP2zjj-FxromL1AOUmcEkbpjL9BNIa1EjCMRa8tjiWS2ZI1S3elgYQ4qlt4"/>
+<span class="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-surface-container-highest font-label-caps text-[9px] font-bold text-on-surface-variant">Оригинал</span>
+</div>
+<div class="flex flex-col flex-1 min-w-0 justify-between">
+<div class="flex items-start justify-between gap-1">
+<div class="flex flex-col min-w-0">
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-primary font-bold">Оригинал</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface leading-tight truncate">Apple 20W USB-C Adapter</h2>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">Быстрая зарядка PD 3.0</span>
+</div>
+<button aria-label="Удалить товар" class="w-8 h-8 rounded-full flex items-center justify-center text-outline hover:text-error active:scale-95 transition-colors shrink-0" onclick="removeItem('cart-item-2', 2400)" type="button">
+<span class="material-symbols-outlined text-[19px]">delete_outline</span>
+</button>
+</div>
+<div class="flex items-center gap-1.5 mt-0.5">
+<span class="w-2 h-2 rounded-full bg-tertiary shrink-0"></span>
+<span class="font-body-sm text-body-sm text-tertiary font-medium">В наличии</span>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-transparent bg-surface-container-low/50 px-2.5 py-2 rounded-lg">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-on-surface font-bold" id="price-val-2">2 400 сом</span>
+<span class="font-body-sm text-body-sm text-secondary">В комплекте гарантия 1 год</span>
+</div>
+<div class="flex items-center bg-surface-container rounded-full p-0.5">
+<button class="w-7 h-7 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-highest active:scale-90 transition-transform" onclick="updateQty(2, -1, 2400)" type="button">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<span class="font-headline-sm text-headline-sm w-7 text-center font-bold text-on-surface" id="qty-val-2">1</span>
+<button class="w-7 h-7 rounded-full flex items-center justify-center text-on-surface hover:bg-surface-container-highest active:scale-90 transition-transform" onclick="updateQty(2, 1, 2400)" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 px-margin-mobile flex flex-col gap-2.5" id="cross-sell-section">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[20px]">auto_awesome</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Рекомендуем к iPhone 16 Pro</h3>
+</div>
+<span class="font-label-caps text-label-caps text-secondary font-medium uppercase">В 1 клик</span>
+</div>
+<div class="grid grid-cols-2 gap-2.5">
+<div class="p-3 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between transition-all" id="addon-card-1">
+<div class="flex flex-col gap-2">
+<div class="w-full h-24 rounded-lg bg-surface-container-low flex items-center justify-center p-2 relative overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="Premium 9H tempered glass screen protector with installation frame for iPhone 16 Pro with oleophobic coating crystal reflections on clean neutral studio backdrop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNl-RQwfDVMHE9sQgS2G6kTXJf12jjsiAefFaoaHN2VLBfid2zqOGqRc4IgxPVyHTtGQeflOlcESwVVoyA3S5iuZxJ7su_WK370YoE7SFA7tAfLTYOEVZS9NmYBql9Zsjk3ceJxWEor8Qev356iT6HW26VED9pBHslFQSg88l2gvpek9Vt3r0HueElA2osWhxKq8A_o2XCa_ZKJ5kSnhsj5wrf3kIaFpjbH40CXMyd"/>
+<span class="absolute top-1 left-1 bg-surface-container-lowest/90 px-1.5 py-0.5 rounded font-label-caps text-[9px] font-bold text-primary">9H Glass</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-ui text-label-ui text-on-surface font-semibold line-clamp-1">Защитное стекло Remax</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Полное покрытие 3D</span>
+</div>
+</div>
+<div class="mt-2 pt-2 flex items-center justify-between">
+<span class="font-price-installment text-price-installment font-bold text-on-surface">+650 сом</span>
+<button class="h-8 px-2.5 rounded-full bg-surface-container text-primary font-label-ui text-label-ui font-semibold flex items-center gap-1 active:scale-95 transition-all" id="btn-addon-1" onclick="toggleAddon(1, 650, 'Защитное стекло Remax')" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Добавить</span>
+</button>
+</div>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col justify-between transition-all" id="addon-card-2">
+<div class="flex flex-col gap-2">
+<div class="w-full h-24 rounded-lg bg-surface-container-low flex items-center justify-center p-2 relative overflow-hidden">
+<img class="w-full h-full object-contain" data-alt="Ultra-transparent MagSafe silicone phone case for Apple iPhone 16 Pro showing integrated magnetic ring, crystal clarity, studio lighting, authorized accessory standard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCw2rvuWz5tcf0NlXPWP_V2pFBwTY2KP3HtfzEYeasvAXI2b71VPseUV14L5btkeYA3Mr-OAjffhhm_tppr1290ASHsQ6EvIjMOl7JIM15Ahm9i_T2LLghnJ9H7oHQX5ejBBdyf_E-PEL8gqdR-P1XVG7BmCpROog2nf5Ck_stY-_TQbwQo2jf0gcCMApKRX4q-77ch0C8pi1mIlNnAj2TftGDFnPOMDxP_eM-rNUPQ"/>
+<span class="absolute top-1 left-1 bg-surface-container-lowest/90 px-1.5 py-0.5 rounded font-label-caps text-[9px] font-bold text-primary">MagSafe</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-ui text-label-ui text-on-surface font-semibold line-clamp-1">Clear Case MagSafe</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Ударопрочный силикон</span>
+</div>
+</div>
+<div class="mt-2 pt-2 flex items-center justify-between">
+<span class="font-price-installment text-price-installment font-bold text-on-surface">+1 200 сом</span>
+<button class="h-8 px-2.5 rounded-full bg-surface-container text-primary font-label-ui text-label-ui font-semibold flex items-center gap-1 active:scale-95 transition-all" id="btn-addon-2" onclick="toggleAddon(2, 1200, 'Clear Case MagSafe')" type="button">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Добавить</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-6 px-margin-mobile flex flex-col gap-3" id="order-summary-section">
+<div class="p-4 rounded-xl bg-surface-container-lowest shadow-sm flex flex-col gap-3">
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Детали заказа</h3>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center text-on-surface">
+<span class="font-body-md text-body-md text-on-surface-variant">Товары (<span id="summary-items-count">2</span> шт.)</span>
+<span class="font-body-md text-body-md font-semibold" id="subtotal-display">118 900 сом</span>
+</div>
+<div class="flex justify-between items-center text-on-surface">
+<div class="flex items-center gap-1">
+<span class="font-body-md text-body-md text-on-surface-variant">Доставка по г. Ош</span>
+<span class="material-symbols-outlined text-[14px] text-tertiary" title="Бесплатно при сумме от 30 000 сом">help</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-tertiary">Бесплатно</span>
+</div>
+<div class="flex justify-between items-center text-on-surface">
+<span class="font-body-md text-body-md text-on-surface-variant">Проверка перед оплатой</span>
+<span class="font-body-md text-body-md font-semibold text-tertiary">Включено</span>
+</div>
+</div>
+<div class="h-px bg-surface-container my-1"></div>
+<div class="flex justify-between items-baseline">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">Итого к оплате</span>
+<div class="flex flex-col items-end">
+<span class="font-price-hero text-price-hero font-bold text-primary" id="total-display">118 900 сом</span>
+<span class="font-price-installment text-price-installment text-secondary">Рассрочка от 0-0-12: от 9 908 сом/мес</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start gap-2.5">
+<span class="material-symbols-outlined text-tertiary text-[20px] shrink-0 mt-0.5">verified_user</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-snug">
+          Оплата производится <strong class="text-on-surface font-semibold">только при получении и проверке</strong> товара курьером в г. Ош. Без предоплаты.
+        </p>
+</div>
+</div>
+</div>
+<div class="mt-4 px-margin-mobile flex flex-col gap-2" id="sticky-checkout-bar">
+<button class="w-full h-12 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-ui text-label-ui font-semibold flex items-center justify-between px-4 shadow-md active:scale-[0.985] transition-transform" id="main-checkout-btn" type="button">
+<span class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">cloud_download</span>
+<span>Перейти к оформлению заказа</span>
+</span>
+<span class="font-bold text-[14px]" id="btn-total-price">118 900 сом</span>
+</button>
+<div class="flex items-center justify-center gap-2 py-1">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Возникли вопросы перед покупкой?</span>
+<a class="font-label-ui text-label-ui text-tertiary font-semibold flex items-center gap-0.5" href="https://wa.me/" target="_blank">
+<span class="material-symbols-outlined text-[15px]">chat</span> Спросить
+      </a>
+</div>
+</div>
+<div class="hidden flex-col items-center justify-center px-margin-mobile py-12 text-center" id="empty-cart-view">
+<div class="w-24 h-24 rounded-full bg-surface-container flex items-center justify-center text-primary mb-4">
+<span class="material-symbols-outlined text-[48px]">remove_shopping_cart</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface font-bold mb-1">Ваша корзина пуста</h3>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xs mb-6">
+      Вы пока не добавили технику. Перейдите в каталог флагманских новинок с официальной гарантией в Оше.
+    </p>
+<a class="h-11 px-6 rounded-full bg-primary text-on-primary font-label-ui text-label-ui font-semibold inline-flex items-center gap-2 shadow-sm active:scale-95 transition-transform" data-path="каталог" href="#">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+<span>Перейти в каталог</span>
+</a>
+</div>
+<div class="mt-6 mx-margin-mobile p-4 rounded-xl bg-surface-container-low flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">support_agent</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Консультация в Оше</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Ответим за 2 минуты, забронируем товар</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2">
+<a class="h-10 rounded-lg bg-tertiary-container text-on-tertiary flex items-center justify-center gap-2 font-label-ui text-label-ui font-semibold active:scale-95 transition-transform" href="https://wa.me/" rel="noopener noreferrer" target="_blank">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+<span>WhatsApp</span>
+</a>
+<a class="h-10 rounded-lg bg-surface-container text-[#229ED9] flex items-center justify-center gap-2 font-label-ui text-label-ui font-semibold active:scale-95 transition-transform" href="https://t.me/" rel="noopener noreferrer" target="_blank">
+<span class="material-symbols-outlined text-[18px]">send</span>
+<span>Telegram</span>
+</a>
+</div>
+</div>
+</div>
+<script>
+  let state = {
+    items: {
+      1: { qty: 1, basePrice: 116500, active: true },
+      2: { qty: 1, basePrice: 2400, active: true }
+    },
+    addons: {
+      1: { active: false, price: 650 },
+      2: { active: false, price: 1200 }
+    }
+  };
+
+  function formatSom(val) {
+    return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' сом';
+  }
+
+  function updateCalculations() {
+    let total = 0;
+    let totalItems = 0;
+
+    for (let id in state.items) {
+      if (state.items[id].active) {
+        total += state.items[id].qty * state.items[id].basePrice;
+        totalItems += state.items[id].qty;
+      }
+    }
+
+    for (let id in state.addons) {
+      if (state.addons[id].active) {
+        total += state.addons[id].price;
+        totalItems += 1;
+      }
+    }
+
+    const formatted = formatSom(total);
+    const subtotalEl = document.getElementById('subtotal-display');
+    const totalEl = document.getElementById('total-display');
+    const btnTotalEl = document.getElementById('btn-total-price');
+    const countEl = document.getElementById('cart-item-count');
+    const summaryCountEl = document.getElementById('summary-items-count');
+
+    if (subtotalEl) subtotalEl.textContent = formatted;
+    if (totalEl) totalEl.textContent = formatted;
+    if (btnTotalEl) btnTotalEl.textContent = formatted;
+    if (countEl) countEl.textContent = `(${totalItems} товар${totalItems === 1 ? '' : totalItems > 4 ? 'ов' : 'а'})`;
+    if (summaryCountEl) summaryCountEl.textContent = totalItems;
+
+    if (totalItems === 0) {
+      const itemsContainer = document.getElementById('cart-items-container');
+      const crossSell = document.getElementById('cross-sell-section');
+      const summary = document.getElementById('order-summary-section');
+      const checkoutBar = document.getElementById('sticky-checkout-bar');
+      const emptyView = document.getElementById('empty-cart-view');
+
+      if (itemsContainer) itemsContainer.classList.add('hidden');
+      if (crossSell) crossSell.classList.add('hidden');
+      if (summary) summary.classList.add('hidden');
+      if (checkoutBar) checkoutBar.classList.add('hidden');
+      if (emptyView) emptyView.classList.remove('hidden');
+      if (countEl) countEl.textContent = '(0 товаров)';
+    }
+  }
+
+  function updateQty(id, delta, basePrice) {
+    if (!state.items[id] || !state.items[id].active) return;
+    let newQty = state.items[id].qty + delta;
+    if (newQty < 1) {
+      removeItem('cart-item-' + id, basePrice);
+      return;
+    }
+    state.items[id].qty = newQty;
+    const qtyEl = document.getElementById('qty-val-' + id);
+    const priceEl = document.getElementById('price-val-' + id);
+    if (qtyEl) qtyEl.textContent = newQty;
+    if (priceEl) priceEl.textContent = formatSom(newQty * basePrice);
+    updateCalculations();
+  }
+
+  function removeItem(elementId, basePrice) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    const id = elementId === 'cart-item-1' ? 1 : 2;
+    state.items[id].active = false;
+    el.style.opacity = '0';
+    el.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      el.remove();
+      updateCalculations();
+    }, 200);
+  }
+
+  function toggleAddon(id, price, name) {
+    const btn = document.getElementById('btn-addon-' + id);
+    const card = document.getElementById('addon-card-' + id);
+    state.addons[id].active = !state.addons[id].active;
+
+    if (state.addons[id].active) {
+      if (btn) {
+        btn.classList.remove('bg-surface-container', 'text-primary');
+        btn.classList.add('bg-tertiary-container', 'text-on-tertiary');
+        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span><span>Добавлено</span>';
+      }
+      if (card) {
+        card.classList.add('bg-surface-container-high');
+      }
+    } else {
+      if (btn) {
+        btn.classList.remove('bg-tertiary-container', 'text-on-tertiary');
+        btn.classList.add('bg-surface-container', 'text-primary');
+        btn.innerHTML = '<span class="material-symbols-outlined text-[16px]">add</span><span>Добавить</span>';
+      }
+      if (card) {
+        card.classList.remove('bg-surface-container-high');
+      }
+    }
+    updateCalculations();
+  }
+
+  const clearBtn = document.getElementById('clear-cart-btn');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      for (let id in state.items) state.items[id].active = false;
+      for (let id in state.addons) state.addons[id].active = false;
+      const c1 = document.getElementById('cart-item-1');
+      const c2 = document.getElementById('cart-item-2');
+      if (c1) c1.remove();
+      if (c2) c2.remove();
+      updateCalculations();
+    });
+  }
+</script></main><aside class="fixed right-margin-mobile bottom-24 z-40 flex flex-col items-end gap-space-sm"><div class="flex flex-col items-center gap-space-xs"><a aria-label="Написать в Telegram" class="w-11 h-11 rounded-full bg-surface-container-lowest shadow-[0_4px_16px_rgba(11,28,48,0.12)] flex items-center justify-center text-[#229ED9] hover:bg-surface-container transition-transform active:scale-95" href="https://t.me/" rel="noopener noreferrer" target="_blank"><span class="material-symbols-outlined text-[22px]">send</span></a><a aria-label="Консультация WhatsApp" class="w-12 h-12 rounded-full bg-tertiary-container shadow-[0_4px_20px_rgba(0,125,85,0.35)] flex items-center justify-center text-on-tertiary hover:opacity-95 transition-transform active:scale-95" href="https://wa.me/" rel="noopener noreferrer" target="_blank"><span class="material-symbols-outlined text-[26px]">chat</span></a></div></aside><nav class="fixed bottom-0 inset-x-0 z-50 pb-safe bg-surface/95 backdrop-blur-xl shadow-[0_-2px_12px_rgba(0,0,0,0.05)]" data-active-classes="text-primary font-semibold"><div class="flex justify-around items-center h-16 px-space-xs"><a class="flex flex-col items-center justify-center w-14 h-14 rounded-full text-on-surface-variant hover:text-on-surface transition-all" data-path="главная" href="#"><span class="material-symbols-outlined text-[22px]">home</span><span class="font-label-caps text-[10px] mt-0.5 tracking-tight">Главная</span></a><a class="flex flex-col items-center justify-center w-14 h-14 rounded-full text-on-surface-variant hover:text-on-surface transition-all" data-path="каталог" href="#"><span class="material-symbols-outlined text-[22px]">grid_view</span><span class="font-label-caps text-[10px] mt-0.5 tracking-tight">Каталог</span></a><a aria-current="page" class="flex flex-col items-center justify-center w-14 h-14 rounded-full transition-all relative text-primary font-semibold" data-path="корзина" href="#"><span class="material-symbols-outlined text-[22px]">shopping_bag</span><span class="absolute top-2 right-3 w-2 h-2 rounded-full bg-primary"></span><span class="font-label-caps text-[10px] mt-0.5 tracking-tight">Корзина</span></a><a class="flex flex-col items-center justify-center w-14 h-14 rounded-full text-on-surface-variant hover:text-on-surface transition-all" data-path="заказы" href="#"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-caps text-[10px] mt-0.5 tracking-tight">Заказы</span></a><a class="flex flex-col items-center justify-center w-14 h-14 rounded-full text-on-surface-variant hover:text-on-surface transition-all" data-path="контакты" href="#"><span class="material-symbols-outlined text-[22px]">support_agent</span><span class="font-label-caps text-[10px] mt-0.5 tracking-tight">Контакты</span></a></div></nav></body></html>

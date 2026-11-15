@@ -1,0 +1,685 @@
+<!DOCTYPE html><html class="dark" lang="ru"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_standard" name="shell-type"><title>A7Store — Магазин оригинальной электроники в Москве</title><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "background": "#0b0f17",
+        "surface": "#0b0f17",
+        "surface-dim": "#080c12",
+        "surface-bright": "#1e293b",
+        "surface-container-lowest": "#070a10",
+        "surface-container-low": "#111827",
+        "surface-container": "#141c2c",
+        "surface-container-high": "#192338",
+        "surface-container-highest": "#212e46",
+        "on-background": "#f8fafc",
+        "on-surface": "#f8fafc",
+        "on-surface-variant": "#94a3b8",
+        "primary": "#3b82f6",
+        "primary-container": "#2563eb",
+        "on-primary": "#ffffff",
+        "secondary": "#4edea3",
+        "secondary-container": "#065f46",
+        "on-secondary": "#022c22",
+        "tertiary": "#10b981",
+        "tertiary-container": "#064e3b",
+        "on-tertiary": "#ffffff",
+        "outline": "#334155",
+        "outline-variant": "#1f293d"
+      },
+      "borderRadius": {
+        "DEFAULT": "0.25rem",
+        "lg": "0.5rem",
+        "xl": "0.75rem",
+        "full": "9999px"
+      },
+      "spacing": {
+        "margin-mobile": "1rem",
+        "space-xl": "2.5rem",
+        "space-xs": "0.25rem",
+        "space-md": "1rem",
+        "gutter": "1rem",
+        "margin": "1.5rem",
+        "space-sm": "0.5rem",
+        "space-lg": "1.5rem",
+        "gutter-mobile": "0.75rem"
+      },
+      "fontFamily": {
+        "display-hero": [ "Inter" ],
+        "headline-sm": [ "Inter" ],
+        "label-caps": [ "Inter" ],
+        "price-card": [ "Inter" ],
+        "body-lg": [ "Inter" ],
+        "price-hero": [ "Inter" ],
+        "headline-lg": [ "Inter" ],
+        "body-md": [ "Inter" ],
+        "body-sm": [ "Inter" ],
+        "price-installment": [ "Inter" ],
+        "display-hero-mobile": [ "Inter" ],
+        "headline-lg-mobile": [ "Inter" ],
+        "headline-md": [ "Inter" ],
+        "label-ui": [ "Inter" ]
+      },
+      "fontSize": {
+        "display-hero": [ "44px", { "lineHeight": "52px", "letterSpacing": "-0.03em", "fontWeight": "700" } ],
+        "headline-sm": [ "16px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "600" } ],
+        "label-caps": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" } ],
+        "price-card": [ "18px", { "lineHeight": "22px", "letterSpacing": "-0.01em", "fontWeight": "700" } ],
+        "body-lg": [ "16px", { "lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400" } ],
+        "price-hero": [ "28px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "700" } ],
+        "headline-lg": [ "32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" } ],
+        "body-md": [ "14px", { "lineHeight": "20px", "letterSpacing": "0", "fontWeight": "400" } ],
+        "body-sm": [ "12px", { "lineHeight": "16px", "letterSpacing": "0", "fontWeight": "400" } ],
+        "price-installment": [ "13px", { "lineHeight": "16px", "letterSpacing": "0", "fontWeight": "500" } ],
+        "display-hero-mobile": [ "32px", { "lineHeight": "38px", "letterSpacing": "-0.025em", "fontWeight": "700" } ],
+        "headline-lg-mobile": [ "24px", { "lineHeight": "30px", "letterSpacing": "-0.02em", "fontWeight": "600" } ],
+        "headline-md": [ "20px", { "lineHeight": "26px", "letterSpacing": "-0.015em", "fontWeight": "600" } ],
+        "label-ui": [ "13px", { "lineHeight": "18px", "letterSpacing": "-0.005em", "fontWeight": "500" } ]
+      }
+    }
+  }
+};</script></head><body class="bg-background font-body-md text-body-md text-on-surface antialiased min-h-screen"><header class="fixed top-0 left-0 right-0 z-50 bg-[#111827]/95 backdrop-blur-xl border-b border-[#1f293d] shadow-[0_4px_20px_rgba(0,0,0,0.4)]"><div class="h-20 max-w-[1280px] mx-auto px-margin flex items-center justify-between gap-space-lg"><div class="flex items-center gap-space-lg shrink-0"><a class="flex flex-col select-none group" data-path="home" href="#"><span class="font-headline-md text-headline-md text-white tracking-tight group-hover:text-primary transition-colors">A7Store</span><span class="font-label-caps text-label-caps text-[#94a3b8] tracking-wider uppercase">Москва • Гаджеты</span></a><a class="h-11 px-space-md bg-primary hover:bg-primary-container text-white rounded-xl flex items-center gap-space-sm font-label-ui text-label-ui transition-all shadow-sm shadow-primary/20" data-path="catalog" href="#"><span class="material-symbols-outlined text-[20px]">grid_view</span><span class="">Каталог</span></a></div><div class="flex-1 max-w-2xl"><div class="relative flex items-center w-full"><span class="material-symbols-outlined absolute left-space-md text-[#94a3b8] text-[20px] pointer-events-none">search</span><input class="w-full h-11 pl-11 pr-space-md bg-[#1a2333] hover:bg-[#202b3f] focus:bg-[#1a2333] rounded-xl font-body-sm text-body-sm text-white placeholder:text-[#94a3b8] placeholder:font-body-sm border border-[#25334a] focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all" placeholder="Поиск iPhone, MacBook, гаджетов среди 1 200+ товаров..." type="text"></div></div><div class="flex items-center gap-space-md shrink-0"><div class="flex items-center bg-[#1a2333] p-1 rounded-full border border-[#25334a]"><button class="px-2.5 py-1 rounded-full bg-primary text-white font-label-caps text-label-caps shadow-sm" type="button">РУ</button><button class="px-2.5 py-1 rounded-full text-[#94a3b8] hover:text-white font-label-caps text-label-caps transition-colors" type="button">КЫР</button></div><button aria-label="Переключить тему" class="w-9 h-9 rounded-full bg-[#1a2333] hover:bg-[#202b3f] border border-[#25334a] text-[#94a3b8] hover:text-white flex items-center justify-center transition-colors shadow-sm" type="button"><span class="material-symbols-outlined text-[18px]">dark_mode</span></button><a class="flex flex-col text-right hover:opacity-80 transition-opacity" href="tel:+74957928490"><span class="font-label-ui text-label-ui text-white font-semibold">+7 (495) 792-84-90</span><span class="font-label-caps text-label-caps text-tertiary flex items-center justify-end gap-1"><span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>10:00 – 22:00</span></a><a class="h-11 px-space-md bg-[#1a2333] hover:bg-[#202b3f] border border-[#25334a] rounded-xl flex items-center gap-space-sm transition-colors relative" data-path="cart" href="#"><div class="relative flex items-center"><span class="material-symbols-outlined text-white text-[22px]">shopping_bag</span><span class="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 bg-primary text-white font-label-caps text-label-caps rounded-full flex items-center justify-center">2</span></div><span class="font-price-card text-price-card text-white pl-1">118 900 ₽</span></a><div class="w-8 h-8 rounded-full bg-[#1a2333] border border-[#25334a] flex items-center justify-center"><span class="material-symbols-outlined text-[#cbd5e1] text-[18px]">person</span></div><button aria-label="Переключить тему" class="w-9 h-9 rounded-full bg-[#1a2333] hover:bg-[#202b3f] border border-[#25334a] text-[#94a3b8] hover:text-white flex items-center justify-center transition-colors shadow-sm" type="button"><span class="material-symbols-outlined text-[18px]">dark_mode</span></button></div></div></header><main class="w-full pt-20 bg-background min-h-[calc(100vh-80px)]"><div class="max-w-[1280px] mx-auto px-margin py-space-lg"><div class="flex flex-col w-full gap-space-xl">
+<!-- HERO PANORAMIC SHOWCASE -->
+<section class="relative w-full rounded-xl overflow-hidden bg-gradient-to-br from-[#141c2c] via-[#101726] to-[#0c121d] border border-[#25334a] p-space-xl shadow-xl">
+<div class="absolute -right-24 -bottom-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+<div class="grid grid-cols-12 gap-space-lg items-center relative z-10">
+<div class="col-span-12 lg:col-span-7 flex flex-col justify-center gap-space-md">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary/15 border border-tertiary/30 text-tertiary font-label-caps text-label-caps">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+            В наличии в Москве • Тверская 15
+          </span>
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#1a2333] border border-[#25334a] text-[#94a3b8] font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+            Доставка курьером за 2 часа
+          </span>
+</div>
+<div class="space-y-2">
+<p class="font-label-caps text-label-caps uppercase tracking-widest text-[#94a3b8]">Флагманский релиз • Титан в 4 цветах</p>
+<h1 class="font-display-hero text-display-hero text-white tracking-tight">iPhone 16 Pro Max</h1>
+<p class="font-body-lg text-body-lg text-[#cbd5e1] max-w-xl">
+            Чип A18 Pro, увеличенный дисплей 6.9″ Super Retina XDR, тактильная кнопка управления камерой Camera Control и титановый корпус Grade 5.
+          </p>
+</div>
+<div class="flex items-baseline gap-space-md pt-2">
+<div class="flex flex-col">
+<span class="font-price-hero text-price-hero text-white">124 990 ₽</span>
+<span class="font-price-installment text-price-installment text-[#94a3b8]">или в рассрочку от 10 415 ₽/мес</span>
+</div>
+<div class="px-2.5 py-1 bg-primary/15 border border-primary/30 rounded-lg font-label-caps text-label-caps text-primary font-semibold">
+            0% переплаты
+          </div>
+</div>
+<div class="flex flex-wrap items-center gap-space-md pt-space-xs">
+<button class="h-12 px-space-lg bg-primary hover:bg-primary-container text-white rounded-xl font-label-ui text-label-ui flex items-center gap-2 shadow-lg shadow-primary/25 transition-all hover:scale-[1.01] active:scale-[0.985]" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_cart</span>
+<span class="">Заказать сейчас</span>
+</button>
+<a class="h-12 px-space-lg bg-[#1a2333] hover:bg-[#202b3f] border border-[#25334a] text-[#cbd5e1] hover:text-white rounded-xl font-label-ui text-label-ui flex items-center gap-2 transition-colors" href="#">
+<span class="">Подробнее о модели</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-3 gap-space-sm pt-space-sm max-w-lg">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">schedule</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">Экспресс за 2-3 ч</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[20px]">storefront</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">Самовывоз сегодня</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">security</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">Гарантия 12 мес</span>
+</div>
+</div>
+</div>
+<div class="col-span-12 lg:col-span-5 flex justify-center items-center relative">
+<div class="relative w-full max-w-md aspect-square flex items-center justify-center p-4">
+<div class="absolute inset-0 bg-primary/10 rounded-full blur-3xl"></div>
+<img class="relative z-10 w-full h-full object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.6)] select-none" data-alt="Editorial close up product photo of Apple iPhone 16 Pro Max in Natural Titanium metallic finish resting on a pure minimalist off-white pedestal. Subtle soft architectural studio lighting, sharp pristine glass and titanium highlights, high dynamic range with high key atmosphere and sharp reflections." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBI_EUJemcoiCDxKNvITnmB7H30blY1Vk0eAhuUQiHVJTbns919xzTy83isuHU1nQ7sDjkDAjvgxyHMIfFEVFjRdB1x9yjpj05Lbx2ihMg9wyAmiOKZ3_5vHhVrnSV2lqvN7_VSvDddGS0U2nhjhPXaZ3OLNbnoE5K7MHBiTe_cXrw_qXFMXMX4L7IsJgJnhpmYsYJRSKSiSj-XKD3DKgEqO0RhIeFS1yMwxkmTjIHF">
+</div>
+</div>
+</div>
+</section>
+<!-- CATEGORY TILES (6 ITEMS ROW) -->
+<section class="w-full">
+<div class="flex items-center justify-between mb-space-md">
+<div class="flex items-center gap-2">
+<span class="font-headline-md text-headline-md text-white">Категории техники</span>
+<span class="text-[#94a3b8] font-label-caps text-label-caps uppercase bg-[#141c2c] border border-[#25334a] px-2 py-0.5 rounded-full">Оригинал</span>
+</div>
+<a class="font-label-ui text-label-ui text-primary hover:text-blue-400 flex items-center gap-1 transition-colors" href="#">
+        Весь каталог <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-space-md">
+<!-- 1. Смартфоны -->
+<a class="group p-space-md bg-[#141c2c] hover:bg-[#192338] border border-[#25334a] rounded-xl shadow-sm transition-all duration-200 flex flex-col justify-between h-36" href="#">
+<div class="flex items-center justify-between">
+<div class="w-10 h-10 rounded-lg bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[22px]">smartphone</span>
+</div>
+<span class="font-label-caps text-label-caps text-[#94a3b8] bg-[#0f1422] border border-[#1f293d] group-hover:border-[#25334a] px-2 py-0.5 rounded-full">240+</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-white block group-hover:text-primary transition-colors">Смартфоны</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">iPhone • Galaxy</span>
+</div>
+</a>
+<!-- 2. Ноутбуки -->
+<a class="group p-space-md bg-[#141c2c] hover:bg-[#192338] border border-[#25334a] rounded-xl shadow-sm transition-all duration-200 flex flex-col justify-between h-36" href="#">
+<div class="flex items-center justify-between">
+<div class="w-10 h-10 rounded-lg bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[22px]">laptop_mac</span>
+</div>
+<span class="font-label-caps text-label-caps text-[#94a3b8] bg-[#0f1422] border border-[#1f293d] group-hover:border-[#25334a] px-2 py-0.5 rounded-full">115+</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-white block group-hover:text-primary transition-colors">Ноутбуки</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">MacBook Pro • Air</span>
+</div>
+</a>
+<!-- 3. Планшеты -->
+<a class="group p-space-md bg-[#141c2c] hover:bg-[#192338] border border-[#25334a] rounded-xl shadow-sm transition-all duration-200 flex flex-col justify-between h-36" href="#">
+<div class="flex items-center justify-between">
+<div class="w-10 h-10 rounded-lg bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[22px]">tablet_mac</span>
+</div>
+<span class="font-label-caps text-label-caps text-[#94a3b8] bg-[#0f1422] border border-[#1f293d] group-hover:border-[#25334a] px-2 py-0.5 rounded-full">78+</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-white block group-hover:text-primary transition-colors">Планшеты</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">iPad Pro • Air</span>
+</div>
+</a>
+<!-- 4. Смарт-часы -->
+<a class="group p-space-md bg-[#141c2c] hover:bg-[#192338] border border-[#25334a] rounded-xl shadow-sm transition-all duration-200 flex flex-col justify-between h-36" href="#">
+<div class="flex items-center justify-between">
+<div class="w-10 h-10 rounded-lg bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[22px]">watch</span>
+</div>
+<span class="font-label-caps text-label-caps text-[#94a3b8] bg-[#0f1422] border border-[#1f293d] group-hover:border-[#25334a] px-2 py-0.5 rounded-full">92+</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-white block group-hover:text-primary transition-colors">Смарт-часы</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">Apple Watch • Ultra</span>
+</div>
+</a>
+<!-- 5. Наушники -->
+<a class="group p-space-md bg-[#141c2c] hover:bg-[#192338] border border-[#25334a] rounded-xl shadow-sm transition-all duration-200 flex flex-col justify-between h-36" href="#">
+<div class="flex items-center justify-between">
+<div class="w-10 h-10 rounded-lg bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[22px]">headphones</span>
+</div>
+<span class="font-label-caps text-label-caps text-[#94a3b8] bg-[#0f1422] border border-[#1f293d] group-hover:border-[#25334a] px-2 py-0.5 rounded-full">130+</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-white block group-hover:text-primary transition-colors">Наушники</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">AirPods • Max • Sony</span>
+</div>
+</a>
+<!-- 6. Аксессуары -->
+<a class="group p-space-md bg-[#141c2c] hover:bg-[#192338] border border-[#25334a] rounded-xl shadow-sm transition-all duration-200 flex flex-col justify-between h-36" href="#">
+<div class="flex items-center justify-between">
+<div class="w-10 h-10 rounded-lg bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[22px]">cable</span>
+</div>
+<span class="font-label-caps text-label-caps text-[#94a3b8] bg-[#0f1422] border border-[#1f293d] group-hover:border-[#25334a] px-2 py-0.5 rounded-full">310+</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-white block group-hover:text-primary transition-colors">Аксессуары</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">MagSafe • Кабели</span>
+</div>
+</a>
+</div>
+</section>
+<!-- PRODUCT SHOWCASE: "ПОПУЛЯРНОЕ В МОСКВЕ" -->
+<section class="w-full">
+<div class="flex items-end justify-between mb-space-md">
+<div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-tertiary font-semibold">Актуальный спрос</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-white">Популярное в Москве</h2>
+</div>
+<div class="flex items-center gap-2">
+<button aria-label="Предыдущий слайд" class="w-10 h-10 rounded-xl bg-[#141c2c] hover:bg-[#192338] border border-[#25334a] text-white shadow-sm flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">west</span>
+</button>
+<button aria-label="Следующий слайд" class="w-10 h-10 rounded-xl bg-[#141c2c] hover:bg-[#192338] border border-[#25334a] text-white shadow-sm flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">east</span>
+</button>
+</div>
+</div>
+<!-- 4 Cards Grid across 1280px -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Card 1: iPhone 16 Pro 256GB -->
+<div class="group bg-[#141c2c] border border-[#25334a] rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-200 relative">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/15 border border-tertiary/30 text-tertiary font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            В наличии в Москве
+          </span>
+<button aria-label="В избранное" class="text-[#94a3b8] hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+</div>
+<div class="w-full aspect-square bg-[#0f1422] rounded-xl mb-space-md flex items-center justify-center p-3 overflow-hidden border border-[#1f293d]">
+<img class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" data-alt="Studio catalog cut out of Apple iPhone 16 Pro in Black Titanium isolated on clean soft neutral studio background, 45 degree angle showing triple camera module and screen edge." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEpMDQLfttVqF2-7FerR2C_Jxsdi3sNaIP9IqoTBFD7IvmA0OpMRTdZ5rJrOdShLdRqj94KaBO5gbw-8xEKKPrTNUFdiS13hODidQHmI6U9b3o3Ek9KIkLrfww37o2hc5IWbMYuo6zeDn8wJeSvVTCr-btlQcqXmGaK1qErJv1HtdY-v7sav2zgX3DqmeHCyWk2t99uE3mtpi3MaJsxwpW6locqBSvyeWjKimmoAYB">
+</div>
+<div class="space-y-space-xs flex-1">
+<div class="flex items-center gap-1.5 font-label-caps text-label-caps text-[#94a3b8]">
+<span class="">256 GB</span> • <span class="">Black Titanium</span> • <span class="">Nano-SIM+eSIM</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white group-hover:text-primary transition-colors">
+            iPhone 16 Pro 256GB
+          </h3>
+<p class="font-body-sm text-body-sm text-[#94a3b8] line-clamp-1">
+            Дисплей 6.3″ 120Hz ProMotion, чип Apple A18 Pro
+          </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-white">116 500 ₽</span>
+<span class="font-price-installment text-price-installment text-[#94a3b8]">от 9 708 ₽/мес</span>
+</div>
+<button aria-label="Добавить iPhone 16 Pro в корзину" class="w-11 h-11 rounded-xl bg-primary hover:bg-primary-container text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm shadow-primary/30" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</button>
+</div>
+</div>
+<!-- Card 2: MacBook Air 13 M3 8/256GB -->
+<div class="group bg-[#141c2c] border border-[#25334a] rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-200 relative">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/15 border border-tertiary/30 text-tertiary font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            В наличии в Москве
+          </span>
+<button aria-label="В избранное" class="text-[#94a3b8] hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+</div>
+<div class="w-full aspect-square bg-[#0f1422] rounded-xl mb-space-md flex items-center justify-center p-3 overflow-hidden border border-[#1f293d]">
+<img class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" data-alt="Crisp studio product shot of Apple MacBook Air 13-inch M3 chip in Midnight matte dark finish, open display showing sleek minimalist silhouette, high key soft studio contrast." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfUwtCOJBpg7Kz4BD9xt_9fGN9_TgUyMj-nkNvv71vOn7iqeNt4gnso4THXNJygE8ZFW3w0U_3mecEmD0pJZ5eKrIX88xe6yeWc2XW_IFuqhS9scZLFejLAUE6Z1I-IvAgtkfnrrcDIeWEh72MGY4z7FqoOZi0GW9gl2ulXsR6wXK5uQ1Wozt2RuKBu3hrwgNXb1xvocIcatHKnxfeBfdx2rMIvb1rm86TR-hxEGSt">
+</div>
+<div class="space-y-space-xs flex-1">
+<div class="flex items-center gap-1.5 font-label-caps text-label-caps text-[#94a3b8]">
+<span class="">8 GB RAM</span> • <span class="">256 GB SSD</span> • <span class="">Midnight</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white group-hover:text-primary transition-colors">
+            MacBook Air 13 M3
+          </h3>
+<p class="font-body-sm text-body-sm text-[#94a3b8] line-clamp-1">
+            Автономность до 18 часов, Liquid Retina экран 13.6″
+          </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-white">98 000 ₽</span>
+<span class="font-price-installment text-price-installment text-[#94a3b8]">от 8 166 ₽/мес</span>
+</div>
+<button aria-label="Добавить MacBook Air в корзину" class="w-11 h-11 rounded-xl bg-primary hover:bg-primary-container text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm shadow-primary/30" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</button>
+</div>
+</div>
+<!-- Card 3: AirPods Pro 2 USB-C -->
+<div class="group bg-[#141c2c] border border-[#25334a] rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-200 relative">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/15 border border-tertiary/30 text-tertiary font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            В наличии в Москве
+          </span>
+<button aria-label="В избранное" class="text-[#94a3b8] hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+</div>
+<div class="w-full aspect-square bg-[#0f1422] rounded-xl mb-space-md flex items-center justify-center p-3 overflow-hidden border border-[#1f293d]">
+<img class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" data-alt="Apple AirPods Pro 2 wireless earphones standing with MagSafe USB-C case open, high dynamic clean white studio lighting, sharp pristine shadows and high gloss finish." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3a-0_R3jPJM29mhDp0zrcOQWu55gJemGj4fjT5vy7ndzXWRW-SQfLdgKH278tO2YHJ3qQBnynpsC0NBCQfk1A50GvrPuZxo_M7KOaZ0HEQazLkOSaQHDFWM3-85xyuBW1sicmBqbHzo2G81X-FWcYeiWWf5JvfCWsfAoC3dpE0YyFOI9LZQexQYiz-dvOfuDGtVPPVfEEHmeMWXcm8rIVtzRZcJph6PrN5kPjxSb6">
+</div>
+<div class="space-y-space-xs flex-1">
+<div class="flex items-center gap-1.5 font-label-caps text-label-caps text-[#94a3b8]">
+<span class="">USB-C</span> • <span class="">MagSafe</span> • <span class="">H2 Chip</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white group-hover:text-primary transition-colors">
+            AirPods Pro 2 USB-C
+          </h3>
+<p class="font-body-sm text-body-sm text-[#94a3b8] line-clamp-1">
+            Активное шумоподавление 2x, адаптивное аудио
+          </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-white">21 900 ₽</span>
+<span class="font-price-installment text-price-installment text-[#94a3b8]">от 1 825 ₽/мес</span>
+</div>
+<button aria-label="Добавить AirPods Pro 2 в корзину" class="w-11 h-11 rounded-xl bg-primary hover:bg-primary-container text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm shadow-primary/30" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</button>
+</div>
+</div>
+<!-- Card 4: Apple Watch Series 10 46mm -->
+<div class="group bg-[#141c2c] border border-[#25334a] rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-200 relative">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/15 border border-tertiary/30 text-tertiary font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            В наличии в Москве
+          </span>
+<button aria-label="В избранное" class="text-[#94a3b8] hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+</div>
+<div class="w-full aspect-square bg-[#0f1422] rounded-xl mb-space-md flex items-center justify-center p-3 overflow-hidden border border-[#1f293d]">
+<img class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" data-alt="Apple Watch Series 10 46mm Jet Black polished aluminum smart watch angled on soft light surface, showing wide angle OLED screen edge and sleek black sport band." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLZjokEimuzF68DTL6qiZprLqfVYyA2Qwv8Qhthiovm7WbH4lyYw_ELThBhfw8MIYOv3BpVKl2IK6tqLbpeCt6fIZuAYMKE-tE6-N3J2R8vj38QfgvMOKoIWNXffJMNfvfxoGO638jpH15xSeN59DjF9fvrRJklVEh_6TvVPnVNMT1Lym2-YSRHKkwDDQF4zuRcGbmeerjSHtpgZHeheOcLOKEyeio58YO2RnhgGam">
+</div>
+<div class="space-y-space-xs flex-1">
+<div class="flex items-center gap-1.5 font-label-caps text-label-caps text-[#94a3b8]">
+<span class="">46mm</span> • <span class="">Jet Black</span> • <span class="">GPS</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white group-hover:text-primary transition-colors">
+            Apple Watch Series 10
+          </h3>
+<p class="font-body-sm text-body-sm text-[#94a3b8] line-clamp-1">
+            Широкоугольный OLED экран, датчик апноэ сна
+          </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-white">41 500 ₽</span>
+<span class="font-price-installment text-price-installment text-[#94a3b8]">от 3 458 ₽/мес</span>
+</div>
+<button aria-label="Добавить Apple Watch в корзину" class="w-11 h-11 rounded-xl bg-primary hover:bg-primary-container text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm shadow-primary/30" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- TRUST BLOCKS (4 COLUMNS) -->
+<section class="w-full bg-[#141c2c] border border-[#25334a] rounded-xl p-space-lg shadow-sm">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-lg">
+<!-- Trust 1 -->
+<div class="flex gap-space-sm items-start">
+<div class="w-12 h-12 rounded-xl bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[24px]">verified</span>
+</div>
+<div class="space-y-1">
+<h4 class="font-headline-sm text-headline-sm text-white">100% Оригинал</h4>
+<p class="font-body-sm text-body-sm text-[#94a3b8]">
+            Проверка по серийному номеру на официальном сайте производителя перед оплатой.
+          </p>
+</div>
+</div>
+<!-- Trust 2 -->
+<div class="flex gap-space-sm items-start">
+<div class="w-12 h-12 rounded-xl bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-tertiary shrink-0">
+<span class="material-symbols-outlined text-[24px]">workspace_premium</span>
+</div>
+<div class="space-y-1">
+<h4 class="font-headline-sm text-headline-sm text-white">Гарантия 1 год</h4>
+<p class="font-body-sm text-body-sm text-[#94a3b8]">
+            Собственный сертифицированный сервисный центр в Москве на Тверской, 15.
+          </p>
+</div>
+</div>
+<!-- Trust 3 -->
+<div class="flex gap-space-sm items-start">
+<div class="w-12 h-12 rounded-xl bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[24px]">electric_moped</span>
+</div>
+<div class="space-y-1">
+<h4 class="font-headline-sm text-headline-sm text-white">Экспресс-доставка</h4>
+<p class="font-body-sm text-body-sm text-[#94a3b8]">
+            Доставка курьером по Москве за 2 часа в пределах МКАД в день оформления.
+          </p>
+</div>
+</div>
+<!-- Trust 4 -->
+<div class="flex gap-space-sm items-start">
+<div class="w-12 h-12 rounded-xl bg-[#1a2333] border border-[#25334a] flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[24px]">payments</span>
+</div>
+<div class="space-y-1">
+<h4 class="font-headline-sm text-headline-sm text-white">Оплата при получении</h4>
+<p class="font-body-sm text-body-sm text-[#94a3b8]">
+            Никаких предоплат. Осматриваете устройство, вскрываете и оплачиваете.
+          </p>
+</div>
+</div>
+</div>
+</section>
+<!-- NEW ARRIVALS / "НОВИНКИ НЕДЕЛИ" -->
+<section class="w-full">
+<div class="flex items-end justify-between mb-space-md">
+<div>
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary"></span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-primary font-semibold">Свежие поступления</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-white">Новинки недели</h2>
+</div>
+<a class="font-label-ui text-label-ui text-primary hover:text-blue-400 flex items-center gap-1 transition-colors" href="#">
+        Смотреть все новинки <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+<!-- 4 Cards Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- New 1: Dyson Airwrap Multi-Styler Complete Long -->
+<div class="group bg-[#141c2c] border border-[#25334a] rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-200">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#1a2333] border border-[#25334a] text-white font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+            Новинка 2024
+          </span>
+<button aria-label="В избранное" class="text-[#94a3b8] hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+</div>
+<div class="w-full aspect-square bg-[#0f1422] rounded-xl mb-space-md flex items-center justify-center p-3 overflow-hidden border border-[#1f293d]">
+<img class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" data-alt="Dyson Airwrap Multi-Styler Complete Long in Strawberry Bronze and Blush Pink premium finish, studio white background, luxury hair styling tool with magnetic attachments neatly laid out." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmK9Zzg-1v946XJg3_arWxxB0VNZcpGfIb9SvhdIHfBt648akM5xVCfZZ-ZiyaM2Ivl8ZRqWWh6Inn6JYNa0ruwJ6wiqcbFhGN90m-gGs_xCqhK1qsW6gscLIQHL4BcBkC5zpF0vIoJGpZ08eeMaiblZIPb__giRHFBNpF4FKS5S9kqeFa-HqdXdZWZLSZoh1mz5mwCB-Rehj5VH8dHZiB2dGA90Io33RRzVcGHNQ7">
+</div>
+<div class="space-y-space-xs flex-1">
+<div class="flex items-center gap-1.5 font-label-caps text-label-caps text-[#94a3b8]">
+<span class="">Dyson</span> • <span class="">Strawberry Bronze</span> • <span class="">Евровилка</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white group-hover:text-primary transition-colors">
+            Dyson Airwrap Multi-Styler
+          </h3>
+<p class="font-body-sm text-body-sm text-[#94a3b8] line-clamp-1">
+            Комплект для длинных волос, интеллектуальный нагрев
+          </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-white">54 990 ₽</span>
+<span class="font-price-installment text-price-installment text-[#94a3b8]">от 4 582 ₽/мес</span>
+</div>
+<button aria-label="Купить Dyson Airwrap" class="w-11 h-11 rounded-xl bg-primary hover:bg-primary-container text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm shadow-primary/30" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</button>
+</div>
+</div>
+<!-- New 2: iPad Pro 11 M4 OLED -->
+<div class="group bg-[#141c2c] border border-[#25334a] rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-200">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/15 border border-tertiary/30 text-tertiary font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            В наличии в Москве
+          </span>
+<button aria-label="В избранное" class="text-[#94a3b8] hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+</div>
+<div class="w-full aspect-square bg-[#0f1422] rounded-xl mb-space-md flex items-center justify-center p-3 overflow-hidden border border-[#1f293d]">
+<img class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" data-alt="Apple iPad Pro 11-inch M4 chip with Ultra Retina XDR display floating horizontally on neutral studio setup, showing thin 5.3mm profile in Space Black color." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDEcDT-5C0_sHKZVYYXv-_EQX70LcGGo3IGawPTlIw4XyP-e9wE56-RONhhbIDM19mnAtfa-L-Zizy9vJjptdtOp69xpBIs39kw4S5G4jEDJammtKOLNf2kPFCQ96l5MF053TMbFQBduOnTr-mPbbSTRJDSgkE09AatnBAKUzveJ5HkVF7uq5Basq3cZrpdmAjDH9NljR0v4SLtwV_F0gsaqumLZpEykaojznYq-cBK">
+</div>
+<div class="space-y-space-xs flex-1">
+<div class="flex items-center gap-1.5 font-label-caps text-label-caps text-[#94a3b8]">
+<span class="">M4 Chip</span> • <span class="">256 GB</span> • <span class="">Space Black</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white group-hover:text-primary transition-colors">
+            iPad Pro 11″ M4 OLED
+          </h3>
+<p class="font-body-sm text-body-sm text-[#94a3b8] line-clamp-1">
+            Двойной OLED-экран Ultra Retina XDR, сверхтонкий 5.3 мм
+          </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-white">104 900 ₽</span>
+<span class="font-price-installment text-price-installment text-[#94a3b8]">от 8 741 ₽/мес</span>
+</div>
+<button aria-label="Купить iPad Pro M4" class="w-11 h-11 rounded-xl bg-primary hover:bg-primary-container text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm shadow-primary/30" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</button>
+</div>
+</div>
+<!-- New 3: Apple Watch Ultra 2 Black Titanium -->
+<div class="group bg-[#141c2c] border border-[#25334a] rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-200">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/15 border border-tertiary/30 text-tertiary font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            В наличии в Москве
+          </span>
+<button aria-label="В избранное" class="text-[#94a3b8] hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+</div>
+<div class="w-full aspect-square bg-[#0f1422] rounded-xl mb-space-md flex items-center justify-center p-3 overflow-hidden border border-[#1f293d]">
+<img class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" data-alt="Apple Watch Ultra 2 in Black Titanium satin finish with Dark Titanium Milanese Loop band, bold technical outdoor smartwatch studio render on white." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBwjtFNP-HEK50qGSh6Tl3aFo3IMPbGabifyTOKcs3wMH5a7JWdqyEX68KxBx_Mp7hx1mhrZhJsReSO1jrW1WXgOhPrum6ju5UEEJtcyLgU_BH4R7hUWcezgDXSjjuhMhMy5LSdh42CxwTqUCQzkBjKTSNOCjtSdEBVRNQQsfQ3cODnMSPKlV5QEmZ3PDTsrOmtsQFvqALtL8kcTyFIjPMrINdbxhZf1bKEQJOuED2E">
+</div>
+<div class="space-y-space-xs flex-1">
+<div class="flex items-center gap-1.5 font-label-caps text-label-caps text-[#94a3b8]">
+<span class="">49mm</span> • <span class="">Black Titanium</span> • <span class="">Ocean Band</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white group-hover:text-primary transition-colors">
+            Apple Watch Ultra 2
+          </h3>
+<p class="font-body-sm text-body-sm text-[#94a3b8] line-clamp-1">
+            Черный титан, яркость 3000 нит, автономность 72 часа
+          </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-white">82 500 ₽</span>
+<span class="font-price-installment text-price-installment text-[#94a3b8]">от 6 875 ₽/мес</span>
+</div>
+<button aria-label="Купить Apple Watch Ultra 2" class="w-11 h-11 rounded-xl bg-primary hover:bg-primary-container text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm shadow-primary/30" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</button>
+</div>
+</div>
+<!-- New 4: Sony WH-1000XM5 -->
+<div class="group bg-[#141c2c] border border-[#25334a] rounded-xl p-space-md flex flex-col justify-between shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-200">
+<div class="flex items-center justify-between mb-space-sm">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#1a2333] border border-[#25334a] text-white font-label-caps text-label-caps">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+            В наличии
+          </span>
+<button aria-label="В избранное" class="text-[#94a3b8] hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">favorite</span>
+</button>
+</div>
+<div class="w-full aspect-square bg-[#0f1422] rounded-xl mb-space-md flex items-center justify-center p-3 overflow-hidden border border-[#1f293d]">
+<img class="h-full w-full object-contain group-hover:scale-105 transition-transform duration-300" data-alt="Sony WH-1000XM5 noise cancelling over-ear headphones in Silver matte texture resting on smooth stone minimal surface, clean Scandinavian studio photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC7Y7J7m6W5IO81GkjLbo3O0gL4YmH72tO1Y2RFAFIvQ5Zp1AT8hM3HOvtfQg3qBgvdzb401wrDE8RtJpmjxvWDcOEZz2PaRwOGBOMvsclbbXfmJqpNVJ_dohhlWCmsa5PqW9JHowFjkZrd8mydI0FeqM9TFzWC0zFWrxVzNJ-gWt_qq-foubM0ZUfii_28Z_Er-h5S28Dpw7NUpZ-_HfRt_UN-A3b05MGYGhfB_3VV">
+</div>
+<div class="space-y-space-xs flex-1">
+<div class="flex items-center gap-1.5 font-label-caps text-label-caps text-[#94a3b8]">
+<span class="">Sony</span> • <span class="">Silver</span> • <span class="">LDAC Hi-Res</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-white group-hover:text-primary transition-colors">
+            Sony WH-1000XM5
+          </h3>
+<p class="font-body-sm text-body-sm text-[#94a3b8] line-clamp-1">
+            Лучшее активное шумоподавление, 8 микрофонов, 30ч
+          </p>
+</div>
+<div class="pt-space-md mt-space-sm flex items-center justify-between">
+<div class="flex flex-col">
+<span class="font-price-card text-price-card text-white">32 900 ₽</span>
+<span class="font-price-installment text-price-installment text-[#94a3b8]">от 2 741 ₽/мес</span>
+</div>
+<button aria-label="Купить Sony WH-1000XM5" class="w-11 h-11 rounded-xl bg-primary hover:bg-primary-container text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-sm shadow-primary/30" type="button">
+<span class="material-symbols-outlined text-[20px]">shopping_bag</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- SHOWROOM MOSCOW BLOCK -->
+<section class="w-full bg-[#141c2c] border border-[#25334a] rounded-xl overflow-hidden shadow-sm">
+<div class="grid grid-cols-1 lg:grid-cols-12">
+<!-- Info Left Panel -->
+<div class="lg:col-span-6 p-space-xl flex flex-col justify-between gap-space-lg">
+<div class="space-y-space-md">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span>
+<span class="font-label-caps text-label-caps uppercase tracking-wider text-tertiary font-semibold">Флагманский шоурум</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-white">Ждем вас в центре Москвы</h2>
+<p class="font-body-md text-body-md text-[#cbd5e1] max-w-md">
+            Приходите в наш магазин на Тверской, чтобы вживую оценить технику, сравнить модели, примерить ремешки и проконсультироваться со специалистами.
+          </p>
+<div class="space-y-space-sm pt-space-xs">
+<div class="flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px] shrink-0 mt-0.5">location_on</span>
+<div>
+<span class="font-headline-sm text-headline-sm text-white block">г. Москва, ул. Тверская, д. 15</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">м. Тверская / Пушкинская / Чеховская (2 минуты пешком)</span>
+</div>
+</div>
+<div class="flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px] shrink-0 mt-0.5">schedule</span>
+<div>
+<span class="font-headline-sm text-headline-sm text-white block">Ежедневно с 10:00 до 22:00</span>
+<span class="font-body-sm text-body-sm text-tertiary">Шоурум открыт • Выдача интернет-заказов за 5 минут</span>
+</div>
+</div>
+<div class="flex items-start gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[22px] shrink-0 mt-0.5">call</span>
+<div>
+<a class="font-headline-sm text-headline-sm text-white hover:text-primary transition-colors block" href="tel:+74957928490">+7 (495) 792-84-90</a>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">Многоканальный телефон для бронирования товаров</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-wrap items-center gap-space-sm pt-space-sm">
+<a class="h-11 px-space-md bg-primary hover:bg-primary-container text-white rounded-xl font-label-ui text-label-ui flex items-center gap-2 shadow-sm transition-colors" href="https://yandex.ru/maps/" rel="noopener" target="_blank">
+<span class="material-symbols-outlined text-[18px]">map</span>
+<span class="">Яндекс Карты</span>
+</a>
+<a class="h-11 px-space-md bg-[#1a2333] hover:bg-[#202b3f] border border-[#25334a] text-white rounded-xl font-label-ui text-label-ui flex items-center gap-2 transition-colors" href="tel:+74957928490">
+<span class="material-symbols-outlined text-[18px]">phone</span>
+<span class="">Позвонить</span>
+</a>
+<a class="h-11 px-space-md bg-tertiary hover:bg-emerald-600 text-white rounded-xl font-label-ui text-label-ui flex items-center gap-2 transition-colors" href="https://wa.me/" rel="noopener" target="_blank">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+<span class="">Написать в WhatsApp</span>
+</a>
+</div>
+</div>
+<!-- Map View Right Panel -->
+<div class="lg:col-span-6 relative min-h-[360px] lg:min-h-full bg-[#0b0f17]">
+<div class="w-full h-full min-h-[360px] bg-cover bg-center brightness-[0.75] contrast-[1.1] filter" data-location="г. Москва, ул. Тверская, д. 15" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB6KRzRHJk2R6cbs1y8yDWOSOGvdwPSOtDFU9BWcvoF9B3DFb8wTLzRSfc6sxzQJMglesaZbfzuzIyg6qUunMhlMeWxAfeh0jGAm0shSFYO1pT-mNKvcChp8S_xUBdMWsVBsoKksj2sTpiY-BFCIipANFKNd5lcL8DbGHbKQON39VGRqf8dlB-8mK5ZPpf4WFNqteuodG6hpJ6KSBIfp6gfe81iazj_0GqoIAidGYmr')"></div>
+<!-- Interactive Marker Overlay Pin -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#111827]/95 border border-[#25334a] backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-3 pointer-events-none">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white shadow-sm">
+<span class="material-symbols-outlined text-[18px]">storefront</span>
+</div>
+<div>
+<span class="font-headline-sm text-headline-sm text-white block leading-tight">A7Store Flagship</span>
+<span class="font-body-sm text-body-sm text-[#94a3b8]">ул. Тверская, 15</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div></div></main><aside class="fixed bottom-6 right-6 z-40 flex flex-col gap-space-sm items-end pointer-events-auto"><div class="bg-[#111827]/95 border border-[#25334a] backdrop-blur-md px-3 py-1.5 rounded-full shadow-[0_4px_16px_rgba(0,0,0,0.4)] font-label-caps text-label-caps text-[#cbd5e1] flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-tertiary"></span>Консультация онлайн</div><div class="flex items-center gap-2"><a aria-label="Написать в Telegram" class="w-12 h-12 rounded-full bg-[#111827] hover:bg-primary border border-[#25334a] text-primary hover:text-white shadow-[0_4px_16px_rgba(0,0,0,0.4)] flex items-center justify-center transition-all hover:scale-105 active:scale-95" href="https://t.me/" rel="noopener" target="_blank"><span class="material-symbols-outlined text-[24px]">send</span></a><a aria-label="Написать в WhatsApp" class="w-12 h-12 rounded-full bg-[#111827] hover:bg-tertiary border border-[#25334a] text-tertiary hover:text-white shadow-[0_4px_16px_rgba(0,0,0,0.4)] flex items-center justify-center transition-all hover:scale-105 active:scale-95" href="https://wa.me/" rel="noopener" target="_blank"><span class="material-symbols-outlined text-[24px]">chat</span></a></div></aside><footer class="w-full bg-[#111827] border-t border-[#1f293d] py-space-xl"><div class="max-w-[1280px] mx-auto px-margin"><div class="grid grid-cols-1 md:grid-cols-4 gap-space-lg pb-space-lg border-b border-[#1f293d]"><div class="space-y-space-sm"><div class="font-headline-sm text-headline-sm text-white tracking-tight">A7Store</div><p class="font-body-sm text-body-sm text-[#94a3b8]">Официальный магазин портативной электроники и аксессуаров в Москве. Только оригинальная продукция с гарантией качества 12 месяцев.</p><div class="pt-space-xs font-label-caps text-label-caps text-[#94a3b8] uppercase tracking-wider">© 2024 A7Store. Все права защищены.</div></div><div class="space-y-space-xs"><div class="font-label-ui text-label-ui font-semibold text-white uppercase tracking-wider mb-2">Магазин в Москве</div><p class="font-body-sm text-body-sm text-[#cbd5e1]">г. Москва, ул. Тверская, д. 15</p><p class="font-body-sm text-body-sm text-[#94a3b8]">м. Пушкинская / Театральный пр.</p><p class="font-body-sm text-body-sm text-[#94a3b8]">Ежедневно с 10:00 до 22:00</p></div><div class="space-y-space-xs"><div class="font-label-ui text-label-ui font-semibold text-white uppercase tracking-wider mb-2">Связь и клиентский сервис</div><a class="font-headline-sm text-headline-sm text-white hover:text-primary transition-colors block" href="tel:+74957928490">+7 (495) 792-84-90</a><p class="font-body-sm text-body-sm text-[#94a3b8]">support@a7store.ru</p><div class="flex items-center gap-space-sm pt-2"><a class="font-body-sm text-body-sm text-primary hover:underline" href="https://t.me/" target="_blank">Telegram</a><span class="text-[#334155]">•</span><a class="font-body-sm text-body-sm text-primary hover:underline" href="https://wa.me/" target="_blank">WhatsApp</a><span class="text-[#334155]">•</span><a class="font-body-sm text-body-sm text-primary hover:underline" href="#">ВКонтакте</a></div></div><div class="space-y-space-xs"><div class="font-label-ui text-label-ui font-semibold text-white uppercase tracking-wider mb-2">Покупателям</div><nav class="flex flex-col space-y-1.5" data-active-classes="text-primary font-semibold"><a class="font-body-sm text-body-sm text-[#94a3b8] hover:text-white transition-colors" data-path="catalog" href="#">Каталог товаров</a><a class="font-body-sm text-body-sm text-[#94a3b8] hover:text-white transition-colors" data-path="cart" href="#">Корзина</a><a class="font-body-sm text-body-sm text-[#94a3b8] hover:text-white transition-colors" data-path="status" href="#">Проверить статус заказа</a><a class="font-body-sm text-body-sm text-[#94a3b8] hover:text-white transition-colors" data-path="checkout" href="#">Условия доставки и оплаты</a></nav></div></div><div class="pt-space-md flex flex-col md:flex-row items-center justify-between gap-space-sm text-[#94a3b8]"><div class="font-body-sm text-body-sm">Оригинальная техника Apple, Dyson, Samsung, Sony. Серийные номера проверяются на официальных сайтах производителей до покупки.</div><div class="flex items-center gap-space-md font-body-sm text-body-sm"><span class="text-tertiary flex items-center gap-1 font-medium"><span class="material-symbols-outlined text-[16px]">verified</span>Гарантия 1 год</span><span class="">Быстрая доставка по Москве за 2 часа</span></div></div></div></footer>
+
+</body></html>
