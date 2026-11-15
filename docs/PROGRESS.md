@@ -2,6 +2,18 @@
 
 Новые записи — сверху. Формат: дата, раздел, что сделано, ключевые файлы, решения, что дальше.
 
+## 2026-11-15 — Архитектура, слой данных, маршруты
+
+- Типы: `src/types/index.ts` (Category/SpecField, Product с condition/usedInfo, Order/OrderEvent, TradeInRequest/TradeInEvent, input-типы).
+- Настройки: `src/config/shop.ts` (заглушки названия/города/контактов, валюта ₽, демо-пароль), `src/config/labels.ts` (русские подписи статусов).
+- Слой данных `src/api/` (вход только через `src/api/index.ts`): категории, товары, заказы, trade-in, вход-заглушка, `notify()` в консоль, `subscribe()` + событие `storage` между вкладками. Хранилище — `src/api/db.ts`, ключ `phone-market:db:v1`, демо-данные из `src/data/seed.ts` (7 категорий, 26 товаров, из них 5 Б/У).
+- Логика склада: заявка списывает остаток, отмена возвращает ровно один раз, переходы статусов проверяются, каждое изменение пишет событие в историю.
+- Утилиты `src/utils/`: formatPrice (`89 900 ₽`), phone, date, links, slugify, cn, compressImage, categoryIcon. Хуки `src/hooks/`: useAsync, useApiQuery (живое обновление), useAdminSession.
+- Маршруты: `src/App.tsx` (клиент + ленивый `src/admin/AdminApp.tsx`), охрана `src/admin/RequireAdmin.tsx`. Страницы, шапка, подвал и каркас админки — пока заглушки.
+- Решения: slug-запросы (`getProductBySlug`, `getCategoryBySlug`) отдают только активные записи; админские функции требуют сессию (имитация RLS); при удалении товара заказы остаются с `productId: null`; оценка trade-in ставится только через `evaluateTradeIn`.
+- Известное ограничение: фото лежат в localStorage как data URL (~5 МБ на всё) — при переполнении api отдаёт понятную ошибку. Уйдёт с переездом на R2.
+- Дальше: вёрстка по задачам исполнителей (32 задачи, 4 волны), затем ручная проверка сценариев.
+
 ## 2026-11-15 — Каркас проекта и ТЗ
 
 - Создан проект: React 19 + Vite + TypeScript, react-router-dom, oxlint.

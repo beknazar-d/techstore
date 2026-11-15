@@ -26,7 +26,16 @@
   --color-success-soft: #ecfdf5;
   --color-success-text: #065f46;
   --color-warning: #f59e0b;
+  --color-warning-soft: #fffbeb;
+  --color-warning-text: #92400e;
   --color-error: #ba1a1a;
+  --color-error-soft: #fef2f2;
+  --color-error-text: #991b1b;
+  --color-neutral-soft: #f1f5f9;
+
+  /* Затемнение под модалкой, полупрозрачная шапка */
+  --color-overlay: rgba(15, 23, 42, 0.5);
+  --color-bg-translucent: rgba(255, 255, 255, 0.92);
 
   /* Радиусы */
   --radius-sm: 4px;
@@ -45,13 +54,29 @@
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
+  --space-5: 20px;
   --space-6: 24px;
+  --space-8: 32px;
   --space-10: 40px;
+  --space-16: 64px;
+
+  /* Высота кнопок и полей */
+  --control-height: 48px;
+  --control-height-sm: 40px;
 
   /* Сетка */
   --container: 1280px;
   --page-padding: 16px;
   --header-height: 56px;
+  --container-narrow: 720px;
+  --admin-sidebar-width: 240px;
+  --admin-nav-height: 60px;
+
+  /* Слои */
+  --z-header: 100;
+  --z-modal: 1000;
+
+  --transition: 150ms ease;
 }
 
 @media (min-width: 768px) {
