@@ -1,0 +1,129 @@
+/* Общие стили для Input и Textarea */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.requiredMark {
+  color: var(--color-error);
+  margin-left: var(--space-1);
+  aria-hidden: true;
+}
+
+.fieldWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  height: var(--control-height);
+  padding: 0 var(--space-4);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  font-size: 16px;
+  line-height: 20px;
+  color: var(--color-text);
+  transition: border-color var(--transition), outline var(--transition);
+}
+
+.textarea {
+  height: auto;
+  min-height: 88px;
+  padding: var(--space-3) var(--space-4);
+  resize: vertical;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+@media (min-width: 768px) {
+  .input,
+  .textarea {
+    font-size: 14px;
+    line-height: 20px;
+  }
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input:focus-visible,
+.textarea:focus-visible {
+  border-color: var(--color-primary);
+  outline: 1px solid var(--color-primary);
+  outline-offset: -1px;
+}
+
+.input:disabled,
+.textarea:disabled {
+  background-color: var(--color-surface-recessed);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+/* Иконка внутри поля */
+.icon {
+  position: absolute;
+  left: var(--space-3);
+  font-size: 20px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  aria-hidden: true;
+}
+
+.withIcon .input,
+.withIcon .textarea {
+  padding-left: var(--space-10);
+}
+
+/* Убираем спиннеры у number input */
+.input[type='number'] {
+  appearance: textfield;
+}
+
+.input[type='number']::-webkit-inner-spin-button,
+.input[type='number']::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+/* Сообщения об ошибках и подсказки */
+.message {
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.errorMessage {
+  color: var(--color-error);
+}
+
+.hintMessage {
+  color: var(--color-text-muted);
+}
+
+/* Ошибка — подсвечиваем рамку */
+.fieldWrapper.hasError .input,
+.fieldWrapper.hasError .textarea {
+  border-color: var(--color-error);
+}
+
+.fieldWrapper.hasError .input:focus-visible,
+.fieldWrapper.hasError .textarea:focus-visible {
+  border-color: var(--color-error);
+  outline: 1px solid var(--color-error);
+  outline-offset: -1px;
+}
