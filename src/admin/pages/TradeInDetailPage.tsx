@@ -1,19 +1,52 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getTradeIn, listTradeInEvents, updateTradeInStatus } from '../../api'
-import { TRADE_IN_STATUS_LABELS, TRADE_IN_STATUSES } from '../../config/labels'
-import { Badge } from '../../components/ui/Badge'
+import {
+  getTradeIn,
+  listTradeInEvents,
+  updateTradeInStatus,
+  evaluateTradeIn,
+  setTradeInAdminNote,
+  getAllowedTradeInStatuses,
+  canEvaluateTradeIn,
+  getErrorMessage,
+} from '../../api'
+import {
+  TRADE_IN_STATUS_LABELS,
+  DEVICE_GRADE_LABELS,
+  TRADE_IN_DEVICE_CATEGORY_LABELS,
+} from '../../config/labels'
+import type { TradeInRequest, TradeInStatus } from '../../types'
+import { PageHeader, Section, InfoRow, EventTimeline } from '../components/AdminBlocks'
+import { TradeInStatusBadge } from '../../components/ui/StatusBadge'
+import { ProductImage } from '../../components/ui/ProductImage'
+import { Modal } from '../../components/ui/Modal'
 import { Spinner } from '../../components/ui/Spinner'
+import { Button } from '../../components/ui/Button'
+import { Input } from '../../components/ui/Input'
+import { Textarea } from '../../components/ui/Textarea'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { formatPrice, formatTradeInNumber } from '../../utils/format'
 import { formatPhone } from '../../utils/phone'
+import { formatDate } from '../../utils/date'
 import styles from './TradeInDetailPage.module.css'
 
 export function TradeInDetailPage() {
   const { id } = useParams()
-  const { data: tradeIn, loading } = useApiQuery(() => getTradeIn(id ?? ''), [id], ['tradeIns'])
-  const { data: events = [] } = useApiQuery(() => listTradeInEvents(id ?? ''), [id], ['tradeIns'])
+  const { data: tradeIn, reload } = useApiQuery(
+    () => getTradeIn(id ?? ''),
+    [id],
+    ['tradeIns']
+  )
+  const { data: events = [] } = useApiQuery(
+    () => listTradeInEvents(id ?? ''),
+    [id],
+    ['tradeIns']
+  )
+  const [error, setError] = useState<string | null>(null)
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
+  const [statusUpdating, setStatusUpdating] = useState(false)
 
-  if (loading) {
+  if (tradeIn === undefined) {
     return (
       <div className={styles.page}>
         <div className={styles.loader}><Spinner /></div>
@@ -24,77 +57,281 @@ export function TradeInDetailPage() {
   if (!tradeIn) {
     return (
       <div className={styles.page}>
-        <p>Заявка не найдена</p>
+        <PageHeader title="Заявка не найдена" backTo="/admin/trade-in" />
       </div>
     )
   }
 
   const currentTradeIn = tradeIn
-  const allowedStatuses = TRADE_IN_STATUSES.filter((status) => status !== currentTradeIn.status)
+  const allowedStatuses = getAllowedTradeInStatuses(currentTradeIn.status)
+  const canEvaluate = canEvaluateTradeIn(currentTradeIn.status)
+  const desiredProductPrice = currentTradeIn.desiredProductPrice ?? 0
+  const adminEstimate = currentTradeIn.adminEstimate ?? 0
+  const extraPayment = desiredProductPrice && adminEstimate && desiredProductPrice > adminEstimate
+    ? desiredProductPrice - adminEstimate
+    : 0
 
-  async function handleStatusChange(status: (typeof TRADE_IN_STATUSES)[number]) {
-    await updateTradeInStatus(currentTradeIn.id, status)
+  async function handleStatusChange(status: TradeInStatus) {
+    setError(null)
+    setStatusUpdating(true)
+    try {
+      await updateTradeInStatus(currentTradeIn.id, status)
+      reload()
+    } catch (e) {
+      setError(getErrorMessage(e))
+    } finally {
+      setStatusUpdating(false)
+    }
+  }
+
+  async function handleEvaluate(estimate: number) {
+    await evaluateTradeIn(currentTradeIn.id, estimate)
+    reload()
+  }
+
+  async function handleAdminNoteSave(note: string) {
+    await setTradeInAdminNote(currentTradeIn.id, note)
+    reload()
   }
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.kicker}>Trade-in</p>
-          <h1 className={styles.title}>{formatTradeInNumber(currentTradeIn.number)}</h1>
+      <PageHeader
+        title={formatTradeInNumber(currentTradeIn.number)}
+        subtitle={
+          <div className={styles.subtitleRow}>
+            <TradeInStatusBadge status={currentTradeIn.status} />
+            <span className={styles.createdAt}>{formatDate(currentTradeIn.createdAt)}</span>
+          </div>
+        }
+        backTo="/admin/trade-in"
+        backLabel="К заявкам"
+      />
+
+      {error && <div className={styles.errorBanner}>{error}</div>}
+
+      <Section title="Клиент">
+        <InfoRow label="Имя">{currentTradeIn.customerName}</InfoRow>
+        <InfoRow label="Телефон">
+          <a href={`tel:${currentTradeIn.customerPhone}`} className={styles.phoneLink}>
+            <span className="material-symbols-outlined" aria-hidden="true">call</span>
+            Позвонить ({formatPhone(currentTradeIn.customerPhone)})
+          </a>
+        </InfoRow>
+        <InfoRow label="Дата создания">{formatDate(currentTradeIn.createdAt)}</InfoRow>
+        <InfoRow label="Комментарий">{currentTradeIn.comment || '—'}</InfoRow>
+      </Section>
+
+      <Section title="Устройство клиента">
+        <InfoRow label="Категория">
+          {TRADE_IN_DEVICE_CATEGORY_LABELS[currentTradeIn.device.category]}
+        </InfoRow>
+        <InfoRow label="Бренд">{currentTradeIn.device.brand}</InfoRow>
+        <InfoRow label="Модель">{currentTradeIn.device.model}</InfoRow>
+        <InfoRow label="Память">{currentTradeIn.device.memory || '—'}</InfoRow>
+        <InfoRow label="Состояние">
+          {DEVICE_GRADE_LABELS[currentTradeIn.device.grade]}
+        </InfoRow>
+        <InfoRow label="Аккумулятор">
+          {currentTradeIn.device.batteryHealth !== undefined ? `${currentTradeIn.device.batteryHealth}%` : '—'}
+        </InfoRow>
+        <InfoRow label="Дефекты">{currentTradeIn.device.defects || '—'}</InfoRow>
+        <InfoRow label="Комплект">{currentTradeIn.device.kit || '—'}</InfoRow>
+      </Section>
+
+      <Section title="Фото устройства">
+        {currentTradeIn.photos.length > 0 ? (
+          <div className={styles.photoGrid}>
+            {currentTradeIn.photos.map((photo, index) => (
+              <button
+                key={index}
+                type="button"
+                className={styles.photoThumb}
+                onClick={() => setSelectedPhoto(photo)}
+                aria-label={`Открыть фото ${index + 1}`}
+              >
+                <ProductImage src={photo} alt={`Фото устройства ${index + 1}`} className={styles.thumbImage} />
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className={styles.noPhotos}>Фото не приложены</p>
+        )}
+      </Section>
+
+      {(currentTradeIn.desiredProductId || currentTradeIn.desiredProductName) && (
+        <Section title="Желаемый товар">
+          <InfoRow label="Товар">
+            {currentTradeIn.desiredProductId ? (
+              <Link to={`/admin/products/${currentTradeIn.desiredProductId}`} className={styles.productLink}>
+                {currentTradeIn.desiredProductName}
+              </Link>
+            ) : (
+              currentTradeIn.desiredProductName
+            )}
+          </InfoRow>
+          {currentTradeIn.desiredProductPrice !== null && (
+            <InfoRow label="Цена товара">{formatPrice(currentTradeIn.desiredProductPrice)}</InfoRow>
+          )}
+          {currentTradeIn.adminEstimate !== null && (
+            <InfoRow label="Оценка выкупа">{formatPrice(currentTradeIn.adminEstimate)}</InfoRow>
+          )}
+          {extraPayment > 0 && (
+            <InfoRow label="Доплата клиента">
+              <span className={styles.extraPayment}>{formatPrice(extraPayment)}</span>
+            </InfoRow>
+          )}
+        </Section>
+      )}
+
+      <Section title="Оценка и статус">
+        {canEvaluate && (
+          <EvaluateForm key={currentTradeIn.id} tradeIn={currentTradeIn} onEvaluate={handleEvaluate} />
+        )}
+        {!canEvaluate && (
+          <InfoRow label="Оценка выкупа">
+            {currentTradeIn.adminEstimate !== null ? formatPrice(currentTradeIn.adminEstimate) : '—'}
+          </InfoRow>
+        )}
+
+        <AdminNoteForm key={currentTradeIn.id} tradeIn={currentTradeIn} onSave={handleAdminNoteSave} />
+
+        <div className={styles.statusSection}>
+          <h3 className={styles.statusTitle}>Смена статуса</h3>
+          {allowedStatuses.length > 0 ? (
+            <div className={styles.statusActions}>
+              {allowedStatuses.map((status) => (
+                <Button
+                  key={status}
+                  variant="secondary"
+                  onClick={() => void handleStatusChange(status)}
+                  disabled={statusUpdating}
+                >
+                  {TRADE_IN_STATUS_LABELS[status]}
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.closedNotice}>Заявка закрыта</p>
+          )}
         </div>
-        <Badge tone={currentTradeIn.status === 'completed' || currentTradeIn.status === 'accepted' ? 'success' : currentTradeIn.status === 'rejected' ? 'neutral' : 'warning'}>
-          {TRADE_IN_STATUS_LABELS[currentTradeIn.status]}
-        </Badge>
-      </header>
+      </Section>
 
-      <div className={styles.grid}>
-        <section className={styles.card}>
-          <h2>Клиент</h2>
-          <dl className={styles.infoList}>
-            <div><dt>Имя</dt><dd>{currentTradeIn.customerName}</dd></div>
-            <div><dt>Телефон</dt><dd><a href={`tel:${currentTradeIn.customerPhone}`}>{formatPhone(currentTradeIn.customerPhone)}</a></dd></div>
-            <div><dt>Оценка</dt><dd>{currentTradeIn.adminEstimate ? formatPrice(currentTradeIn.adminEstimate) : '—'}</dd></div>
-          </dl>
-        </section>
+      <Section title="История">
+        <EventTimeline
+          events={events.map((e) => ({
+            id: e.id,
+            message: e.message,
+            createdAt: e.createdAt,
+          }))}
+        />
+      </Section>
 
-        <section className={styles.card}>
-          <h2>Устройство</h2>
-          <dl className={styles.infoList}>
-            <div><dt>Категория</dt><dd>{currentTradeIn.device.category}</dd></div>
-            <div><dt>Бренд</dt><dd>{currentTradeIn.device.brand}</dd></div>
-            <div><dt>Модель</dt><dd>{currentTradeIn.device.model}</dd></div>
-            <div><dt>Состояние</dt><dd>{currentTradeIn.device.grade}</dd></div>
-            <div><dt>Аккумулятор</dt><dd>{currentTradeIn.device.batteryHealth ? `${currentTradeIn.device.batteryHealth}%` : '—'}</dd></div>
-          </dl>
-        </section>
-      </div>
-
-      <section className={styles.card}>
-        <h2>Изменение статуса</h2>
-        <div className={styles.actions}>
-          {allowedStatuses.map((status) => (
-            <button key={status} type="button" className={styles.actionButton} onClick={() => void handleStatusChange(status)}>
-              {TRADE_IN_STATUS_LABELS[status]}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.card}>
-        <h2>История</h2>
-        <ul className={styles.timeline}>
-          {events.map((event) => (
-            <li key={event.id}>
-              <time>{event.createdAt.slice(0, 16).replace('T', ' ')}</time>
-              <span>{event.message}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <Link to="/admin/trade-in" className={styles.backLink}>Назад к заявкам</Link>
+      <Modal open={selectedPhoto !== null} onClose={() => setSelectedPhoto(null)} size="lg" title="Фото устройства">
+        {selectedPhoto && (
+          <div className={styles.fullscreenPhoto}>
+            <ProductImage src={selectedPhoto} alt="Увеличенное фото" className={styles.fullImage} />
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
 
+function EvaluateForm({
+  tradeIn,
+  onEvaluate,
+}: {
+  tradeIn: TradeInRequest
+  onEvaluate: (estimate: number) => Promise<void>
+}) {
+  const [estimate, setEstimate] = useState<string>(
+    tradeIn.adminEstimate !== null ? String(tradeIn.adminEstimate) : ''
+  )
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    const value = Number(estimate)
+    if (!Number.isInteger(value) || value <= 0) {
+      setError('Оценка — целое число больше нуля')
+      return
+    }
+    setSaving(true)
+    try {
+      await onEvaluate(value)
+    } catch (e) {
+      setError(getErrorMessage(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className={styles.evaluateForm}>
+      <div className={styles.formRow}>
+        <Input
+          label="Оценка выкупа, ₽"
+          name="estimate"
+          type="number"
+          min="1"
+          step="1"
+          value={estimate}
+          onChange={(e) => setEstimate(e.target.value)}
+          placeholder="Например, 15000"
+          required
+          disabled={saving}
+          error={error ?? undefined}
+        />
+      </div>
+      <Button type="submit" disabled={saving} className={styles.submitButton}>
+        {saving ? 'Сохранение…' : 'Сохранить оценку'}
+      </Button>
+    </form>
+  )
+}
+
+function AdminNoteForm({
+  tradeIn,
+  onSave,
+}: {
+  tradeIn: TradeInRequest
+  onSave: (note: string) => Promise<void>
+}) {
+  const [note, setNote] = useState<string>(tradeIn.adminNote ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSaving(true)
+    try {
+      await onSave(note)
+    } catch (e) {
+      setError(getErrorMessage(e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className={styles.adminNoteForm}>
+      <Textarea
+        label="Заметка администратора"
+        name="adminNote"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Заметка видна только администраторам"
+        rows={3}
+        disabled={saving}
+        error={error ?? undefined}
+      />
+      <Button type="submit" disabled={saving} className={styles.submitButton}>
+        {saving ? 'Сохранение…' : 'Сохранить заметку'}
+      </Button>
+    </form>
+  )
+}

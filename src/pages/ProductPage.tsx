@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getCategory, getProductBySlug } from '../api'
 import { OrderForm } from '../components/order/OrderForm'
@@ -8,57 +8,30 @@ import { Modal } from '../components/ui/Modal'
 import { ProductImage } from '../components/ui/ProductImage'
 import { Spinner } from '../components/ui/Spinner'
 import { StockBadge } from '../components/ui/StockBadge'
-import type { Category, Order, Product } from '../types'
+import { useApiQuery } from '../hooks/useApiQuery'
+import type { Order } from '../types'
 import { formatPrice } from '../utils/format'
 import styles from './ProductPage.module.css'
 
 export function ProductPage() {
   const { slug } = useParams()
-  const [product, setProduct] = useState<Product | null>(null)
-  const [category, setCategory] = useState<Category | null>(null)
-  const [loading, setLoading] = useState(true)
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null)
 
-  useEffect(() => {
-    if (typeof slug !== 'string' || slug.trim() === '') {
-      setProduct(null)
-      setCategory(null)
-      setLoading(false)
-      return
-    }
-
-    const productSlug = slug
-    let isMounted = true
-
-    async function load() {
-      try {
-        const currentProduct = await getProductBySlug(productSlug)
-        if (!isMounted) return
-
-        if (!currentProduct) {
-          setProduct(null)
-          setCategory(null)
-          return
-        }
-
-        setProduct(currentProduct)
-        const currentCategory = await getCategory(currentProduct.categoryId)
-        if (isMounted) {
-          setCategory(currentCategory)
-        }
-      } finally {
-        if (isMounted) setLoading(false)
-      }
-    }
-
-    setLoading(true)
-    void load()
-
-    return () => {
-      isMounted = false
-    }
-  }, [slug])
+  // Товар и его категория одним запросом. Склад обновляется сам, когда меняется таблица products.
+  const { data } = useApiQuery(
+    async () => {
+      if (!slug?.trim()) return { product: null, category: null }
+      const product = await getProductBySlug(slug)
+      const category = product ? await getCategory(product.categoryId) : null
+      return { product, category }
+    },
+    [slug],
+    ['products', 'categories'],
+  )
+  const loading = data === undefined
+  const product = data?.product ?? null
+  const category = data?.category ?? null
 
   const specEntries = useMemo(() => {
     if (!product || !category) return []

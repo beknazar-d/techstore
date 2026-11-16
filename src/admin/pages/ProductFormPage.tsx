@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { getErrorMessage } from '../../api/errors'
-import { listCategories } from '../../api/categories'
-import { createProduct, getProduct, updateProduct, deleteProduct } from '../../api/products'
+import { createProduct, deleteProduct, getErrorMessage, getProduct, listCategories, updateProduct } from '../../api'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { Modal } from '../../components/ui/Modal'
 import { Button } from '../../components/ui/Button'
 import { LinkButton } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
+import { Textarea } from '../../components/ui/Textarea'
+import { Spinner } from '../../components/ui/Spinner'
 import { Select } from '../../components/ui/Select'
 import { Checkbox } from '../../components/ui/Checkbox'
 import { EmptyState } from '../../components/ui/EmptyState'
@@ -24,28 +24,32 @@ export function ProductFormPage() {
   const isNew = !id
 
   const {
-    data: categories = [],
-    loading: categoriesLoading,
+    data: categories,
     error: categoriesError,
   } = useApiQuery(() => listCategories({ onlyActive: false }), [], ['categories'])
 
   const {
     data: product,
-    loading: productLoading,
     error: productError,
   } = useApiQuery(
-    () => getProduct(id!),
-    [id!],
+    () => (id ? getProduct(id) : Promise.resolve(null)),
+    [id],
     ['products']
   )
 
-  if (categoriesLoading || (!isNew && productLoading)) {
+  // Спиннер только при первой загрузке: при фоновом обновлении форма не размонтируется.
+  if (categories === undefined || product === undefined) {
+    if (categoriesError || productError) {
+      return (
+        <div className={styles.page}>
+          <EmptyState icon="error" title="Ошибка загрузки" text={categoriesError ?? productError ?? ''} tone="error" />
+        </div>
+      )
+    }
     return (
       <div className={styles.page}>
         <div className={styles.loading}>
-          <span className="material-symbols-outlined" style={{ fontSize: 48, color: 'var(--color-primary)' }}>
-            hourglass_empty
-          </span>
+          <Spinner />
         </div>
       </div>
     )
@@ -57,7 +61,7 @@ export function ProductFormPage() {
         <EmptyState
           icon="error"
           title="Ошибка загрузки категорий"
-          text={getErrorMessage(categoriesError)}
+          text={categoriesError}
           tone="error"
         />
       </div>
@@ -70,7 +74,7 @@ export function ProductFormPage() {
         <EmptyState
           icon="error"
           title="Ошибка загрузки товара"
-          text={getErrorMessage(productError)}
+          text={productError}
           tone="error"
         />
       </div>
@@ -115,7 +119,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
   const [categoryId, setCategoryId] = useState<string>(initialProduct?.categoryId ?? '')
   const [name, setName] = useState(initialProduct?.name ?? '')
   const [brand, setBrand] = useState(initialProduct?.brand ?? '')
-  const [description, _setDescription] = useState(initialProduct?.description ?? '')
+  const [description, setDescription] = useState(initialProduct?.description ?? '')
   const [condition, setCondition] = useState<ProductCondition>(initialProduct?.condition ?? 'new')
   const [usedInfo, setUsedInfo] = useState<UsedInfo | null>(initialProduct?.usedInfo ?? null)
   const [price, setPrice] = useState<number | ''>(initialProduct?.price ?? '')
@@ -186,7 +190,10 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
         brand: brand.trim(),
         description: description.trim(),
         condition,
-        usedInfo: condition === 'used' ? usedInfo : null,
+        usedInfo:
+          condition === 'used' && usedInfo
+            ? { ...usedInfo, defects: usedInfo.defects?.trim() || undefined, kit: usedInfo.kit?.trim() || undefined }
+            : null,
         price: typeof price === 'number' ? price : Number(price),
         minPrice:
           minPrice !== null && minPrice !== '' ? (typeof minPrice === 'number' ? minPrice : Number(minPrice)) : null,
@@ -225,14 +232,19 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
   const categoryOptions = categories.map((c) => ({ value: c.id, label: c.name }))
 
   return (
-    <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+    <form
+      className={styles.form}
+      onSubmit={(e) => {
+        e.preventDefault()
+        void handleSave()
+      }}
+    >
       <PageHeader
         backTo="/admin/products"
         title={isNew ? 'Новый товар' : 'Редактирование товара'}
         actions={
           !isNew && (
-            <Button variant="danger" onClick={() => setDeleteConfirm(true)}>
-              <span className="material-symbols-outlined">delete</span>
+            <Button variant="danger" icon="delete" onClick={() => setDeleteConfirm(true)}>
               Удалить
             </Button>
           )
@@ -253,6 +265,13 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
           <Input label="Название" value={name} onChange={(e) => setName(e.target.value)} required />
 
           <Input label="Бренд" value={brand} onChange={(e) => setBrand(e.target.value)} required />
+
+          <Textarea
+            label="Описание"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+          />
 
           <Input
             label="Цена, ₽"
@@ -368,7 +387,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
                 onChange={(e) =>
                   setUsedInfo({
                     ...(usedInfo ?? { grade: 'excellent' }),
-                    defects: e.target.value.trim() || undefined,
+                    defects: e.target.value,
                   })
                 }
               />
@@ -378,7 +397,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
                 onChange={(e) =>
                   setUsedInfo({
                     ...(usedInfo ?? { grade: 'excellent' }),
-                    kit: e.target.value.trim() || undefined,
+                    kit: e.target.value,
                   })
                 }
               />
@@ -416,7 +435,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
           <LinkButton to="/admin/products" variant="secondary">
             Отмена
           </LinkButton>
-          <Button type="submit" loading={saving} onClick={handleSave}>
+          <Button type="submit" loading={saving}>
             Сохранить
           </Button>
         </div>
@@ -424,11 +443,11 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
 
       <Modal open={deleteConfirm} onClose={() => setDeleteConfirm(false)} title="Удалить товар" size="sm">
         <p>Товар будет удалён безвозвратно. В заказах и заявках trade-in останутся название и цена.</p>
-        <div className={styles.footer} style={{ marginTop: 'var(--space-6)' }}>
+        <div className={`${styles.footer} ${styles.modalFooter}`}>
           <Button variant="secondary" onClick={() => setDeleteConfirm(false)}>
             Отмена
           </Button>
-          <Button variant="danger" onClick={handleDelete} loading={saving}>
+          <Button variant="danger" onClick={() => void handleDelete()} loading={saving}>
             Удалить
           </Button>
         </div>

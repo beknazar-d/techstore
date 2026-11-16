@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { listCategories, listProducts } from '../api'
 import { ProductGrid } from '../components/product/ProductGrid'
 import { Chips } from '../components/ui/Chips'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
-import type { Category, Product } from '../types'
+import { useApiQuery } from '../hooks/useApiQuery'
 import styles from './CatalogPage.module.css'
 
 type ConditionFilter = 'all' | 'new' | 'used'
@@ -19,50 +19,29 @@ const conditionOptions: Array<{ value: ConditionFilter; label: string }> = [
 export function CatalogPage() {
   const { categorySlug } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [categories, setCategories] = useState<Category[]>([])
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-
   const currentCondition = useMemo<ConditionFilter>(() => {
     const value = searchParams.get('condition')
     if (value === 'new' || value === 'used') return value
     return 'all'
   }, [searchParams])
 
+  const { data: categories } = useApiQuery(() => listCategories({ onlyActive: true }), [], ['categories'])
+  const { data: products } = useApiQuery(
+    () =>
+      listProducts({
+        onlyActive: true,
+        categorySlug: categorySlug ?? undefined,
+        condition: currentCondition === 'all' ? undefined : currentCondition,
+      }),
+    [categorySlug, currentCondition],
+    ['products', 'categories'],
+  )
+  const loading = categories === undefined || products === undefined
+
   const selectedCategory = useMemo(
-    () => categories.find((category) => category.slug === categorySlug) ?? null,
+    () => categories?.find((category) => category.slug === categorySlug) ?? null,
     [categories, categorySlug],
   )
-
-  useEffect(() => {
-    let isMounted = true
-
-    async function load() {
-      try {
-        const [categoryList, productList] = await Promise.all([
-          listCategories({ onlyActive: true }),
-          listProducts({
-            onlyActive: true,
-            categorySlug: categorySlug ?? undefined,
-            condition: currentCondition === 'all' ? undefined : currentCondition,
-          }),
-        ])
-
-        if (!isMounted) return
-        setCategories(categoryList)
-        setProducts(productList)
-      } finally {
-        if (isMounted) setLoading(false)
-      }
-    }
-
-    setLoading(true)
-    void load()
-
-    return () => {
-      isMounted = false
-    }
-  }, [categorySlug, currentCondition])
 
   function changeCondition(next: ConditionFilter) {
     const nextParams = new URLSearchParams(searchParams)

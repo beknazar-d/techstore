@@ -1,12 +1,18 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { listCategories } from '../../api'
+import { SPEC_FIELD_TYPE_LABELS } from '../../config/labels'
+import type { Category } from '../../types'
 import { Badge } from '../../components/ui/Badge'
+import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
 import { useApiQuery } from '../../hooks/useApiQuery'
+import { CategoryEditor } from '../components/CategoryEditor'
 import styles from './CategoriesPage.module.css'
 
 export function CategoriesPage() {
-  const { data: categories = [], loading } = useApiQuery(() => listCategories({ onlyActive: false }), [], ['categories'])
+  const { data, reload } = useApiQuery(() => listCategories({ onlyActive: false }), [], ['categories'])
+  const [editingCategory, setEditingCategory] = useState<Category | null | 'new'>(null)
+  const categories = useMemo(() => data ?? [], [data])
 
   const summary = useMemo(
     () => ({
@@ -16,12 +22,25 @@ export function CategoriesPage() {
     [categories],
   )
 
-  if (loading) {
+  if (data === undefined) {
     return (
       <div className={styles.page}>
         <div className={styles.loader}><Spinner /></div>
       </div>
     )
+  }
+
+  const handleOpenEditor = (category: Category | 'new') => {
+    setEditingCategory(category)
+  }
+
+  const handleCloseEditor = () => {
+    setEditingCategory(null)
+  }
+
+  const handleSuccess = () => {
+    setEditingCategory(null)
+    reload()
   }
 
   return (
@@ -31,9 +50,14 @@ export function CategoriesPage() {
           <p className={styles.kicker}>Категории</p>
           <h1 className={styles.title}>Шаблоны характеристик</h1>
         </div>
-        <div className={styles.summary}>
-          <span>{summary.active} активных</span>
-          <strong>{summary.total} всего</strong>
+        <div className={styles.headerActions}>
+          <div className={styles.summary}>
+            <span>{summary.active} активных</span>
+            <strong>{summary.total} всего</strong>
+          </div>
+          <Button variant="primary" icon="add" onClick={() => handleOpenEditor('new')}>
+            Добавить категорию
+          </Button>
         </div>
       </header>
 
@@ -58,16 +82,31 @@ export function CategoriesPage() {
                 {category.specFields.slice(0, 4).map((field) => (
                   <li key={field.key}>
                     <span>{field.label}</span>
-                    <em>{field.type}</em>
+                    <em>{SPEC_FIELD_TYPE_LABELS[field.type]}</em>
                   </li>
                 ))}
               </ul>
             ) : (
               <p className={styles.empty}>Поля характеристик пока не добавлены</p>
             )}
+
+            <div className={styles.cardActions}>
+              <Button variant="ghost" size="sm" icon="edit" onClick={() => handleOpenEditor(category)}>
+                Изменить
+              </Button>
+            </div>
           </article>
         ))}
       </div>
+
+      {editingCategory !== null && (
+        <CategoryEditor
+          key={editingCategory === 'new' ? 'new' : editingCategory.id}
+          category={editingCategory === 'new' ? null : editingCategory}
+          onClose={handleCloseEditor}
+          onSuccess={handleSuccess}
+        />
+      )}
     </div>
   )
 }

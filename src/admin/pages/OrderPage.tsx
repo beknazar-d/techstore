@@ -1,19 +1,33 @@
 import { Link, useParams } from 'react-router-dom'
-import { getOrder, listOrderEvents, updateOrderStatus } from '../../api'
-import { ORDER_STATUS_LABELS, ORDER_STATUSES } from '../../config/labels'
-import { Badge } from '../../components/ui/Badge'
+import { getOrder, listOrderEvents, updateOrderStatus, cancelOrder, setOrderAdminNote, getAllowedOrderStatuses, getErrorMessage } from '../../api'
+import { ORDER_STATUS_LABELS, DELIVERY_TYPE_LABELS, ORDER_SOURCE_LABELS } from '../../config/labels'
+import { OrderStatusBadge } from '../../components/ui/StatusBadge'
+import { PageHeader } from '../components/AdminBlocks'
+import { Section, InfoRow, EventTimeline } from '../components/AdminBlocks'
 import { Spinner } from '../../components/ui/Spinner'
-import { useApiQuery } from '../../hooks/useApiQuery'
+import { Modal } from '../../components/ui/Modal'
+import { Textarea } from '../../components/ui/Textarea'
+import { Button } from '../../components/ui/Button'
+import { formatDate, formatDateTime } from '../../utils/date'
 import { formatOrderNumber, formatPrice } from '../../utils/format'
+import type { OrderStatus } from '../../types'
+import { mapHref } from '../../utils/links'
 import { formatPhone } from '../../utils/phone'
+import { useApiQuery } from '../../hooks/useApiQuery'
 import styles from './OrderPage.module.css'
+import { useState } from 'react'
 
 export function OrderPage() {
   const { id } = useParams()
-  const { data: order, loading } = useApiQuery(() => getOrder(id ?? ''), [id], ['orders'])
+  const { data: order, reload } = useApiQuery(() => getOrder(id ?? ''), [id], ['orders'])
   const { data: events = [] } = useApiQuery(() => listOrderEvents(id ?? ''), [id], ['orders'])
 
-  if (loading) {
+  const [error, setError] = useState('')
+  const [statusLoading, setStatusLoading] = useState<Record<string, boolean>>({})
+  const [noteLoading, setNoteLoading] = useState(false)
+  const [showCancelModal, setShowCancelModal] = useState(false)
+
+  if (order === undefined) {
     return (
       <div className={styles.page}>
         <div className={styles.loader}><Spinner /></div>
@@ -29,74 +43,248 @@ export function OrderPage() {
     )
   }
 
-  const currentOrder = order
-  const allowedStatuses = ORDER_STATUSES.filter((status) => status !== currentOrder.status)
+  const allowedStatuses = getAllowedOrderStatuses(order.status)
 
-  async function handleStatusChange(status: (typeof ORDER_STATUSES)[number]) {
-    await updateOrderStatus(currentOrder.id, status)
+  async function handleStatusChange(status: OrderStatus) {
+    if (status === 'cancelled') {
+      setShowCancelModal(true)
+      return
+    }
+
+    setStatusLoading(prev => ({ ...prev, [status]: true }))
+    setError('')
+
+    try {
+      await updateOrderStatus(order!.id, status)
+      await reload()
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setStatusLoading(prev => ({ ...prev, [status]: false }))
+    }
   }
+
+  async function confirmCancel() {
+    setShowCancelModal(false)
+    setStatusLoading(prev => ({ ...prev, cancelled: true }))
+    setError('')
+
+    try {
+      await cancelOrder(order!.id)
+      await reload()
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setStatusLoading(prev => ({ ...prev, cancelled: false }))
+    }
+  }
+
+  async function handleNoteChange(newNote: string) {
+    setNoteLoading(true)
+    setError('')
+
+    try {
+      await setOrderAdminNote(order!.id, newNote)
+      await reload()
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setNoteLoading(false)
+    }
+  }
+
+  const statusActions = allowedStatuses.map((status) => {
+    const isCancel = status === 'cancelled'
+    const isDisabled = Object.values(statusLoading).some(Boolean)
+
+    return (
+      <Button
+        key={status}
+        variant={isCancel ? 'danger' : 'primary'}
+        size="sm"
+        loading={statusLoading[status]}
+        disabled={isDisabled}
+        onClick={() => void handleStatusChange(status)}
+        icon={isCancel ? 'delete' : undefined}
+      >
+        {ORDER_STATUS_LABELS[status]}
+      </Button>
+    )
+  })
+
+  const hasLocation = order.location?.lat && order.location?.lng
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.kicker}>Заказ</p>
-          <h1 className={styles.title}>{formatOrderNumber(currentOrder.number)}</h1>
+      <PageHeader
+        title={`Заказ ${formatOrderNumber(order.number)}`}
+        backTo="/admin/orders"
+        actions={[
+          <OrderStatusBadge key="status-badge" status={order.status} />,
+        ]}
+      />
+
+      {error && (
+        <div className={styles.error} role="alert">
+          {error}
         </div>
-        <Badge tone={currentOrder.status === 'completed' ? 'success' : currentOrder.status === 'cancelled' ? 'neutral' : 'warning'}>
-          {ORDER_STATUS_LABELS[currentOrder.status]}
-        </Badge>
-      </header>
+      )}
 
-      <div className={styles.grid}>
-        <section className={styles.card}>
-          <h2>Клиент</h2>
-          <dl className={styles.infoList}>
-            <div><dt>Имя</dt><dd>{currentOrder.customerName}</dd></div>
-            <div><dt>Телефон</dt><dd><a href={`tel:${currentOrder.customerPhone}`}>{formatPhone(currentOrder.customerPhone)}</a></dd></div>
-            <div><dt>Способ</dt><dd>{currentOrder.deliveryType === 'pickup' ? 'Самовывоз' : 'Доставка'}</dd></div>
-            <div><dt>Дата</dt><dd>{currentOrder.desiredDate || '—'}</dd></div>
-            <div><dt>Время</dt><dd>{currentOrder.desiredTime || '—'}</dd></div>
-          </dl>
-        </section>
-
-        <section className={styles.card}>
-          <h2>Товар</h2>
-          <dl className={styles.infoList}>
-            <div><dt>Название</dt><dd>{currentOrder.productName}</dd></div>
-            <div><dt>Количество</dt><dd>{currentOrder.quantity} шт.</dd></div>
-            <div><dt>Цена</dt><dd>{formatPrice(currentOrder.price)}</dd></div>
-            <div><dt>Сумма</dt><dd>{formatPrice(currentOrder.quantity * currentOrder.price)}</dd></div>
-            <div><dt>Адрес</dt><dd>{currentOrder.address || 'Не указан'}</dd></div>
-          </dl>
-        </section>
-      </div>
-
-      <section className={styles.card}>
-        <h2>Изменение статуса</h2>
-        <div className={styles.actions}>
-          {allowedStatuses.map((status) => (
-            <button key={status} type="button" className={styles.actionButton} onClick={() => void handleStatusChange(status)}>
-              {ORDER_STATUS_LABELS[status]}
-            </button>
-          ))}
+      <Section title="Информация о заказе">
+        <div className={styles.infoGrid}>
+          <InfoRow label="Источник">
+            {ORDER_SOURCE_LABELS[order.source]}
+          </InfoRow>
+          <InfoRow label="Дата создания">
+            {formatDateTime(order.createdAt)}
+          </InfoRow>
+          <InfoRow label="Способ получения">
+            {DELIVERY_TYPE_LABELS[order.deliveryType]}
+          </InfoRow>
+          {order.deliveryType === 'delivery' && (
+            <InfoRow label="Адрес доставки">
+              <div className={styles.addressRow}>
+                <span>{order.address || 'Не указан'}</span>
+                {hasLocation && (
+                  <a
+                    href={mapHref(order.location!)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={styles.mapLink}
+                  >
+                    <span className="material-symbols-outlined">map</span>
+                    Открыть на карте
+                  </a>
+                )}
+              </div>
+            </InfoRow>
+          )}
+          {order.desiredDate && (
+            <InfoRow label="Желаемая дата">
+              {formatDate(order.desiredDate)}
+            </InfoRow>
+          )}
+          {order.comment && (
+            <InfoRow label="Комментарий клиента">
+              {order.comment}
+            </InfoRow>
+          )}
+          {order.desiredTime && (
+            <InfoRow label="Желаемое время">
+              {order.desiredTime}
+            </InfoRow>
+          )}
         </div>
-      </section>
+      </Section>
 
-      <section className={styles.card}>
-        <h2>История</h2>
-        <ul className={styles.timeline}>
-          {events.map((event) => (
-            <li key={event.id}>
-              <time>{event.createdAt.slice(0, 16).replace('T', ' ')}</time>
-              <span>{event.message}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <Section title="Клиент">
+        <div className={styles.infoGrid}>
+          <InfoRow label="Имя">
+            {order.customerName}
+          </InfoRow>
+          <InfoRow label="Телефон">
+            <a href={`tel:${order.customerPhone}`} className={styles.phoneLink}>
+              <span className="material-symbols-outlined">phone</span>
+              {formatPhone(order.customerPhone)}
+            </a>
+          </InfoRow>
+        </div>
+      </Section>
 
-      <Link to="/admin/orders" className={styles.backLink}>Назад к заказам</Link>
+      <Section title="Товар">
+        <div className={styles.infoGrid}>
+          <InfoRow label="Название">
+            {order.productName}
+          </InfoRow>
+          <InfoRow label="Количество">
+            {order.quantity} шт.
+          </InfoRow>
+          <InfoRow label="Цена">
+            {formatPrice(order.price)}
+          </InfoRow>
+          <InfoRow label="Сумма">
+            {formatPrice(order.quantity * order.price)}
+          </InfoRow>
+          {order.productId && (
+            <InfoRow label="Товар в админке">
+              <Link to={`/admin/products/${order.productId}`} className={styles.linkButton}>
+                Перейти
+              </Link>
+            </InfoRow>
+          )}
+        </div>
+      </Section>
+
+      <Section title="Изменение статуса" actions={statusActions.length > 0 ? statusActions : undefined}>
+        {statusActions.length === 0 && (
+          <p className={styles.closedText}>Заказ закрыт</p>
+        )}
+      </Section>
+
+      <Section title="Заметка администратора">
+        <AdminNote note={order.adminNote} onSave={handleNoteChange} loading={noteLoading} />
+      </Section>
+
+      <Section title="История">
+        <EventTimeline events={events} />
+      </Section>
+
+      <Modal
+        open={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        title="Подтверждение отмены заказа"
+        footer={
+          <div className={styles.modalFooter}>
+            <Button variant="ghost" onClick={() => setShowCancelModal(false)} disabled={statusLoading.cancelled}>
+              Отмена
+            </Button>
+            <Button variant="danger" onClick={confirmCancel} loading={statusLoading.cancelled}>
+              Отменить заказ
+            </Button>
+          </div>
+        }
+      >
+        <p>Товар вернётся на склад. Продолжить?</p>
+      </Modal>
     </div>
   )
 }
 
+interface AdminNoteProps {
+  note: string
+  onSave: (note: string) => Promise<void>
+  loading: boolean
+}
+
+function AdminNote({ note, onSave, loading }: AdminNoteProps) {
+  const [localNote, setLocalNote] = useState(note)
+  const [error, setError] = useState('')
+
+  const handleSave = async () => {
+    setError('')
+    await onSave(localNote)
+    setLocalNote(localNote)
+  }
+
+  return (
+    <div className={styles.adminNote}>
+      <Textarea
+        label="Заметка администратора (только для вас)"
+        value={localNote}
+        onChange={(e) => setLocalNote(e.target.value)}
+        placeholder="Добавьте заметку..."
+        rows={3}
+        error={error}
+      />
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={handleSave}
+        loading={loading}
+        className={styles.saveNoteButton}
+      >
+        Сохранить заметку
+      </Button>
+    </div>
+  )
+}
