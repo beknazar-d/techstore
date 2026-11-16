@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom'
+import { ThemeToggle } from '../ui/ThemeToggle'
 import { shop } from '../../config/shop'
 import { formatPhone, telHref } from '../../utils/phone'
 import { cn } from '../../utils/cn'
@@ -28,6 +29,7 @@ export function Header() {
           </a>
           <span className={styles.hours}>{shop.workingHours}</span>
         </div>
+        <ThemeToggle className={styles.themeToggle} />
         <a href={telHref(shop.phone)} className={styles.callButton} aria-label="Позвонить в магазин">
           <span className="material-symbols-outlined" aria-hidden="true">call</span>
         </a>

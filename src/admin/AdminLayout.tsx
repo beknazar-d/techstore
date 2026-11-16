@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { listOrders, listTradeIns, logout } from '../api'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { shop } from '../config/shop'
 import { useAdminSession } from '../hooks/useAdminSession'
 import { useApiQuery } from '../hooks/useApiQuery'
@@ -42,11 +43,14 @@ export function AdminLayout() {
           <div className={styles.shopName}>{shop.name}</div>
           <div className={styles.caption}>Админка</div>
         </div>
-        <button type="button" className={styles.iconButton} aria-label="Выйти" onClick={handleLogout}>
-          <span className="material-symbols-outlined" aria-hidden="true">
-            logout
-          </span>
-        </button>
+        <div className={styles.actions}>
+          <ThemeToggle />
+          <button type="button" className={styles.iconButton} aria-label="Выйти" onClick={handleLogout}>
+            <span className="material-symbols-outlined" aria-hidden="true">
+              logout
+            </span>
+          </button>
+        </div>
       </header>
 
       <aside className={styles.sidebar}>

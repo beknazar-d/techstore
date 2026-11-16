@@ -1,0 +1,241 @@
+.page {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: var(--space-8) var(--page-padding) var(--space-10);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.productCard {
+  display: grid;
+  gap: var(--space-5);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+}
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mainImageWrap {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-warm);
+  border: 1px solid var(--color-border);
+}
+
+.mainImage {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.thumbRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.thumbWrap {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-warm);
+}
+
+.thumbImage {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.brand {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  line-height: 34px;
+}
+
+.description {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.price {
+  margin: 0;
+  font-size: 32px;
+  line-height: 38px;
+  font-weight: 700;
+}
+
+.stockText {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.usedBlock {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-warm);
+  color: var(--color-text-secondary);
+}
+
+.usedBlock p {
+  margin: 0;
+}
+
+.successMessage {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
+}
+
+.successMessage :global(.material-symbols-outlined) {
+  font-size: 24px;
+}
+
+.successMessage strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.successMessage p {
+  margin: 0;
+  color: var(--color-success-text);
+  opacity: 0.9;
+}
+
+.specSection {
+  margin-top: var(--space-8);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+}
+
+.specTitle {
+  margin: 0 0 var(--space-4);
+  font-size: 24px;
+  line-height: 30px;
+}
+
+.specList {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.specRow {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.1fr) minmax(0, 1.4fr);
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.specRow:first-child {
+  border-top: none;
+}
+
+.specRow dt {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.specRow dd {
+  margin: 0;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.loaderWrap,
+.emptyWrap {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.emptyWrap {
+  max-width: 480px;
+  margin: 0 auto;
+  gap: var(--space-3);
+}
+
+.emptyText {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+@media (min-width: 768px) {
+  .page {
+    padding-top: var(--space-10);
+  }
+
+  .productCard {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    padding: var(--space-5);
+  }
+
+  .title {
+    font-size: 36px;
+    line-height: 42px;
+  }
+}
