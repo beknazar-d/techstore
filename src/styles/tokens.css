@@ -1,8 +1,12 @@
 /* Дизайн-токены. Источник: design/design/a7store_retail_system/DESIGN.md
-   В компонентах используйте только эти переменные, без «сырых» цветов. */
-:root {
+   В компонентах используйте только эти переменные, без «сырых» цветов.
+
+   Цвета тем заданы на селекторах [data-theme], а не только на :root: во время смены темы
+   поверх страницы лежит её снимок с data-theme старой темы (см. ThemeToggle),
+   и переменные должны переопределяться на нём тоже. */
+:root,
+[data-theme='light'] {
   color-scheme: light;
-  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* Поверхности */
   --color-bg: #ffffff;
@@ -42,6 +46,20 @@
   --color-overlay: rgba(15, 23, 42, 0.5);
   --color-bg-translucent: rgba(255, 255, 255, 0.92);
 
+  /* Тени */
+  --shadow-card-hover: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+  --shadow-modal: 0 12px 36px -4px rgba(15, 23, 42, 0.12);
+}
+
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Звезда в анимации смены темы (одинаковая в обеих темах) */
+  --color-star: #f0a500;
+  --color-star-glow: #ffcf5a;
+  --color-star-core: #fff8e1;
+  --color-star-cool: #a5c8ff;
+
   /* Радиусы */
   --radius-sm: 4px;
   --radius: 8px;
@@ -49,10 +67,6 @@
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-full: 9999px;
-
-  /* Тени */
-  --shadow-card-hover: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
-  --shadow-modal: 0 12px 36px -4px rgba(15, 23, 42, 0.12);
 
   /* Отступы (шаг 4/8px) */
   --space-1: 4px;
@@ -84,7 +98,7 @@
   --transition: 150ms ease;
 }
 
-:root[data-theme='dark'] {
+[data-theme='dark'] {
   color-scheme: dark;
   --color-bg: #0b0f17;
   --color-surface-warm: #111827;

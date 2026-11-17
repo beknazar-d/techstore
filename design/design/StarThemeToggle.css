@@ -1,0 +1,72 @@
+/* ===== Темы =====
+   Важно: селектор [data-theme], а не :root[data-theme]. Во время анимации
+   поверх страницы лежит её снимок с data-theme старой темы — переменные
+   должны переопределяться и на нём. Все цвета в приложении берём из var(). */
+[data-theme='dark'] {
+  --bg: #0a0e1a;
+  --card: #141a2b;
+  --text: #e8ebf4;
+  --muted: #8b94aa;
+  color-scheme: dark;
+}
+[data-theme='light'] {
+  --bg: #f5f6fa;
+  --card: #ffffff;
+  --text: #131722;
+  --muted: #5d6578;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ===== Кнопка ===== */
+.theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--text) 16%, transparent);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.theme-btn:hover { border-color: #f0a500; }
+.theme-btn:focus-visible { outline: 2px solid #f0a500; outline-offset: 2px; }
+.theme-btn[aria-busy='true'] { cursor: progress; }
+.theme-btn svg { color: #f0a500; flex: none; }
+
+/* ===== Слои эффекта (создаются и удаляются из JS) ===== */
+
+/* Снимок страницы в СТАРОЙ теме: лежит поверх настоящей страницы (она уже
+   в новой теме), в нём от центра растёт круглая "дыра" (mask-image).
+   Не добавляй сюда transform/filter/contain — сломается position: fixed
+   у элементов внутри снимка. */
+.star-theme-snapshot {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+  color: var(--text);
+}
+.star-theme-snapshot > div { position: absolute; }
+
+/* Холст со звездой, взрывом и искрами — поверх всего. */
+.star-theme-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2147483001;
+  pointer-events: none;
+}

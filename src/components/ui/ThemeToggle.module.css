@@ -1,90 +1,4 @@
-.themeBurst {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2000;
-  opacity: 0;
-}
-
-.themeBurst.active {
-  opacity: 1;
-}
-
-.themeBurst::before {
-  content: '';
-  position: absolute;
-  left: var(--theme-burst-center-x, 50vw);
-  top: var(--theme-burst-center-y, 50vh);
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0.2);
-  opacity: 0;
-}
-
-.themeBurst.active::before {
-  animation: centerBloom 0.9s cubic-bezier(0.22, 0.8, 0.2, 1) forwards;
-}
-
-.themeBurst.light::before {
-  background: radial-gradient(circle, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0.9) 18%, rgba(255, 255, 255, 0.38) 42%, rgba(255, 255, 255, 0) 72%);
-  box-shadow: 0 0 40px rgba(255, 255, 255, 0.8), 0 0 100px rgba(255, 255, 255, 0.55);
-}
-
-.themeBurst.dark::before {
-  background: radial-gradient(circle, rgba(18, 21, 29, 1) 0%, rgba(18, 21, 29, 0.9) 18%, rgba(18, 21, 29, 0.32) 42%, rgba(18, 21, 29, 0) 72%);
-  box-shadow: 0 0 40px rgba(18, 21, 29, 0.75), 0 0 90px rgba(18, 21, 29, 0.5);
-}
-
-.spark {
-  position: absolute;
-  left: var(--theme-burst-x, 50vw);
-  top: var(--theme-burst-y, 50vh);
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%) scale(0.4);
-  opacity: 0;
-  filter: blur(1.5px);
-}
-
-.themeBurst.active .spark {
-  animation: sparkTravel 1.9s cubic-bezier(0.18, 0.8, 0.22, 1) forwards;
-}
-
-.themeBurst.light .spark {
-  background: radial-gradient(circle, rgba(255, 245, 200, 1) 0%, rgba(255, 204, 108, 1) 18%, rgba(255, 132, 40, 0.96) 34%, rgba(255, 78, 31, 0.7) 58%, rgba(255, 78, 31, 0) 90%);
-  box-shadow: 0 0 18px rgba(255, 185, 70, 0.9), 0 0 40px rgba(255, 118, 42, 0.8), 0 0 72px rgba(255, 94, 28, 0.7), 0 0 110px rgba(255, 120, 44, 0.4);
-}
-
-.themeBurst.dark .spark {
-  background: radial-gradient(circle, rgba(255, 246, 207, 1) 0%, rgba(255, 188, 91, 1) 16%, rgba(255, 120, 42, 0.96) 31%, rgba(255, 82, 40, 0.72) 56%, rgba(255, 82, 40, 0) 90%);
-  box-shadow: 0 0 18px rgba(255, 178, 88, 0.9), 0 0 42px rgba(255, 116, 52, 0.75), 0 0 76px rgba(255, 86, 32, 0.58), 0 0 120px rgba(255, 99, 34, 0.38);
-}
-
-.themeReveal {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 1800;
-  opacity: 0;
-  background: #ffffff;
-  clip-path: circle(0% at var(--theme-burst-center-x, 50vw) var(--theme-burst-center-y, 50vh));
-}
-
-.themeReveal.revealActive {
-  opacity: 1;
-  animation: themeReveal 1.8s cubic-bezier(0.18, 0.8, 0.22, 1) forwards;
-}
-
-.themeReveal.light {
-  background: #ffffff;
-}
-
-.themeReveal.dark {
-  background: #0b0f17;
-}
-
+/* Кнопка смены темы */
 .toggle {
   position: relative;
   display: inline-flex;
@@ -94,78 +8,57 @@
   height: 40px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--color-bg);
   color: var(--color-text);
-  transition: background var(--transition), border-color var(--transition), color var(--transition), transform var(--transition), box-shadow var(--transition);
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), transform var(--transition);
 }
 
 .toggle:hover {
-  background: var(--color-surface-recessed);
+  border-color: var(--color-star);
+  color: var(--color-star);
   transform: translateY(-1px);
-  box-shadow: 0 0 0 3px var(--color-ring);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--color-star);
+  outline-offset: 2px;
+}
+
+.toggle[aria-busy='true'] {
+  cursor: progress;
 }
 
 .toggle :global(.material-symbols-outlined) {
   font-size: 20px;
 }
 
-.toggle:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+/* ===== Слои анимации (создаются и удаляются в utils/starThemeTransition.ts) ===== */
+
+/* Снимок страницы в СТАРОЙ теме поверх настоящей страницы (она уже в новой теме).
+   В нём от центра растёт круглая «дыра» (mask-image).
+   Не добавляй сюда transform/filter/contain — сломается position: fixed
+   у элементов внутри снимка (шапка, модалки). */
+.snapshot {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
-@keyframes sparkTravel {
-  0% {
-    opacity: 0;
-    left: var(--theme-burst-x, 50vw);
-    top: var(--theme-burst-y, 50vh);
-    transform: translate(-50%, -50%) scale(0.28);
-  }
-  12% {
-    opacity: 1;
-  }
-  52% {
-    opacity: 1;
-    left: var(--theme-burst-center-x, 50vw);
-    top: var(--theme-burst-center-y, 50vh);
-    transform: translate(-50%, -50%) scale(2.1);
-  }
-  100% {
-    opacity: 0;
-    left: var(--theme-burst-center-x, 50vw);
-    top: var(--theme-burst-center-y, 50vh);
-    transform: translate(-50%, -50%) scale(5.2);
-  }
+.snapshot > div {
+  position: absolute;
 }
 
-@keyframes centerBloom {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.1);
-  }
-  20% {
-    opacity: 0.85;
-  }
-  68% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(18);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(30);
-  }
-}
-
-@keyframes themeReveal {
-  0% {
-    opacity: 1;
-    clip-path: circle(0% at var(--theme-burst-center-x, 50vw) var(--theme-burst-center-y, 50vh));
-  }
-  35% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    clip-path: circle(140% at var(--theme-burst-center-x, 50vw) var(--theme-burst-center-y, 50vh));
-  }
+/* Холст со звездой, вспышкой и искрами — поверх всего. */
+.canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2147483001;
+  pointer-events: none;
 }
