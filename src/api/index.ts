@@ -57,3 +57,13 @@ export {
   getAllowedTradeInStatuses,
   canEvaluateTradeIn,
 } from './tradeIns'
+export {
+  AI_MODEL_OPTIONS,
+  EMPTY_CONVERSATION,
+  getAiSettings,
+  updateAiSettings,
+  connectAi,
+  disconnectAi,
+  askAssistant,
+  type AssistantConversation,
+} from './ai'

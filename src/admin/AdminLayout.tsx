@@ -5,6 +5,7 @@ import { shop } from '../config/shop'
 import { useAdminSession } from '../hooks/useAdminSession'
 import { useApiQuery } from '../hooks/useApiQuery'
 import { cn } from '../utils/cn'
+import { AiAssistant } from './components/AiAssistant'
 import styles from './AdminLayout.module.css'
 
 type CounterKey = 'orders' | 'tradeIns' | 'chats'
@@ -139,6 +140,7 @@ export function AdminLayout() {
           )
         })}
       </nav>
+      <AiAssistant />
     </div>
   )
 }

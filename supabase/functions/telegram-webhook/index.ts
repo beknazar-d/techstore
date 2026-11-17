@@ -1,13 +1,18 @@
 // Webhook Telegram-бота: Telegram присылает сюда каждое сообщение клиента.
 // Сообщение сохраняется в bot_chats / bot_messages — админка видит его сразу (Realtime).
 //
-// Пока ИИ-ответы не подключены: на /start бот отвечает приветствием из настроек,
-// остальные сообщения передаются менеджеру (чат в режиме «Ждёт менеджера»).
+// На /start бот отвечает приветствием из настроек. Остальные сообщения:
+//   - ИИ включён и ключ Anthropic подключён, чат у бота → ответ ИИ (в фоне, Telegram не ждёт);
+//   - иначе сообщение передаётся менеджеру (чат в режиме «Ждёт менеджера»).
 //
 // Вход без JWT (verify_jwt = false в config.toml): Telegram не умеет его присылать.
 // Подлинность проверяем по заголовку X-Telegram-Bot-Api-Secret-Token.
 
 import { adminDb, botToken, safeEqual, tg, webhookSecret } from '../_shared/telegram.ts'
+import { aiKey } from '../_shared/ai.ts'
+import { replyWithAi } from '../_shared/botAi.ts'
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined
 
 interface TgUser {
   first_name?: string
@@ -69,12 +74,13 @@ Deno.serve(async (req) => {
   const db = adminDb()
   const { data: settings } = await db
     .from('bot_settings')
-    .select('is_enabled, greeting')
+    .select('is_enabled, greeting, ai_enabled, ai_instructions, allow_bargaining, allow_orders, handoff_to_manager')
     .eq('id', true)
     .maybeSingle()
 
   const text = describe(message)
   const isStart = /^\/start\b/.test(text)
+  const aiReady = Boolean(settings?.is_enabled && settings.ai_enabled && (await aiKey().catch(() => null)))
   const name = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(' ')
 
   const { data: chat, error } = await db.rpc('bot_receive_message', {
@@ -82,7 +88,7 @@ Deno.serve(async (req) => {
     p_customer_name: name,
     p_telegram_username: message.from?.username ?? '',
     p_text: text,
-    p_handoff_reason: isStart ? null : HANDOFF_NO_AI,
+    p_handoff_reason: isStart || aiReady ? null : HANDOFF_NO_AI,
   })
   if (error || !chat) {
     console.error('bot_receive_message failed', error)
@@ -97,6 +103,14 @@ Deno.serve(async (req) => {
     } catch (sendError) {
       console.error('greeting failed', sendError)
     }
+  }
+
+  if (!isStart && aiReady && settings && chat.mode !== 'manager') {
+    if (chat.mode === 'closed') await db.from('bot_chats').update({ mode: 'bot' }).eq('id', chat.id)
+    const work = replyWithAi(token, chat, settings)
+    // Отвечаем Telegram сразу, ИИ работает в фоне — иначе долгий ответ вызовет повторную доставку.
+    if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(work)
+    else await work
   }
 
   return new Response('ok')

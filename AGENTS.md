@@ -75,7 +75,13 @@ Fable раздаёт задачи остальным агентам:
 - Telegram: Edge Functions `telegram-webhook` (сообщения клиентов → «Чаты») и `telegram-admin`
   (подключение, ответ менеджера, тест группы). Токен админ вставляет в «Настройках»,
   он хранится зашифрованным в Supabase Vault (RPC `bot_token_*`, только service_role).
-  ИИ-ответов и уведомлений в группу о заказах пока нет — следующий шаг.
+  Уведомлений в группу о заказах пока нет — следующий шаг.
+- ИИ — Claude (Anthropic). API-ключ админ вставляет в «Настройках» → Vault (RPC `ai_key_*`), модели
+  и указания — таблица `ai_settings`. Edge Function `ai-admin`: подключение ключа и шаг ИИ-ассистента.
+  Инструменты ассистента (`supabase/functions/ai-admin/tools.ts`) выполняет браузер через `src/api/ai.ts`
+  теми же функциями `src/api`, что и формы; удаления у ассистента нет. Кружок — `src/admin/components/AiAssistant`.
+  ИИ-ответы бота — `supabase/functions/_shared/botAi.ts` (поиск товаров, торг не ниже `min_price`,
+  заявка через `create_order`, передача менеджеру); при сбое ИИ чат уходит менеджеру.
 - Фото — **временно** сжатый data URL в базе (миграция `trade_in_photos_interim`). Дальше — R2.
 - `src/data/seed.ts` → `supabase/seed.sql` только для локальной базы (`supabase db reset`).
 - `.env.production` — публичные URL и anon-ключ для боевой сборки; секретов там нет.
@@ -116,6 +122,7 @@ Fable раздаёт задачи остальным агентам:
 - **Секреты** (ключи R2, service role Supabase) — только в секретах Edge Functions.
   Токен Telegram-бота — в Supabase Vault: админ вводит его на сайте, Edge Function
   `telegram-admin` проверяет и сохраняет, обратно во фронтенд он не возвращается.
+  Ключ Anthropic — так же, через `ai-admin` в Vault.
   Во фронтенде — только `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`.
 
 ## Модель данных (Supabase)

@@ -6,8 +6,13 @@ import {
   disconnectBot,
   sendTestNotification,
   getErrorMessage,
+  getAiSettings,
+  updateAiSettings,
+  connectAi,
+  disconnectAi,
+  AI_MODEL_OPTIONS,
 } from '../../api'
-import type { BotSettings } from '../../types'
+import type { AiModel, AiSettings, BotSettings } from '../../types'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { PageHeader, Section, InfoRow } from '../components/AdminBlocks'
 import { Button } from '../../components/ui/Button'
@@ -17,6 +22,7 @@ import { Checkbox } from '../../components/ui/Checkbox'
 import { Badge } from '../../components/ui/Badge'
 import { Spinner } from '../../components/ui/Spinner'
 import { Modal } from '../../components/ui/Modal'
+import { Select } from '../../components/ui/Select'
 import styles from './SettingsPage.module.css'
 
 function BotBehaviorForm({ initial }: { initial: BotSettings }) {
@@ -134,8 +140,8 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
               onChange={(e) => setAiEnabled(e.target.checked)}
             />
             <p className={styles.checkboxHint}>
-              Бот берёт цены и наличие из каталога сайта. Если выключить, бот будет только пересылать
-              сообщения менеджерам.
+              Нужен подключённый ИИ (блок «Искусственный интеллект» выше). Бот берёт цены и наличие из
+              каталога сайта. Если выключить, бот будет только пересылать сообщения менеджерам.
             </p>
           </div>
 
@@ -260,7 +266,9 @@ export function SettingsPage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Настройки" subtitle="Telegram-бот и уведомления" />
+      <PageHeader title="Настройки" subtitle="ИИ, Telegram-бот и уведомления" />
+
+      <AiSection />
 
       <Section title="Telegram-бот">
         {!data.connected ? (
@@ -364,5 +372,187 @@ export function SettingsPage() {
       </Modal>
 
     </div>
+  )
+}
+
+function AiModelsForm({ initial }: { initial: AiSettings }) {
+  const [assistantModel, setAssistantModel] = useState<AiModel>(initial.assistantModel)
+  const [botModel, setBotModel] = useState<AiModel>(initial.botModel)
+  const [instructions, setInstructions] = useState(initial.assistantInstructions)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    setError('')
+    setSaved(false)
+    try {
+      await updateAiSettings({ assistantModel, botModel, assistantInstructions: instructions })
+      setSaved(true)
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className={styles.behaviorBody}>
+      <Select
+        label="Модель ИИ-ассистента в админке"
+        options={AI_MODEL_OPTIONS}
+        value={assistantModel}
+        onChange={(e) => setAssistantModel(e.target.value as AiModel)}
+        hint="Кружок со звёздочкой в углу админки: добавляет категории и товары, меняет остатки, смотрит заказы и статистику"
+      />
+      <Select
+        label="Модель Telegram-бота"
+        options={AI_MODEL_OPTIONS}
+        value={botModel}
+        onChange={(e) => setBotModel(e.target.value as AiModel)}
+        hint="Как бот общается с клиентами — в блоке «Ответы с помощью ИИ» ниже"
+      />
+      <Textarea
+        label="Указания ассистенту"
+        rows={4}
+        value={instructions}
+        onChange={(e) => setInstructions(e.target.value)}
+        hint="Необязательно. Например: «Описания товаров пиши в 2–3 предложения, без восклицательных знаков»"
+      />
+      <div className={styles.formFooter}>
+        {error && (
+          <span className={styles.errorText} role="alert">
+            {error}
+          </span>
+        )}
+        <Button onClick={handleSave} loading={saving}>
+          Сохранить
+        </Button>
+        {saved && <span className={styles.successText}>Сохранено</span>}
+      </div>
+    </div>
+  )
+}
+
+function AiSection() {
+  const { data, reload } = useApiQuery(() => getAiSettings(), [], ['aiSettings'])
+  const [key, setKey] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [showDisconnect, setShowDisconnect] = useState(false)
+
+  if (data === undefined) {
+    return (
+      <Section title="Искусственный интеллект">
+        <div className={styles.loader}>
+          <Spinner />
+        </div>
+      </Section>
+    )
+  }
+
+  async function handleConnect() {
+    setLoading(true)
+    setError('')
+    try {
+      await connectAi(key)
+      setKey('')
+      await reload()
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleDisconnect() {
+    setShowDisconnect(false)
+    setLoading(true)
+    setError('')
+    try {
+      await disconnectAi()
+      await reload()
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Section title="Искусственный интеллект">
+      {!data.connected ? (
+        <div className={styles.connectBlock}>
+          <ol className={styles.stepsList}>
+            <li>Откройте console.anthropic.com → API Keys → Create Key</li>
+            <li>Пополните баланс в разделе Billing — без него ИИ отвечать не будет</li>
+            <li>Скопируйте ключ (начинается с sk-ant-) и вставьте ниже</li>
+          </ol>
+          <div className={styles.connectForm}>
+            <Input
+              label="API-ключ Anthropic (Claude)"
+              type="password"
+              autoComplete="off"
+              placeholder="sk-ant-…"
+              hint="Ключ хранится зашифрованным на сервере, сайт его больше не показывает"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+            />
+            {error && (
+              <p className={styles.connectError} role="alert">
+                {error}
+              </p>
+            )}
+            <div>
+              <Button icon="key" onClick={handleConnect} loading={loading} disabled={!key.trim()}>
+                Подключить ИИ
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className={styles.connectedBlock}>
+          <div className={styles.connectedHeader}>
+            <Badge tone="success" dot>
+              Подключён
+            </Badge>
+          </div>
+          <InfoRow label="Ключ">••••{data.keyHint}</InfoRow>
+          <AiModelsForm initial={data} />
+          <div className={styles.connectedActions}>
+            <Button variant="secondary" onClick={() => setShowDisconnect(true)} loading={loading}>
+              Отключить ИИ
+            </Button>
+            {error && (
+              <span className={styles.connectError} role="alert">
+                {error}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <Modal
+        open={showDisconnect}
+        onClose={() => setShowDisconnect(false)}
+        title="Отключить ИИ?"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowDisconnect(false)}>
+              Отмена
+            </Button>
+            <Button variant="danger" onClick={handleDisconnect}>
+              Отключить
+            </Button>
+          </>
+        }
+      >
+        <p className={styles.modalText}>
+          Ключ удалится с сервера. Ассистент перестанет работать, а бот будет передавать все сообщения
+          менеджерам. Настройки сохранятся.
+        </p>
+      </Modal>
+    </Section>
   )
 }

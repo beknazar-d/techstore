@@ -437,3 +437,40 @@ export interface ShopStats {
     missingCost: number
   }
 }
+
+// ---------- Искусственный интеллект ----------
+
+/** Модели Claude, которые можно выбрать в «Настройках». */
+export type AiModel = 'claude-opus-5-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5'
+
+export interface AiSettings {
+  /** Ключ Anthropic сохранён на сервере (Vault). */
+  connected: boolean
+  /** Последние 4 символа ключа — только для показа. */
+  keyHint: string
+  /** Модель ИИ-ассистента админки. */
+  assistantModel: AiModel
+  /** Модель, которой отвечает Telegram-бот. */
+  botModel: AiModel
+  /** Дополнительные указания ассистенту. */
+  assistantInstructions: string
+  updatedAt: string
+}
+
+export type AiSettingsInput = Partial<Pick<AiSettings, 'assistantModel' | 'botModel' | 'assistantInstructions'>>
+
+/** Одно действие, которое ассистент выполнил в админке. */
+export interface AssistantAction {
+  tool: string
+  /** Коротко по-русски: «Создана категория „Планшеты“». */
+  summary: string
+  ok: boolean
+}
+
+/** Сообщение в окне ассистента. */
+export interface AssistantChatItem {
+  role: 'user' | 'assistant'
+  text: string
+  actions?: AssistantAction[]
+  error?: boolean
+}

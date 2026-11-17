@@ -435,3 +435,6 @@ verify_jwt = false
 # Админ проверяется внутри функции (getUser + таблица admins).
 [functions.telegram-admin]
 verify_jwt = false
+
+[functions.ai-admin]
+verify_jwt = false
