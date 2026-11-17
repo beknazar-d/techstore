@@ -78,6 +78,8 @@ export interface Product {
   price: number
   /** Нижняя граница торга для Telegram-бота. Видит только админ. */
   minPrice: number | null
+  /** Себестоимость (закупка) за штуку, ₽. Видит только админ. null — не указана. */
+  costPrice: number | null
   /** Остаток на складе, >= 0. */
   stock: number
   isActive: boolean
@@ -102,6 +104,7 @@ export interface ProductInput {
   usedInfo?: UsedInfo | null
   price: number
   minPrice?: number | null
+  costPrice?: number | null
   stock: number
   isActive: boolean
   images: string[]
@@ -143,6 +146,8 @@ export interface Order {
   productName: string
   /** Цена за штуку на момент заказа. */
   price: number
+  /** Себестоимость за штуку на момент заказа (для прибыли). null — не была указана. */
+  costPrice: number | null
   quantity: number
   customerName: string
   customerPhone: string
@@ -359,4 +364,77 @@ export interface BotMessage {
 
 export interface ChatFilters {
   mode?: ChatMode
+}
+
+// ---------- Статистика (только админ) ----------
+
+/** Период статистики, дней. */
+export type StatsPeriod = 7 | 30 | 90
+
+/** Точка графика: один день. */
+export interface StatsDay {
+  /** `YYYY-MM-DD` */
+  date: string
+  /** Выручка по выполненным заказам, ₽. */
+  revenue: number
+  /** Прибыль по выполненным заказам (где известна себестоимость), ₽. */
+  profit: number
+  /** Сколько заявок пришло за день (кроме отменённых). */
+  orders: number
+}
+
+export interface StatsTopProduct {
+  productId: string | null
+  name: string
+  quantity: number
+  revenue: number
+  /** null — себестоимость не указана. */
+  profit: number | null
+}
+
+/**
+ * Сводка за период. Заказы относятся к дню заявки (`createdAt`).
+ * Деньги считаются только по выполненным заказам — их клиент оплатил.
+ */
+export interface ShopStats {
+  period: StatsPeriod
+  /** Первый и последний день периода, `YYYY-MM-DD`. */
+  from: string
+  to: string
+  revenue: number
+  profit: number
+  /** Наценка: прибыль / выручка с известной себестоимостью, %. null — нет данных. */
+  marginPercent: number | null
+  /** Выручка выполненных заказов без себестоимости (в прибыль не вошла), ₽. */
+  revenueWithoutCost: number
+  ordersTotal: number
+  ordersCompleted: number
+  ordersCancelled: number
+  /** Новые + подтверждённые — ещё не оплачены. */
+  ordersInProgress: number
+  /** Сумма заказов в работе, ₽ — ожидаемая выручка. */
+  inProgressValue: number
+  /** Средний чек выполненного заказа, ₽. */
+  averageCheck: number | null
+  /** Доля отменённых, %. */
+  cancelRatePercent: number | null
+  ordersBySource: Record<OrderSource, number>
+  tradeInsTotal: number
+  /** Клиент согласился или обмен состоялся. */
+  tradeInsAccepted: number
+  daily: StatsDay[]
+  /** До 5 товаров с наибольшей выручкой. */
+  topProducts: StatsTopProduct[]
+  /** Склад сейчас (не зависит от периода). */
+  inventory: {
+    units: number
+    /** Остаток по себестоимости, ₽ — сколько денег «лежит» на складе. */
+    costValue: number
+    /** Остаток по цене продажи, ₽. */
+    retailValue: number
+    lowStock: number
+    outOfStock: number
+    /** Активных товаров без себестоимости — прибыль по ним не считается. */
+    missingCost: number
+  }
 }

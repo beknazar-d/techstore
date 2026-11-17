@@ -15,6 +15,7 @@ import { PageHeader } from '../components/AdminBlocks'
 import { ProductSpecsFields } from '../components/ProductSpecsFields'
 import { ImagePicker } from '../../components/ui/ImagePicker'
 import { CONDITION_LABELS, DEVICE_GRADE_LABELS, DEVICE_GRADES } from '../../config/labels'
+import { formatPrice } from '../../utils/format'
 import styles from './ProductFormPage.module.css'
 import type { ProductInput, Product, ProductSpecs, UsedInfo, ProductCondition, Category, DeviceGrade } from '../../types'
 
@@ -124,6 +125,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
   const [usedInfo, setUsedInfo] = useState<UsedInfo | null>(initialProduct?.usedInfo ?? null)
   const [price, setPrice] = useState<number | ''>(initialProduct?.price ?? '')
   const [minPrice, setMinPrice] = useState<number | '' | null>(initialProduct?.minPrice ?? null)
+  const [costPrice, setCostPrice] = useState<number | '' | null>(initialProduct?.costPrice ?? null)
   const [stock, setStock] = useState<number | ''>(initialProduct?.stock ?? '')
   const [isActive, setIsActive] = useState(initialProduct?.isActive ?? true)
   const [images, setImages] = useState<string[]>(initialProduct?.images ?? [])
@@ -151,6 +153,12 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
       const minPriceNum = typeof minPrice === 'number' ? minPrice : Number(minPrice)
       if (!Number.isInteger(minPriceNum) || minPriceNum <= 0 || minPriceNum > priceNum) {
         return 'Минимальная цена должна быть больше нуля и не выше обычной цены'
+      }
+    }
+    if (costPrice !== null && costPrice !== '') {
+      const costPriceNum = typeof costPrice === 'number' ? costPrice : Number(costPrice)
+      if (!Number.isInteger(costPriceNum) || costPriceNum < 0) {
+        return 'Себестоимость — целое число, не меньше нуля'
       }
     }
     const stockNum = typeof stock === 'number' ? stock : Number(stock)
@@ -197,6 +205,8 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
         price: typeof price === 'number' ? price : Number(price),
         minPrice:
           minPrice !== null && minPrice !== '' ? (typeof minPrice === 'number' ? minPrice : Number(minPrice)) : null,
+        costPrice:
+          costPrice !== null && costPrice !== '' ? (typeof costPrice === 'number' ? costPrice : Number(costPrice)) : null,
         stock: typeof stock === 'number' ? stock : Number(stock),
         isActive,
         images,
@@ -300,6 +310,34 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
             step="1"
             hint="Видит только админ, для Telegram-бота"
           />
+
+          <Input
+            label="Себестоимость, ₽"
+            type="number"
+            inputMode="numeric"
+            value={costPrice ?? ''}
+            onChange={(e) => {
+              const val = e.target.value
+              setCostPrice(val === '' ? null : Number(val))
+            }}
+            min="0"
+            step="1"
+            hint="Закупочная цена за штуку. Нужна для расчёта прибыли, клиенты её не видят"
+          />
+
+          {price !== '' && costPrice !== null && costPrice !== '' && (
+            <div className={styles.marginInfo}>
+              {costPrice > price ? (
+                <span className={styles.marginError}>
+                  Себестоимость выше цены продажи
+                </span>
+              ) : (
+                <span>
+                  Наценка: {formatPrice(price - costPrice)} ({Math.round((price - costPrice) / price * 100)}%)
+                </span>
+              )}
+            </div>
+          )}
 
           <Input
             label="Остаток на складе"

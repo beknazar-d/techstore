@@ -23,7 +23,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Trade-in', to: '/admin/trade-in', icon: 'swap_horiz', counter: 'tradeIns' },
   { label: 'Чаты', to: '/admin/chats', icon: 'forum', counter: 'chats' },
   { label: 'Товары', to: '/admin/products', icon: 'inventory_2' },
-  { label: 'Категории', to: '/admin/categories', icon: 'category' },
+  { label: 'Категории', to: '/admin/categories', icon: 'category', desktopOnly: true },
+  { label: 'Статистика', to: '/admin/stats', icon: 'monitoring' },
   { label: 'Настройки', to: '/admin/settings', icon: 'settings', desktopOnly: true },
 ]
 

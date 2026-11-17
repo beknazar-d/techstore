@@ -82,6 +82,16 @@
   background: transparent;
 }
 
+.marginInfo {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-top: var(--space-1);
+}
+
+.marginError {
+  color: var(--color-error-text);
+}
+
 @media (min-width: 768px) {
   .fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));

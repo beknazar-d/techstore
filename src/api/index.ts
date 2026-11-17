@@ -7,6 +7,7 @@ export { ApiError, getErrorMessage, type ApiErrorCode } from './errors'
 export { subscribe, resetDemoData, type DbTable } from './db'
 export { login, logout, getSession, onAuthChange } from './auth'
 export { notify, type NotifyEvent } from './notify'
+export { getShopStats } from './stats'
 export {
   listCategories,
   getCategoryBySlug,

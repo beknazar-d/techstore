@@ -35,7 +35,11 @@ export function ProductsPage() {
           <p className={styles.kicker}>Товары</p>
           <h1 className={styles.title}>Управление каталогом</h1>
         </div>
-        <Link to="/admin/products/new" className={styles.primaryAction}>+ Новый товар</Link>
+        <div className={styles.headerActions}>
+          {/* На телефоне «Категорий» нет в нижней панели — попадают сюда отсюда. */}
+          <Link to="/admin/categories" className={styles.secondaryAction}>Категории</Link>
+          <Link to="/admin/products/new" className={styles.primaryAction}>+ Новый товар</Link>
+        </div>
       </header>
 
       <div className={styles.toolbar}>

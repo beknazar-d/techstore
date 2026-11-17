@@ -641,6 +641,8 @@ export function createSeed(): Db {
       usedInfo: item.used ?? null,
       price: item.price,
       minPrice: item.minPrice ?? null,
+      // Демо-себестоимость: новые ~82% цены, Б/У ~70%, округлено до сотен.
+      costPrice: Math.round((item.price * (item.used ? 0.7 : 0.82)) / 100) * 100,
       stock: item.stock,
       isActive: true,
       images: [],
@@ -686,7 +688,7 @@ function createDemoRequests(seeded: Product[], base: number) {
   const orders: Order[] = [
     {
       id: 'order-demo-1003', number: 1003, status: 'new', source: 'site',
-      productId: s24.id, productName: s24.name, price: s24.price, quantity: 1,
+      productId: s24.id, productName: s24.name, price: s24.price, costPrice: s24.costPrice, quantity: 1,
       customerName: 'Алексей Смирнов', customerPhone: '+79161234567',
       deliveryType: 'delivery', address: 'Москва, ул. Профсоюзная, 45, кв. 12',
       location: { lat: 55.6705, lng: 37.5537 },
@@ -696,7 +698,7 @@ function createDemoRequests(seeded: Product[], base: number) {
     },
     {
       id: 'order-demo-1002', number: 1002, status: 'confirmed', source: 'site',
-      productId: airpods.id, productName: airpods.name, price: airpods.price, quantity: 2,
+      productId: airpods.id, productName: airpods.name, price: airpods.price, costPrice: airpods.costPrice, quantity: 2,
       customerName: 'Мария Иванова', customerPhone: '+79035557788',
       deliveryType: 'pickup', address: '', location: null,
       desiredDate: day(0), desiredTime: '15:00',
@@ -705,7 +707,7 @@ function createDemoRequests(seeded: Product[], base: number) {
     },
     {
       id: 'order-demo-1001', number: 1001, status: 'completed', source: 'site',
-      productId: dyson.id, productName: dyson.name, price: dyson.price, quantity: 1,
+      productId: dyson.id, productName: dyson.name, price: dyson.price, costPrice: dyson.costPrice, quantity: 1,
       customerName: 'Ольга Кузнецова', customerPhone: '+79257001020',
       deliveryType: 'delivery', address: 'Москва, Ленинский проспект, 32',
       location: null, desiredDate: day(-1), desiredTime: '12:00',
@@ -747,7 +749,17 @@ function createDemoRequests(seeded: Product[], base: number) {
     { id: 'te-demo-3', tradeInId: 'tradein-demo-501', type: 'evaluated', fromStatus: 'new', toStatus: 'evaluated', message: 'Оценка: 18 000 ₽', createdAt: ago(400) },
   ]
 
-  return { orders, orderEvents, tradeIns, tradeInEvents }
+  // История выполненных и отменённых заказов за 60 дней — чтобы статистике было что показать.
+  // Номера: история 1001…, затем три «живых» заказа выше.
+  const history = createOrderHistory(seeded, base)
+  for (const order of orders) order.number += history.orders.length
+
+  return {
+    orders: [...orders, ...history.orders],
+    orderEvents: [...orderEvents, ...history.orderEvents],
+    tradeIns,
+    tradeInEvents,
+  }
 }
 
 /** Настройки бота по умолчанию: бот не подключён, ИИ и торг включены. */
@@ -791,7 +803,7 @@ export function createBotSeed(orders: Order[], base = Date.now()) {
     { chatId: 'chat-demo-2', sender: 'customer', text: 'Добрый вечер, нужен Galaxy S24 с доставкой на Профсоюзную', minutesAgo: 40, createdAt: '' },
     { chatId: 'chat-demo-2', sender: 'bot', text: 'Добрый вечер! Galaxy S24 8/256 ГБ в наличии, 64 990 ₽. Подскажите, пожалуйста, имя, телефон и удобное время доставки.', minutesAgo: 39, createdAt: '' },
     { chatId: 'chat-demo-2', sender: 'customer', text: 'Алексей, +7 916 123-45-67, завтра после 18', minutesAgo: 30, createdAt: '' },
-    { chatId: 'chat-demo-2', sender: 'bot', text: 'Готово! Заявка №1003 принята. Менеджер позвонит для подтверждения. Оплата при получении.', minutesAgo: 25, createdAt: '' },
+    { chatId: 'chat-demo-2', sender: 'bot', text: `Готово! Заявка №${linkedOrder?.number ?? ''} принята. Менеджер позвонит для подтверждения. Оплата при получении.`, minutesAgo: 25, createdAt: '' },
     // Чат 3: вопрос закрыт.
     { chatId: 'chat-demo-3', sender: 'customer', text: 'Вы работаете в воскресенье?', minutesAgo: 1440, createdAt: '' },
     { chatId: 'chat-demo-3', sender: 'bot', text: 'Да, мы работаем каждый день с 10:00 до 21:00.', minutesAgo: 1440, createdAt: '' },
@@ -831,4 +843,69 @@ export function createBotSeed(orders: Order[], base = Date.now()) {
   ]
 
   return { botSettings: defaultBotSettings(new Date(base).toISOString()), chats, chatMessages }
+}
+
+/**
+ * Демо-история продаж за 60 дней: в основном выполненные заказы, часть отменённых.
+ * Детерминированная (одинаковая при каждом сбросе), склад не трогает.
+ */
+function createOrderHistory(seeded: Product[], base: number) {
+  // Простой генератор псевдослучайных чисел с фиксированным зерном.
+  let state = 20261117
+  const random = () => {
+    state = (state * 1_103_515_245 + 12_345) % 2_147_483_648
+    return state / 2_147_483_648
+  }
+  const pick = <T,>(items: T[]) => items[Math.floor(random() * items.length)]
+
+  const names = [
+    'Иван Петров', 'Анна Соколова', 'Сергей Волков', 'Екатерина Морозова', 'Дмитрий Новиков',
+    'Ольга Лебедева', 'Максим Козлов', 'Наталья Попова', 'Артём Васильев', 'Юлия Фёдорова',
+  ]
+  const candidates = seeded.filter((product) => product.condition === 'new' || product.stock > 0)
+  const orders: Order[] = []
+  const orderEvents: OrderEvent[] = []
+
+  // Чем ближе к сегодняшнему дню, тем больше заказов — на графике виден рост.
+  for (let daysAgo = 60; daysAgo >= 2; daysAgo -= 1) {
+    const perDay = random() < 0.35 + (60 - daysAgo) / 120 ? (random() < 0.3 ? 2 : 1) : 0
+    for (let i = 0; i < perDay; i += 1) {
+      const product = pick(candidates)
+      const quantity = product.price < 10_000 && random() < 0.4 ? 2 : 1
+      const createdAt = new Date(base - daysAgo * 86_400_000 + Math.floor(random() * 10) * 3_600_000).toISOString()
+      const updatedAt = new Date(Date.parse(createdAt) + 26 * 3_600_000).toISOString()
+      const cancelled = random() < 0.12
+      const id = `order-history-${orders.length + 1}`
+      orders.push({
+        id,
+        number: 1001 + orders.length,
+        status: cancelled ? 'cancelled' : 'completed',
+        source: random() < 0.25 ? 'telegram' : 'site',
+        productId: product.id,
+        productName: product.name,
+        price: product.price,
+        costPrice: product.costPrice,
+        quantity,
+        customerName: pick(names),
+        customerPhone: `+7916${String(1_000_000 + Math.floor(random() * 8_999_999))}`,
+        deliveryType: random() < 0.5 ? 'pickup' : 'delivery',
+        address: '',
+        location: null,
+        desiredDate: '',
+        desiredTime: '',
+        comment: '',
+        adminNote: '',
+        createdAt,
+        updatedAt,
+      })
+      orderEvents.push(
+        { id: `${id}-e1`, orderId: id, type: 'created', fromStatus: null, toStatus: 'new', message: `Заявка создана, со склада списано ${quantity} шт.`, createdAt },
+        cancelled
+          ? { id: `${id}-e2`, orderId: id, type: 'cancelled', fromStatus: 'new', toStatus: 'cancelled', message: `Заказ отменён, на склад возвращено ${quantity} шт.`, createdAt: updatedAt }
+          : { id: `${id}-e2`, orderId: id, type: 'status_changed', fromStatus: 'new', toStatus: 'completed', message: 'Статус: Новый → Выполнен', createdAt: updatedAt },
+      )
+    }
+  }
+
+  return { orders, orderEvents }
 }

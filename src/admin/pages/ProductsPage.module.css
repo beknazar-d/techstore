@@ -40,6 +40,31 @@
   font-weight: 600;
 }
 
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-warm);
+  color: var(--color-text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.secondaryAction:hover {
+  border-color: var(--color-border-strong);
+}
+
 .toolbar {
   display: flex;
   gap: var(--space-3);

@@ -109,6 +109,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       productId: product.id,
       productName: product.name,
       price: product.price,
+      costPrice: product.costPrice ?? null,
       quantity: input.quantity,
       customerName,
       customerPhone,

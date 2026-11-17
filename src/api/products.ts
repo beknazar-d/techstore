@@ -64,6 +64,11 @@ function validate(product: Product, db: Db): void {
       throw new ApiError('validation', 'Минимальная цена должна быть больше нуля и не выше обычной цены')
     }
   }
+  // Старые данные без поля — считаем «не указана».
+  product.costPrice = product.costPrice ?? null
+  if (product.costPrice !== null && (!isInt(product.costPrice) || product.costPrice < 0)) {
+    throw new ApiError('validation', 'Себестоимость — целое число, не меньше нуля')
+  }
   if (!isInt(product.stock) || product.stock < 0) {
     throw new ApiError('validation', 'Остаток — целое число, не меньше нуля')
   }
@@ -144,6 +149,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
       usedInfo: input.usedInfo ?? null,
       price: input.price,
       minPrice: input.minPrice ?? null,
+      costPrice: input.costPrice ?? null,
       stock: input.stock,
       isActive: input.isActive,
       images: input.images,

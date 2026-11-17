@@ -13,6 +13,7 @@ import { OrdersPage } from './pages/OrdersPage'
 import { ProductFormPage } from './pages/ProductFormPage'
 import { ProductsPage } from './pages/ProductsPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { StatsPage } from './pages/StatsPage'
 import { TradeInDetailPage } from './pages/TradeInDetailPage'
 import { TradeInsPage } from './pages/TradeInsPage'
 import { RequireAdmin } from './RequireAdmin'
@@ -35,6 +36,7 @@ export default function AdminApp() {
           <Route path="categories" element={<CategoriesPage />} />
           <Route path="chats" element={<ChatsPage />} />
           <Route path="chats/:id" element={<ChatPage />} />
+          <Route path="stats" element={<StatsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/admin/orders" replace />} />
         </Route>

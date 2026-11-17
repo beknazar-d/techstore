@@ -1,0 +1,233 @@
+.page {
+  padding: var(--space-4);
+}
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.periodFilters {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.periodButton {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.periodButton:hover {
+  background: var(--color-surface-elevated);
+}
+
+.periodButton[data-active="true"] {
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  border-color: var(--color-primary);
+}
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.kpiCard {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-elevated);
+  padding: var(--space-3);
+}
+
+.kpiLabel {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.kpiValue {
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1;
+  margin-bottom: var(--space-2);
+}
+
+.kpiSub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-warning-soft);
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-md);
+  color: var(--color-warning-text);
+  font-size: 14px;
+}
+
+.warning .material-symbols-outlined {
+  font-size: 20px;
+  color: var(--color-warning-text);
+}
+
+.warningLink {
+  margin-left: auto;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.warningLink:hover {
+  text-decoration: underline;
+}
+
+.topProducts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.productRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-1) var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.productRow:last-child {
+  border-bottom: none;
+}
+
+.productName {
+  font-weight: 500;
+  grid-column: 1 / -1;
+}
+
+.productQuantity {
+  text-align: left;
+}
+
+.tableHeader > :first-child {
+  display: none;
+}
+
+.productRevenue,
+.productProfit {
+  text-align: right;
+}
+
+.inventoryGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  column-gap: var(--space-6);
+}
+
+@media (min-width: 768px) {
+  .inventoryGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.inventoryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inventoryRow:last-child {
+  border-bottom: none;
+}
+
+.inventoryLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.inventoryLink:hover {
+  text-decoration: underline;
+}
+@media (min-width: 768px) {
+  .page {
+    padding: var(--space-6);
+  }
+
+  .kpiGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-4);
+  }
+
+  .kpiCard {
+    padding: var(--space-4);
+  }
+
+  .kpiValue {
+    font-size: 24px;
+  }
+
+  .tableHeader,
+  .productRow {
+    grid-template-columns: minmax(0, 2fr) repeat(3, minmax(0, 1fr));
+    align-items: center;
+  }
+
+  .tableHeader > :first-child {
+    display: block;
+  }
+
+  .productName {
+    grid-column: auto;
+  }
+
+  .productQuantity {
+    text-align: center;
+  }
+}

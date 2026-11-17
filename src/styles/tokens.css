@@ -42,6 +42,11 @@
   --color-error-text: #991b1b;
   --color-neutral-soft: #f1f5f9;
 
+  /* Графики (проверено валидатором контраста и различимости для дальтоников) */
+  --color-chart-revenue: #2563eb;
+  --color-chart-profit: #059669;
+  --color-chart-grid: #e2e8f0;
+
   /* Затемнение под модалкой, полупрозрачная шапка */
   --color-overlay: rgba(15, 23, 42, 0.5);
   --color-bg-translucent: rgba(255, 255, 255, 0.92);
@@ -129,6 +134,10 @@
   --color-error-soft: rgba(248, 113, 113, 0.12);
   --color-error-text: #fecaca;
   --color-neutral-soft: rgba(148, 163, 184, 0.12);
+
+  --color-chart-revenue: #3b82f6;
+  --color-chart-profit: #0ea472;
+  --color-chart-grid: #263247;
 
   --color-overlay: rgba(10, 14, 21, 0.72);
   --color-bg-translucent: rgba(15, 20, 29, 0.85);

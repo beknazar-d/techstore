@@ -5,6 +5,7 @@ import {
   connectBot,
   disconnectBot,
   sendTestNotification,
+  resetDemoData,
   getErrorMessage,
 } from '../../api'
 import type { BotSettings } from '../../types'
@@ -208,6 +209,9 @@ export function SettingsPage() {
   const [disconnectLoading, setDisconnectLoading] = useState(false)
   const [showDisconnectModal, setShowDisconnectModal] = useState(false)
   const [enabledLoading, setEnabledLoading] = useState(false)
+  const [showResetModal, setShowResetModal] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetSuccess, setResetSuccess] = useState(false)
 
   if (data === undefined) {
     return (
@@ -257,6 +261,20 @@ export function SettingsPage() {
       // игнорируем — при следующей загрузке состояние вернётся
     } finally {
       setEnabledLoading(false)
+    }
+  }
+
+  async function handleReset() {
+    setShowResetModal(false)
+    setResetLoading(true)
+    setResetSuccess(false)
+    try {
+      await resetDemoData()
+      setResetSuccess(true)
+    } catch (err) {
+      console.error(getErrorMessage(err))
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -347,6 +365,16 @@ export function SettingsPage() {
 
       <BotBehaviorForm initial={data} />
 
+      <Section title="Демо-данные">
+        <p className={styles.demoText}>
+          Сейчас сайт работает в демо-режиме: данные хранятся в этом браузере. Сброс вернёт демо-каталог, заказы за 60 дней и чаты. Все изменения будут потеряны.
+        </p>
+        <Button variant="danger" onClick={() => setShowResetModal(true)}>
+          Сбросить демо-данные
+        </Button>
+        {resetSuccess && <span className={styles.successText}>Данные сброшены</span>}
+      </Section>
+
       <Modal
         open={showDisconnectModal}
         onClose={() => setShowDisconnectModal(false)}
@@ -364,6 +392,26 @@ export function SettingsPage() {
       >
         <p className={styles.modalText}>
           Бот перестанет отвечать клиентам и присылать уведомления. Настройки сохранятся.
+        </p>
+      </Modal>
+
+      <Modal
+        open={showResetModal}
+        onClose={() => setShowResetModal(false)}
+        title="Сбросить демо-данные?"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowResetModal(false)}>
+              Отмена
+            </Button>
+            <Button variant="danger" onClick={handleReset} loading={resetLoading}>
+              Сбросить
+            </Button>
+          </>
+        }
+      >
+        <p className={styles.modalText}>
+          Сбросить все данные к демо-набору? Это нельзя отменить.
         </p>
       </Modal>
     </div>
