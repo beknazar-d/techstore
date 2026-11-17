@@ -1,16 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listCategories, listProducts } from '../api'
-import { Button, LinkButton } from '../components/ui/Button'
+import { LinkButton } from '../components/ui/Button'
 import { ProductGrid } from '../components/product/ProductGrid'
 import { Spinner } from '../components/ui/Spinner'
 import { getCategoryIcon } from '../utils/categoryIcon'
 import type { Category, Product } from '../types'
 import styles from './HomePage.module.css'
 
+const FEATURES = [
+  { icon: 'local_shipping', title: 'Доставка по Москве', text: 'Или самовывоз — как удобнее' },
+  { icon: 'payments', title: 'Оплата при получении', text: 'Без предоплаты и онлайн-оплаты' },
+  { icon: 'verified', title: 'Проверка устройств', text: 'Б/У — с указанием состояния и аккумулятора' },
+  { icon: 'swap_horiz', title: 'Trade-in', text: 'Сдайте старое устройство в счёт нового' },
+]
+
 export function HomePage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<Product[]>([])
+  const [usedSmartphones, setUsedSmartphones] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -18,14 +26,17 @@ export function HomePage() {
 
     async function load() {
       try {
-        const [categoryList, productList] = await Promise.all([
+        // «Популярные» — только новые товары, Б/У идут своим блоком ниже, без повторов.
+        const [categoryList, productList, usedList] = await Promise.all([
           listCategories({ onlyActive: true }),
-          listProducts({ onlyActive: true, limit: 8 }),
+          listProducts({ onlyActive: true, condition: 'new', limit: 8 }),
+          listProducts({ onlyActive: true, condition: 'used', categorySlug: 'smartfony', limit: 4 }),
         ])
 
         if (!isMounted) return
         setCategories(categoryList)
         setProducts(productList)
+        setUsedSmartphones(usedList)
       } finally {
         if (isMounted) setLoading(false)
       }
@@ -36,13 +47,6 @@ export function HomePage() {
       isMounted = false
     }
   }, [])
-
-  const usedSmartphones = useMemo(() => {
-    const smartphoneCategory = categories.find((category) => category.slug === 'smartfony')
-    return products.filter(
-      (product) => product.condition === 'used' && smartphoneCategory && product.categoryId === smartphoneCategory.id,
-    )
-  }, [categories, products])
 
   if (loading) {
     return (
@@ -64,20 +68,27 @@ export function HomePage() {
           </span>
           <h1 className={styles.title}>Гаджеты и техника для каждого дня</h1>
           <p className={styles.lead}>
-            Выбирайте смартфоны, ноутбуки, аксессуары и техники для дома — всё в наличии, оплата при получении.
+            Смартфоны, ноутбуки, аксессуары и техника для дома — всё в наличии, оплата при получении.
           </p>
           <div className={styles.actions}>
             <LinkButton to="/catalog" icon="grid_view">В каталог</LinkButton>
-            <Button variant="secondary" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>К подборке</Button>
+            <LinkButton to="/trade-in" variant="secondary" icon="swap_horiz">Обменять старый</LinkButton>
           </div>
         </div>
         <div className={styles.heroCard}>
-          <p className={styles.heroLabel}>Проверка и гарантия</p>
-          <h2>Быстрая доставка по Москве</h2>
+          <p className={styles.heroLabel}>Почему у нас</p>
           <ul className={styles.featureList}>
-            <li>На складе 7 категорий товара</li>
-            <li>Проверка каждого устройства</li>
-            <li>Обмен старого устройства на новое</li>
+            {FEATURES.map((feature) => (
+              <li key={feature.title} className={styles.feature}>
+                <span className={styles.featureIcon} aria-hidden="true">
+                  <span className="material-symbols-outlined">{feature.icon}</span>
+                </span>
+                <span>
+                  <span className={styles.featureTitle}>{feature.title}</span>
+                  <span className={styles.featureText}>{feature.text}</span>
+                </span>
+              </li>
+            ))}
           </ul>
         </div>
       </section>

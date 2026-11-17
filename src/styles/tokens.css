@@ -100,12 +100,12 @@
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --color-bg: #0b0f17;
-  --color-surface-warm: #111827;
-  --color-surface-recessed: #1a2234;
-  --color-surface-elevated: #1a2234;
+  --color-bg: #0f141d;
+  --color-surface-warm: #1c2534;
+  --color-surface-recessed: #222c3d;
+  --color-surface-elevated: #161d2a;
   --color-surface-strong: rgba(59, 130, 246, 0.08);
-  --color-border: #283548;
+  --color-border: #2c3a50;
   --color-border-strong: #3b82f6;
   --color-ring: rgba(59, 130, 246, 0.25);
 
@@ -116,8 +116,8 @@
   --color-on-primary: #f8fafc;
 
   --color-text: #f8fafc;
-  --color-text-secondary: #94a3b8;
-  --color-text-muted: #475569;
+  --color-text-secondary: #a8b5c8;
+  --color-text-muted: #7d8ba2;
 
   --color-success: #10b981;
   --color-success-soft: rgba(16, 185, 129, 0.12);
@@ -130,8 +130,8 @@
   --color-error-text: #fecaca;
   --color-neutral-soft: rgba(148, 163, 184, 0.12);
 
-  --color-overlay: rgba(11, 15, 23, 0.72);
-  --color-bg-translucent: rgba(11, 15, 23, 0.8);
+  --color-overlay: rgba(10, 14, 21, 0.72);
+  --color-bg-translucent: rgba(15, 20, 29, 0.85);
 
   --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.45);
   --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.85);

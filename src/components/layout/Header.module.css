@@ -135,11 +135,16 @@
     margin-left: var(--space-4);
   }
 
+  /* Телефон прижат вправо, рядом с кнопкой темы (а не посередине шапки). */
   .contacts {
     margin-left: auto;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+  }
+
+  .themeToggle {
+    margin-left: 0;
   }
 
   .phone {
