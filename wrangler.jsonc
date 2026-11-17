@@ -1,0 +1,14 @@
+// Хостинг: Cloudflare Worker «techstore» со статикой из dist (React SPA).
+// Автодеплой — Workers Builds: на каждый push в main Cloudflare выполняет
+// `npm run build` и `npx wrangler deploy`.
+// VITE_* переменные задаются в панели: Worker → Settings → Build → Variables.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "techstore",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    // Любой неизвестный путь (/catalog, /admin/orders) отдаёт index.html — маршруты решает React Router.
+    "not_found_handling": "single-page-application"
+  }
+}
