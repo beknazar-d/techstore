@@ -94,8 +94,11 @@ Fable раздаёт задачи остальным агентам:
    │                           └──► Telegram Bot API (уведомление о заказе)
    │
    └── фото товаров ◄── Cloudflare R2 (публичный домен)
-Хостинг SPA — Cloudflare Pages
+Хостинг SPA — Cloudflare Worker «techstore» (статика из dist)
 ```
+
+Правило хранения: **тяжёлые файлы (фото) — в Cloudflare R2, все данные — в Supabase**
+(товары, заказы, trade-in, переписка Telegram-бота, настройки бота).
 
 - **Frontend:** React 19 + Vite + TypeScript, `react-router-dom`, `@supabase/supabase-js`.
   Одно приложение; админка — роуты `/admin/*`, загружаются лениво (`React.lazy`).
@@ -103,7 +106,13 @@ Fable раздаёт задачи остальным агентам:
   Отдельного сервера нет.
 - **Фото:** Cloudflare R2. Загрузка из админки через подписанную ссылку, которую выдаёт
   Edge Function `upload-url`. В базе храним только публичный URL.
-- **Хостинг:** Cloudflare Pages (`npm run build` → `dist`, SPA-fallback на `index.html`).
+- **Хостинг:** Cloudflare Worker `techstore` со статикой (`wrangler.jsonc`: `dist`,
+  `not_found_handling: single-page-application`). Адрес: `techstore.sadyrbekov981-ae2.workers.dev`.
+  **Автодеплой — Workers Builds:** каждый push в `main` → `npm run build` → `npx wrangler deploy`.
+  Push в `main` = выкладка на боевой сайт. `VITE_*` переменные задаются в панели Cloudflare
+  (Worker → Settings → Build → Variables), а не в репозитории.
+- **Supabase:** проект `zicvjjxrkpwcwtiepqdq` привязан к репозиторию (GitHub-интеграция).
+  `supabase/config.toml` содержит боевые настройки входа — не возвращай туда localhost-значения.
 - **Секреты** (ключ Telegram-бота, ключи R2, service role Supabase) — только в секретах
   Edge Functions. Во фронтенде — только `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`.
 
@@ -146,6 +155,18 @@ Fable раздаёт задачи остальным агентам:
 - `desired_product_id` + снимок названия и цены — на что хочет обменять (необязательно)
 - `admin_estimate` (сколько предлагаем, ₽), `admin_note`, `comment`, `created_at`
 - изменения пишутся в историю, как у заказов
+
+**bot_settings** — одна строка: настройки Telegram-бота (имя бота, ID группы менеджеров,
+какие уведомления слать, приветствие, инструкция для ИИ, разрешён ли торг, может ли бот
+оформлять заявки, передавать ли разговор менеджеру). Токен бота сюда НЕ пишется — только
+в секреты Edge Functions; в таблице лишь последние 4 символа для показа.
+
+**bot_chats** — переписка с клиентом в Telegram: `telegram_chat_id`, имя, username, телефон,
+`mode` (`bot` | `manager` | `closed` — кто отвечает), `handoff_reason`, `order_id`,
+`unread_count`, последнее сообщение.
+
+**bot_messages** — сообщения: `chat_id`, `sender` (`customer` | `bot` | `manager`), `text`,
+`created_at`. Ответ менеджера переводит чат в `manager`, и бот в нём замолкает.
 
 **admins** — `user_id` из Supabase Auth. Админ = пользователь, который есть в этой таблице.
 
