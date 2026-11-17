@@ -1,10 +1,57 @@
 import { shop } from '../config/shop'
 import type { Category, Product, ProductFilters, ProductInput, ProductSpecs, UsedInfo } from '../types'
 import { slugify } from '../utils/slugify'
-import { requireAdmin } from './auth'
-import { clone, createId, delay, mutate, nowISO, readDb, uniqueSlug, type Db } from './db'
+import { getCategory } from './categories'
+import { emit, supabase, uniqueSlug, unwrap } from './client'
 import { ApiError } from './errors'
-import { notify } from './notify'
+
+/** Колонки, доступные всем. min_price и cost_price анониму не выданы (права на колонки). */
+const PUBLIC_COLUMNS =
+  'id, category_id, name, slug, brand, description, condition, used_info, price, stock, is_active, images, specs, created_at, updated_at'
+/** Для админки. */
+const ADMIN_COLUMNS = `${PUBLIC_COLUMNS}, min_price, cost_price`
+
+interface ProductRow {
+  id: string
+  category_id: string
+  name: string
+  slug: string
+  brand: string
+  description: string
+  condition: Product['condition']
+  used_info: UsedInfo | null
+  price: number
+  min_price?: number | null
+  cost_price?: number | null
+  stock: number
+  is_active: boolean
+  images: string[]
+  specs: ProductSpecs
+  created_at: string
+  updated_at: string
+}
+
+function fromRow(row: ProductRow): Product {
+  return {
+    id: row.id,
+    categoryId: row.category_id,
+    name: row.name,
+    slug: row.slug,
+    brand: row.brand,
+    description: row.description,
+    condition: row.condition,
+    usedInfo: row.used_info,
+    price: row.price,
+    minPrice: row.min_price ?? null,
+    costPrice: row.cost_price ?? null,
+    stock: row.stock,
+    isActive: row.is_active,
+    images: row.images ?? [],
+    specs: row.specs ?? {},
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
 
 function isInt(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value)
@@ -47,14 +94,13 @@ function cleanUsedInfo(info: UsedInfo | null | undefined): UsedInfo {
   return clean
 }
 
-/** Проверяет товар целиком (после слияния с изменениями) и приводит поля в порядок. */
-function validate(product: Product, db: Db): void {
-  product.name = product.name.trim()
-  product.brand = product.brand.trim()
-  product.description = product.description.trim()
+type ProductFields = Omit<Product, 'id' | 'slug' | 'createdAt' | 'updatedAt'>
 
-  if (!product.name) throw new ApiError('validation', 'Укажите название товара')
-  const category = db.categories.find((c) => c.id === product.categoryId)
+/** Проверяет товар целиком (после слияния с изменениями) и возвращает строку для базы. */
+async function validate(product: ProductFields): Promise<Record<string, unknown>> {
+  const name = product.name.trim()
+  if (!name) throw new ApiError('validation', 'Укажите название товара')
+  const category = product.categoryId ? await getCategory(product.categoryId) : null
   if (!category) throw new ApiError('validation', 'Выберите категорию')
   if (!isInt(product.price) || product.price <= 0) {
     throw new ApiError('validation', 'Цена — целое число больше нуля')
@@ -64,8 +110,6 @@ function validate(product: Product, db: Db): void {
       throw new ApiError('validation', 'Минимальная цена должна быть больше нуля и не выше обычной цены')
     }
   }
-  // Старые данные без поля — считаем «не указана».
-  product.costPrice = product.costPrice ?? null
   if (product.costPrice !== null && (!isInt(product.costPrice) || product.costPrice < 0)) {
     throw new ApiError('validation', 'Себестоимость — целое число, не меньше нуля')
   }
@@ -75,158 +119,133 @@ function validate(product: Product, db: Db): void {
   if (product.images.length > shop.maxProductImages) {
     throw new ApiError('validation', `Не больше ${shop.maxProductImages} фото на товар`)
   }
-  product.usedInfo = product.condition === 'used' ? cleanUsedInfo(product.usedInfo) : null
-  product.specs = cleanSpecs(product.specs, category)
-}
-
-/** Сообщает менеджерам, что товар заканчивается или закончился (только когда остаток уменьшился). */
-export function notifyStock(product: Product, previousStock: number): void {
-  if (product.stock >= previousStock) return
-  if (product.stock === 0) {
-    void notify({ type: 'stock_out', product })
-  } else if (product.stock <= shop.lowStockThreshold) {
-    void notify({ type: 'stock_low', product })
+  return {
+    category_id: product.categoryId,
+    name,
+    brand: product.brand.trim(),
+    description: product.description.trim(),
+    condition: product.condition,
+    used_info: product.condition === 'used' ? cleanUsedInfo(product.usedInfo) : null,
+    price: product.price,
+    min_price: product.minPrice,
+    cost_price: product.costPrice,
+    stock: product.stock,
+    is_active: product.isActive,
+    images: product.images,
+    specs: cleanSpecs(product.specs, category),
   }
 }
 
 /**
  * Список товаров, новые сверху.
- * `onlyActive` — для клиентской части: только активные товары из активных категорий.
+ * `onlyActive` — для клиентской части: только активные товары из активных категорий
+ * (без закупочной и минимальной цены). Без него — для админки, все поля.
  */
 export async function listProducts(filters: ProductFilters = {}): Promise<Product[]> {
-  await delay()
-  const db = readDb()
-  let categoryId = filters.categoryId
-  if (filters.categorySlug) {
-    const category = db.categories.find((c) => c.slug === filters.categorySlug)
-    if (!category) return []
-    categoryId = category.id
-  }
-  const activeCategoryIds = new Set(db.categories.filter((c) => c.isActive).map((c) => c.id))
-  const search = filters.search?.trim().toLowerCase()
+  const columns = filters.onlyActive ? PUBLIC_COLUMNS : ADMIN_COLUMNS
+  const needsCategory = filters.onlyActive || Boolean(filters.categorySlug)
+  let query = supabase
+    .from('products')
+    .select(needsCategory ? `${columns}, category:categories!inner(slug, is_active)` : columns)
+    .order('created_at', { ascending: false })
 
-  let result = db.products.filter((p) => {
-    if (categoryId && p.categoryId !== categoryId) return false
-    if (filters.condition && p.condition !== filters.condition) return false
-    if (filters.onlyActive && (!p.isActive || !activeCategoryIds.has(p.categoryId))) return false
-    if (search && !`${p.name} ${p.brand}`.toLowerCase().includes(search)) return false
-    return true
-  })
-  result.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  if (filters.limit) result = result.slice(0, filters.limit)
-  return clone(result)
+  if (filters.categoryId) query = query.eq('category_id', filters.categoryId)
+  if (filters.categorySlug) query = query.eq('category.slug', filters.categorySlug)
+  if (filters.condition) query = query.eq('condition', filters.condition)
+  if (filters.onlyActive) query = query.eq('is_active', true).eq('category.is_active', true)
+  const search = filters.search?.trim().replace(/[%_,()]/g, ' ')
+  if (search) query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%`)
+  if (filters.limit) query = query.limit(filters.limit)
+
+  const rows = unwrap(await query, 'Не удалось загрузить товары') as unknown as ProductRow[]
+  return rows.map(fromRow)
 }
 
 /** Для клиентской части: находит только активный товар из активной категории. */
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  await delay()
-  const db = readDb()
-  const product = db.products.find((p) => p.slug === slug && p.isActive)
-  if (!product) return null
-  const category = db.categories.find((c) => c.id === product.categoryId)
-  return category?.isActive ? clone(product) : null
+  const row = unwrap(
+    await supabase
+      .from('products')
+      .select(`${PUBLIC_COLUMNS}, category:categories!inner(is_active)`)
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .eq('category.is_active', true)
+      .maybeSingle(),
+  ) as unknown as ProductRow | null
+  return row ? fromRow(row) : null
 }
 
 /** Для админки: находит любой товар, в том числе скрытый. */
 export async function getProduct(id: string): Promise<Product | null> {
-  await delay()
-  return clone(readDb().products.find((p) => p.id === id) ?? null)
+  const row = unwrap(
+    await supabase.from('products').select(ADMIN_COLUMNS).eq('id', id).maybeSingle(),
+  ) as unknown as ProductRow | null
+  return row ? fromRow(row) : null
 }
 
 export async function createProduct(input: ProductInput): Promise<Product> {
-  await delay()
-  requireAdmin()
-  return mutate(['products'], (db) => {
-    const now = nowISO()
-    const product: Product = {
-      id: createId(),
-      categoryId: input.categoryId,
-      name: input.name,
-      slug: '',
-      brand: input.brand,
-      description: input.description,
-      condition: input.condition ?? 'new',
-      usedInfo: input.usedInfo ?? null,
-      price: input.price,
-      minPrice: input.minPrice ?? null,
-      costPrice: input.costPrice ?? null,
-      stock: input.stock,
-      isActive: input.isActive,
-      images: input.images,
-      specs: input.specs,
-      createdAt: now,
-      updatedAt: now,
-    }
-    validate(product, db)
-    product.slug = uniqueSlug(slugify(input.slug?.trim() || product.name), db.products.map((p) => p.slug))
-    db.products.push(product)
-    return clone(product)
+  const fields = await validate({
+    categoryId: input.categoryId,
+    name: input.name,
+    brand: input.brand,
+    description: input.description,
+    condition: input.condition ?? 'new',
+    usedInfo: input.usedInfo ?? null,
+    price: input.price,
+    minPrice: input.minPrice ?? null,
+    costPrice: input.costPrice ?? null,
+    stock: input.stock,
+    isActive: input.isActive,
+    images: input.images,
+    specs: input.specs,
   })
+  const slug = await uniqueSlug('products', slugify(input.slug?.trim() || String(fields.name)))
+  const row = unwrap(
+    await supabase.from('products').insert({ ...fields, slug }).select(ADMIN_COLUMNS).single(),
+    'Не удалось создать товар',
+  ) as unknown as ProductRow
+  emit(['products'])
+  return fromRow(row)
 }
 
 export async function updateProduct(id: string, patch: Partial<ProductInput>): Promise<Product> {
-  await delay()
-  requireAdmin()
-  let previousStock = 0
-  const updated = mutate(['products'], (db) => {
-    const index = db.products.findIndex((p) => p.id === id)
-    if (index === -1) throw new ApiError('not_found', 'Товар не найден')
-    const current = db.products[index]
-    previousStock = current.stock
+  const current = await getProduct(id)
+  if (!current) throw new ApiError('not_found', 'Товар не найден')
 
-    const { slug, ...fields } = patch
-    // undefined в patch означает «не менять».
-    const changes = Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined))
-    const next: Product = { ...current, ...changes, updatedAt: nowISO() }
-    validate(next, db)
-    if (slug !== undefined) {
-      const others = db.products.filter((p) => p.id !== id).map((p) => p.slug)
-      next.slug = uniqueSlug(slugify(slug.trim() || next.name), others)
-    }
-    db.products[index] = next
-    return clone(next)
-  })
-  notifyStock(updated, previousStock)
-  return updated
+  const { slug, ...fields } = patch
+  // undefined в patch означает «не менять».
+  const changes = Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined))
+  const next: Product = { ...current, ...changes }
+  const row: Record<string, unknown> = await validate(next)
+  if (slug !== undefined) {
+    row.slug = await uniqueSlug('products', slugify(slug.trim() || next.name), id)
+  }
+
+  const updated = unwrap(
+    await supabase.from('products').update(row).eq('id', id).select(ADMIN_COLUMNS).maybeSingle(),
+    'Не удалось сохранить товар',
+  ) as unknown as ProductRow | null
+  if (!updated) throw new ApiError('not_found', 'Товар не найден')
+  emit(['products'])
+  return fromRow(updated)
 }
 
 /** Удаляет товар. Заказы и заявки trade-in остаются: в них сохранены название и цена. */
 export async function deleteProduct(id: string): Promise<void> {
-  await delay()
-  requireAdmin()
-  mutate(['products', 'orders', 'tradeIns'], (db) => {
-    const index = db.products.findIndex((p) => p.id === id)
-    if (index === -1) throw new ApiError('not_found', 'Товар не найден')
-    db.products.splice(index, 1)
-    for (const order of db.orders) {
-      if (order.productId === id) order.productId = null
-    }
-    for (const tradeIn of db.tradeIns) {
-      if (tradeIn.desiredProductId === id) tradeIn.desiredProductId = null
-    }
-  })
+  const rows = unwrap(await supabase.from('products').delete().eq('id', id).select('id')) as { id: string }[]
+  if (rows.length === 0) throw new ApiError('not_found', 'Товар не найден')
+  emit(['products', 'orders', 'tradeIns'])
 }
 
 /**
- * Меняет остаток на `delta` (+5 — приход, −1 — списание).
+ * Меняет остаток на `delta` (+5 — приход, −1 — списание). Атомарно в базе (RPC adjust_stock).
  * Остаток не может стать меньше нуля → `ApiError('out_of_stock')`.
  */
 export async function adjustStock(id: string, delta: number): Promise<Product> {
-  await delay()
-  requireAdmin()
   if (!isInt(delta)) throw new ApiError('validation', 'Изменение остатка — целое число')
-  let previousStock = 0
-  const updated = mutate(['products'], (db) => {
-    const product = db.products.find((p) => p.id === id)
-    if (!product) throw new ApiError('not_found', 'Товар не найден')
-    if (product.stock + delta < 0) {
-      throw new ApiError('out_of_stock', `Нельзя списать больше, чем есть на складе (${product.stock} шт.)`)
-    }
-    previousStock = product.stock
-    product.stock += delta
-    product.updatedAt = nowISO()
-    return clone(product)
-  })
-  notifyStock(updated, previousStock)
-  return updated
+  unwrap(await supabase.rpc('adjust_stock', { p_product_id: id, p_delta: delta }))
+  const product = await getProduct(id)
+  if (!product) throw new ApiError('not_found', 'Товар не найден')
+  emit(['products'])
+  return product
 }

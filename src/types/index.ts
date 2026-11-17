@@ -318,12 +318,6 @@ export interface BotSettings {
 /** Что админ меняет в настройках (без токена — он задаётся отдельно). */
 export type BotSettingsInput = Partial<Omit<BotSettings, 'connected' | 'tokenHint' | 'updatedAt'>>
 
-export interface ConnectBotInput {
-  /** Токен от @BotFather: `123456789:AA...`. */
-  token: string
-  botUsername: string
-}
-
 // ---------- Telegram-бот: чаты ----------
 
 /** Кто сейчас отвечает клиенту: бот (ИИ) или менеджер. `closed` — разговор завершён. */

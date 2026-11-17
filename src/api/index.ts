@@ -1,12 +1,10 @@
 // Единственная точка входа в слой данных. Компоненты импортируют только отсюда:
 //   import { listProducts, createOrder, getErrorMessage } from '../api'
-// Сейчас данные лежат в localStorage (см. db.ts), позже реализация сменится на Supabase,
-// а сигнатуры функций останутся прежними.
+// Данные — в Supabase (src/lib/supabase.ts): таблицы под RLS и функции базы (RPC).
 
 export { ApiError, getErrorMessage, type ApiErrorCode } from './errors'
-export { subscribe, resetDemoData, type DbTable } from './db'
+export { subscribe, type DbTable } from './client'
 export { login, logout, getSession, onAuthChange } from './auth'
-export { notify, type NotifyEvent } from './notify'
 export { getShopStats } from './stats'
 export {
   listCategories,

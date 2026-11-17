@@ -1,86 +1,77 @@
-// Вход администратора. Сейчас — локальная заглушка с демо-паролем из src/config/shop.ts.
-// Позже: Supabase Auth (signInWithPassword / signOut / getSession / onAuthStateChange)
-// плюс проверка по таблице admins. Сигнатуры останутся такими же.
+// Вход администратора через Supabase Auth.
+// Админ = пользователь Supabase Auth, который есть в таблице public.admins
+// (её читает только сам пользователь — свою строку). Остальное проверяют RLS и функции базы.
 
-import { shop } from '../config/shop'
+import type { Session } from '@supabase/supabase-js'
 import type { AdminSession } from '../types'
-import { delay } from './db'
+import { supabase } from './client'
 import { ApiError } from './errors'
-
-const SESSION_KEY = 'phone-market:admin-session:v1'
 
 type AuthListener = (session: AdminSession | null) => void
 
-const listeners = new Set<AuthListener>()
+/** Кэш проверки «этот пользователь — админ», чтобы не спрашивать базу на каждое событие. */
+const adminCheck = new Map<string, Promise<boolean>>()
 
-function readSession(): AdminSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY)
-    if (!raw) return null
-    const parsed: unknown = JSON.parse(raw)
-    if (typeof parsed === 'object' && parsed !== null && 'email' in parsed && 'loggedInAt' in parsed) {
-      return parsed as AdminSession
-    }
-  } catch {
-    // Нет доступа к хранилищу или битые данные — считаем, что входа нет.
+function isAdminUser(userId: string): Promise<boolean> {
+  let check = adminCheck.get(userId)
+  if (!check) {
+    check = Promise.resolve(
+      supabase
+        .from('admins')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle()
+        .then(({ data, error }) => !error && data !== null),
+    )
+    adminCheck.set(userId, check)
   }
-  return null
+  return check
 }
 
-function emit(session: AdminSession | null): void {
-  for (const listener of listeners) listener(session)
+async function toAdminSession(session: Session | null): Promise<AdminSession | null> {
+  if (!session) return null
+  if (!(await isAdminUser(session.user.id))) return null
+  return {
+    email: session.user.email ?? '',
+    loggedInAt: session.user.last_sign_in_at ?? new Date().toISOString(),
+  }
 }
 
-/** Вход. Неверные данные → `ApiError('auth')`. */
+/** Вход. Неверные данные или пользователь не админ → `ApiError('auth')`. */
 export async function login(email: string, password: string): Promise<AdminSession> {
-  await delay(300)
-  if (!email.trim() || password !== shop.demoAdminPassword) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
+  if (error || !data.session) {
+    if (error && /fetch|network/i.test(error.message)) {
+      throw new ApiError('storage', 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.')
+    }
     throw new ApiError('auth', 'Неверный email или пароль')
   }
-  const session: AdminSession = { email: email.trim(), loggedInAt: new Date().toISOString() }
-  try {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(session))
-  } catch {
-    throw new ApiError('storage', 'Не удалось сохранить вход: хранилище браузера недоступно')
+  adminCheck.delete(data.session.user.id)
+  const session = await toAdminSession(data.session)
+  if (!session) {
+    await supabase.auth.signOut()
+    throw new ApiError('auth', 'У этого пользователя нет доступа к админке')
   }
-  emit(session)
   return session
 }
 
 export async function logout(): Promise<void> {
-  try {
-    localStorage.removeItem(SESSION_KEY)
-  } catch {
-    // Нечего удалять.
-  }
-  emit(null)
+  await supabase.auth.signOut()
 }
 
 /** Текущая сессия администратора или null. */
 export async function getSession(): Promise<AdminSession | null> {
-  return readSession()
+  const { data } = await supabase.auth.getSession()
+  return toAdminSession(data.session)
 }
 
 /** Подписка на вход и выход (в том числе в другой вкладке). Возвращает функцию отписки. */
 export function onAuthChange(listener: AuthListener): () => void {
-  listeners.add(listener)
-  return () => {
-    listeners.delete(listener)
-  }
-}
-
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (event) => {
-    if (event.key === SESSION_KEY || event.key === null) emit(readSession())
+  const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Запросы к базе внутри колбэка onAuthStateChange могут зависнуть — выносим из него.
+    setTimeout(() => {
+      void toAdminSession(session).then(listener, () => listener(null))
+    }, 0)
   })
-}
-
-/**
- * Для функций слоя данных, доступных только администратору.
- * Имитация будущих RLS-правил: без входа — ошибка.
- */
-export function requireAdmin(): void {
-  if (!readSession()) {
-    throw new ApiError('auth', 'Нужно войти в админку')
-  }
+  return () => data.subscription.unsubscribe()
 }

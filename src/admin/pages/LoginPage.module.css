@@ -48,15 +48,6 @@
   line-height: 20px;
 }
 
-.demo {
-  background: var(--color-primary-soft);
-  border-radius: var(--radius);
-  padding: var(--space-3);
-  font-size: 13px;
-  line-height: 18px;
-  color: var(--color-text);
-}
-
 .back {
   align-self: center;
   font-size: 13px;

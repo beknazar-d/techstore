@@ -1,7 +1,7 @@
-// Демо-данные для локальной версии. Попадают в localStorage при первом запуске.
+// Демо-данные. Из них генерируется supabase/seed.sql для ЛОКАЛЬНОЙ базы (supabase db reset).
+// На боевую базу не попадают. Сайт их не импортирует.
 // Цены в рублях. Фото нет — интерфейс показывает заглушку.
 
-import type { Db } from '../api/db'
 import type {
   BotChat,
   BotMessage,
@@ -16,6 +16,20 @@ import type {
   TradeInRequest,
   UsedInfo,
 } from '../types'
+
+export interface Db {
+  categories: Category[]
+  products: Product[]
+  orders: Order[]
+  orderEvents: OrderEvent[]
+  tradeIns: TradeInRequest[]
+  tradeInEvents: TradeInEvent[]
+  nextOrderNumber: number
+  nextTradeInNumber: number
+  botSettings: BotSettings
+  chats: BotChat[]
+  chatMessages: BotMessage[]
+}
 
 const MEMORY = ['64 ГБ', '128 ГБ', '256 ГБ', '512 ГБ', '1 ТБ']
 const RAM = ['4 ГБ', '6 ГБ', '8 ГБ', '12 ГБ', '16 ГБ', '24 ГБ', '32 ГБ']

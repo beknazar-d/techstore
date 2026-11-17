@@ -13,7 +13,7 @@ export function LoginPage() {
   const { session, loading } = useAdminSession()
   const location = useLocation()
   const navigate = useNavigate()
-  const [email, setEmail] = useState<string>(shop.demoAdminEmail)
+  const [email, setEmail] = useState<string>('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -84,7 +84,6 @@ export function LoginPage() {
             Войти
           </Button>
         </form>
-        <div className={styles.demo}>Демо-версия. Пароль: {shop.demoAdminPassword}</div>
         <Link to="/" className={styles.back}>
           ← На сайт
         </Link>

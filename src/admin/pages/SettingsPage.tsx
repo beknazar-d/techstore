@@ -5,7 +5,6 @@ import {
   connectBot,
   disconnectBot,
   sendTestNotification,
-  resetDemoData,
   getErrorMessage,
 } from '../../api'
 import type { BotSettings } from '../../types'
@@ -201,17 +200,12 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
 export function SettingsPage() {
   const { data, reload } = useApiQuery(() => getBotSettings(), [], ['botSettings'])
 
-  const [connectToken, setConnectToken] = useState('')
-  const [connectUsername, setConnectUsername] = useState('')
   const [connectLoading, setConnectLoading] = useState(false)
   const [connectError, setConnectError] = useState('')
 
   const [disconnectLoading, setDisconnectLoading] = useState(false)
   const [showDisconnectModal, setShowDisconnectModal] = useState(false)
   const [enabledLoading, setEnabledLoading] = useState(false)
-  const [showResetModal, setShowResetModal] = useState(false)
-  const [resetLoading, setResetLoading] = useState(false)
-  const [resetSuccess, setResetSuccess] = useState(false)
 
   if (data === undefined) {
     return (
@@ -227,9 +221,7 @@ export function SettingsPage() {
     setConnectLoading(true)
     setConnectError('')
     try {
-      await connectBot({ token: connectToken, botUsername: connectUsername })
-      setConnectToken('')
-      setConnectUsername('')
+      await connectBot()
       await reload()
     } catch (err) {
       setConnectError(getErrorMessage(err))
@@ -264,20 +256,6 @@ export function SettingsPage() {
     }
   }
 
-  async function handleReset() {
-    setShowResetModal(false)
-    setResetLoading(true)
-    setResetSuccess(false)
-    try {
-      await resetDemoData()
-      setResetSuccess(true)
-    } catch (err) {
-      console.error(getErrorMessage(err))
-    } finally {
-      setResetLoading(false)
-    }
-  }
-
   return (
     <div className={styles.page}>
       <PageHeader title="Настройки" subtitle="Telegram-бот и уведомления" />
@@ -286,40 +264,26 @@ export function SettingsPage() {
         {!data.connected ? (
           <div className={styles.connectBlock}>
             <ol className={styles.stepsList}>
-              <li>Откройте @BotFather в Telegram и отправьте /newbot</li>
-              <li>Придумайте имя бота — оно должно заканчиваться на bot</li>
-              <li>Скопируйте токен и вставьте ниже</li>
+              <li>Откройте @BotFather в Telegram, выберите бота и скопируйте токен (/mybots → API Token)</li>
+              <li>
+                В Supabase откройте Edge Functions → Secrets и добавьте секрет <code>TELEGRAM_BOT_TOKEN</code> со
+                значением токена
+              </li>
+              <li>Нажмите «Подключить бота» — сообщения, которые пишут боту, начнут приходить в раздел «Чаты»</li>
             </ol>
 
-            <div className={styles.connectForm}>
-              <Input
-                label="Токен бота"
-                type="password"
-                autoComplete="off"
-                placeholder="123456789:AAH…"
-                hint="Токен хранится на сервере, в браузере он не сохраняется"
-                value={connectToken}
-                onChange={(e) => setConnectToken(e.target.value)}
-              />
-              <Input
-                label="Имя бота"
-                placeholder="phone_market_bot"
-                hint="Без @"
-                value={connectUsername}
-                onChange={(e) => setConnectUsername(e.target.value)}
-              />
+            <p className={styles.demoText}>Токен хранится только на сервере, сайт его не видит.</p>
 
-              {connectError && (
-                <p className={styles.connectError} role="alert">
-                  {connectError}
-                </p>
-              )}
+            {connectError && (
+              <p className={styles.connectError} role="alert">
+                {connectError}
+              </p>
+            )}
 
-              <div>
-                <Button icon="link" onClick={handleConnect} loading={connectLoading}>
-                  Подключить бота
-                </Button>
-              </div>
+            <div>
+              <Button icon="link" onClick={handleConnect} loading={connectLoading}>
+                Подключить бота
+              </Button>
             </div>
           </div>
         ) : (
@@ -365,16 +329,6 @@ export function SettingsPage() {
 
       <BotBehaviorForm initial={data} />
 
-      <Section title="Демо-данные">
-        <p className={styles.demoText}>
-          Сейчас сайт работает в демо-режиме: данные хранятся в этом браузере. Сброс вернёт демо-каталог, заказы за 60 дней и чаты. Все изменения будут потеряны.
-        </p>
-        <Button variant="danger" onClick={() => setShowResetModal(true)}>
-          Сбросить демо-данные
-        </Button>
-        {resetSuccess && <span className={styles.successText}>Данные сброшены</span>}
-      </Section>
-
       <Modal
         open={showDisconnectModal}
         onClose={() => setShowDisconnectModal(false)}
@@ -395,25 +349,6 @@ export function SettingsPage() {
         </p>
       </Modal>
 
-      <Modal
-        open={showResetModal}
-        onClose={() => setShowResetModal(false)}
-        title="Сбросить демо-данные?"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setShowResetModal(false)}>
-              Отмена
-            </Button>
-            <Button variant="danger" onClick={handleReset} loading={resetLoading}>
-              Сбросить
-            </Button>
-          </>
-        }
-      >
-        <p className={styles.modalText}>
-          Сбросить все данные к демо-набору? Это нельзя отменить.
-        </p>
-      </Modal>
     </div>
   )
 }

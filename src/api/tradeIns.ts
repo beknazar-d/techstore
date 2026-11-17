@@ -1,28 +1,74 @@
 // Заявки на trade-in: клиент описывает старое устройство, магазин оценивает и перезванивает.
 // Денег на сайте нет: сумма выкупа и доплата обсуждаются по телефону или в магазине.
+// Переходы статусов и история — в базе (RPC), здесь те же правила для кнопок.
 
-import { TRADE_IN_STATUS_LABELS } from '../config/labels'
 import { shop } from '../config/shop'
 import type {
   CreateTradeInInput,
   TradeInDevice,
   TradeInEvent,
-  TradeInEventType,
   TradeInFilters,
   TradeInRequest,
   TradeInStatus,
 } from '../types'
-import { formatPrice } from '../utils/format'
 import { isValidPhone, normalizePhone } from '../utils/phone'
-import { requireAdmin } from './auth'
-import { clone, createId, delay, mutate, nowISO, readDb, type Db } from './db'
+import { emit, supabase, unwrap } from './client'
 import { ApiError } from './errors'
-import { notify } from './notify'
+
+const COLUMNS =
+  'id, number, status, customer_name, customer_phone, device, photos, desired_product_id, desired_product_name, desired_product_price, comment, admin_estimate, admin_note, created_at, updated_at'
+
+interface TradeInRow {
+  id: string
+  number: number
+  status: TradeInStatus
+  customer_name: string
+  customer_phone: string
+  device: TradeInDevice
+  photos: string[]
+  desired_product_id: string | null
+  desired_product_name: string
+  desired_product_price: number | null
+  comment: string
+  admin_estimate: number | null
+  admin_note: string
+  created_at: string
+  updated_at: string
+}
+
+interface TradeInEventRow {
+  id: string
+  trade_in_id: string
+  type: TradeInEvent['type']
+  from_status: TradeInStatus | null
+  to_status: TradeInStatus | null
+  message: string
+  created_at: string
+}
+
+function fromRow(row: TradeInRow): TradeInRequest {
+  return {
+    id: row.id,
+    number: row.number,
+    status: row.status,
+    customerName: row.customer_name,
+    customerPhone: row.customer_phone,
+    device: row.device,
+    photos: row.photos ?? [],
+    desiredProductId: row.desired_product_id,
+    desiredProductName: row.desired_product_name,
+    desiredProductPrice: row.desired_product_price,
+    comment: row.comment,
+    adminEstimate: row.admin_estimate,
+    adminNote: row.admin_note,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
 
 /**
  * Допустимые переходы: new → evaluated → accepted | rejected → completed.
  * В `evaluated` заявку переводит только `evaluateTradeIn` (нужна сумма оценки).
- * Отказаться можно на любом шаге до завершения. `rejected` и `completed` — конечные.
  */
 const TRADE_IN_TRANSITIONS: Record<TradeInStatus, TradeInStatus[]> = {
   new: ['rejected'],
@@ -40,32 +86,6 @@ export function getAllowedTradeInStatuses(status: TradeInStatus): TradeInStatus[
 /** Можно ли сейчас поставить или изменить оценку. */
 export function canEvaluateTradeIn(status: TradeInStatus): boolean {
   return status === 'new' || status === 'evaluated'
-}
-
-function addEvent(
-  db: Db,
-  tradeIn: TradeInRequest,
-  type: TradeInEventType,
-  message: string,
-  fromStatus: TradeInStatus | null = null,
-  toStatus: TradeInStatus | null = null,
-): void {
-  const event: TradeInEvent = {
-    id: createId(),
-    tradeInId: tradeIn.id,
-    type,
-    fromStatus,
-    toStatus,
-    message,
-    createdAt: tradeIn.updatedAt,
-  }
-  db.tradeInEvents.push(event)
-}
-
-function findTradeIn(db: Db, id: string): TradeInRequest {
-  const tradeIn = db.tradeIns.find((t) => t.id === id)
-  if (!tradeIn) throw new ApiError('not_found', 'Заявка не найдена')
-  return tradeIn
 }
 
 function cleanDevice(device: TradeInDevice): TradeInDevice {
@@ -90,11 +110,9 @@ function cleanDevice(device: TradeInDevice): TradeInDevice {
 
 /**
  * Создаёт заявку на trade-in (доступно без входа). Склад не трогает.
- * Если указан `desiredProductId`, в заявке сохраняются название и цена этого товара.
+ * Если указан `desiredProductId`, база сохраняет в заявке название и цену этого товара.
  */
 export async function createTradeIn(input: CreateTradeInInput): Promise<TradeInRequest> {
-  await delay(400)
-
   const customerName = input.customerName.trim()
   const customerPhone = normalizePhone(input.customerPhone)
   if (!customerName) throw new ApiError('validation', 'Укажите ваше имя')
@@ -105,60 +123,72 @@ export async function createTradeIn(input: CreateTradeInInput): Promise<TradeInR
     throw new ApiError('validation', `Не больше ${shop.maxTradeInPhotos} фото`)
   }
 
-  const tradeIn = mutate(['tradeIns'], (db) => {
-    // Желаемый товар могли удалить или скрыть, пока клиент заполнял форму — тогда заявка идёт без него.
-    const desired = input.desiredProductId
-      ? db.products.find((p) => p.id === input.desiredProductId && p.isActive)
-      : undefined
-    const now = nowISO()
-    const created: TradeInRequest = {
-      id: createId(),
-      number: db.nextTradeInNumber,
-      status: 'new',
-      customerName,
-      customerPhone,
-      device,
-      photos,
-      desiredProductId: desired?.id ?? null,
-      desiredProductName: desired?.name ?? '',
-      desiredProductPrice: desired?.price ?? null,
-      comment: input.comment?.trim() ?? '',
-      adminEstimate: null,
-      adminNote: '',
-      createdAt: now,
-      updatedAt: now,
-    }
-    db.nextTradeInNumber += 1
-    db.tradeIns.push(created)
-    addEvent(db, created, 'created', 'Заявка создана', null, 'new')
-    return clone(created)
-  })
+  const result = unwrap(
+    await supabase.rpc('create_trade_in', {
+      p_customer_name: customerName,
+      p_customer_phone: customerPhone,
+      p_device: device,
+      p_photos: photos,
+      p_desired_product_id: input.desiredProductId ?? null,
+      p_comment: input.comment?.trim() ?? '',
+    }),
+    'Не удалось отправить заявку. Попробуйте ещё раз.',
+  ) as { trade_in_id: string; trade_in_number: number }[]
+  const created = result[0]
+  if (!created) throw new ApiError('storage', 'Не удалось отправить заявку. Попробуйте ещё раз.')
 
-  void notify({ type: 'trade_in_created', tradeIn })
-  return tradeIn
+  emit(['tradeIns'])
+  const now = new Date().toISOString()
+  return {
+    id: created.trade_in_id,
+    number: created.trade_in_number,
+    status: 'new',
+    customerName,
+    customerPhone,
+    device,
+    photos,
+    desiredProductId: input.desiredProductId ?? null,
+    desiredProductName: '',
+    desiredProductPrice: null,
+    comment: input.comment?.trim() ?? '',
+    adminEstimate: null,
+    adminNote: '',
+    createdAt: now,
+    updatedAt: now,
+  }
 }
 
-/** Заявки, новые сверху. Только для администратора. */
+/** Заявки, новые сверху. Только для администратора (RLS). */
 export async function listTradeIns(filters: TradeInFilters = {}): Promise<TradeInRequest[]> {
-  await delay()
-  requireAdmin()
-  const { tradeIns } = readDb()
-  const result = filters.status ? tradeIns.filter((t) => t.status === filters.status) : tradeIns
-  return clone(result.sort((a, b) => b.createdAt.localeCompare(a.createdAt)))
+  let query = supabase.from('trade_ins').select(COLUMNS).order('created_at', { ascending: false })
+  if (filters.status) query = query.eq('status', filters.status)
+  const rows = unwrap(await query, 'Не удалось загрузить заявки') as TradeInRow[]
+  return rows.map(fromRow)
 }
 
 export async function getTradeIn(id: string): Promise<TradeInRequest | null> {
-  await delay()
-  requireAdmin()
-  return clone(readDb().tradeIns.find((t) => t.id === id) ?? null)
+  const row = unwrap(await supabase.from('trade_ins').select(COLUMNS).eq('id', id).maybeSingle()) as TradeInRow | null
+  return row ? fromRow(row) : null
 }
 
 /** История заявки, старые события сверху. */
 export async function listTradeInEvents(tradeInId: string): Promise<TradeInEvent[]> {
-  await delay()
-  requireAdmin()
-  const events = readDb().tradeInEvents.filter((e) => e.tradeInId === tradeInId)
-  return clone(events.sort((a, b) => a.createdAt.localeCompare(b.createdAt)))
+  const rows = unwrap(
+    await supabase
+      .from('trade_in_events')
+      .select('id, trade_in_id, type, from_status, to_status, message, created_at')
+      .eq('trade_in_id', tradeInId)
+      .order('created_at'),
+  ) as TradeInEventRow[]
+  return rows.map((row) => ({
+    id: row.id,
+    tradeInId: row.trade_in_id,
+    type: row.type,
+    fromStatus: row.from_status,
+    toStatus: row.to_status,
+    message: row.message,
+    createdAt: row.created_at,
+  }))
 }
 
 /**
@@ -167,76 +197,30 @@ export async function listTradeInEvents(tradeInId: string): Promise<TradeInEvent
  * `note`, если передана, заменяет заметку администратора.
  */
 export async function evaluateTradeIn(id: string, estimate: number, note?: string): Promise<TradeInRequest> {
-  await delay()
-  requireAdmin()
   if (!Number.isInteger(estimate) || estimate <= 0) {
     throw new ApiError('validation', 'Оценка — целое число больше нуля')
   }
-  const { tradeIn, fromStatus } = mutate(['tradeIns'], (db) => {
-    const found = findTradeIn(db, id)
-    if (!canEvaluateTradeIn(found.status)) {
-      throw new ApiError(
-        'invalid_transition',
-        `Оценку нельзя изменить: заявка в статусе «${TRADE_IN_STATUS_LABELS[found.status]}»`,
-      )
-    }
-    const fromStatus = found.status
-    found.status = 'evaluated'
-    found.adminEstimate = estimate
-    if (note !== undefined) found.adminNote = note.trim()
-    found.updatedAt = nowISO()
-    addEvent(db, found, 'evaluated', `Оценка: ${formatPrice(estimate)}`, fromStatus, 'evaluated')
-    return { tradeIn: clone(found), fromStatus }
-  })
-  void notify({ type: 'trade_in_status_changed', tradeIn, fromStatus })
-  return tradeIn
+  const row = unwrap(
+    await supabase.rpc('evaluate_trade_in', { p_trade_in_id: id, p_estimate: estimate, p_note: note ?? null }),
+  ) as TradeInRow
+  emit(['tradeIns'])
+  return fromRow(row)
 }
 
-/**
- * Меняет статус: evaluated → accepted → completed, либо rejected на любом шаге до завершения.
- * Недопустимый переход → `ApiError('invalid_transition')`. Для оценки — `evaluateTradeIn`.
- */
+/** Меняет статус: evaluated → accepted → completed, либо rejected до завершения. */
 export async function updateTradeInStatus(id: string, status: TradeInStatus): Promise<TradeInRequest> {
-  await delay()
-  requireAdmin()
-  const { tradeIn, fromStatus } = mutate(['tradeIns'], (db) => {
-    const found = findTradeIn(db, id)
-    if (!TRADE_IN_TRANSITIONS[found.status].includes(status)) {
-      throw new ApiError(
-        'invalid_transition',
-        status === 'evaluated'
-          ? 'Чтобы оценить заявку, укажите сумму оценки'
-          : `Нельзя перевести заявку из статуса «${TRADE_IN_STATUS_LABELS[found.status]}» в «${TRADE_IN_STATUS_LABELS[status]}»`,
-      )
-    }
-    const fromStatus = found.status
-    found.status = status
-    found.updatedAt = nowISO()
-    addEvent(
-      db,
-      found,
-      'status_changed',
-      `Статус: ${TRADE_IN_STATUS_LABELS[fromStatus]} → ${TRADE_IN_STATUS_LABELS[status]}`,
-      fromStatus,
-      status,
-    )
-    return { tradeIn: clone(found), fromStatus }
-  })
-  void notify({ type: 'trade_in_status_changed', tradeIn, fromStatus })
-  return tradeIn
+  const row = unwrap(
+    await supabase.rpc('update_trade_in_status', { p_trade_in_id: id, p_status: status }),
+  ) as TradeInRow
+  emit(['tradeIns'])
+  return fromRow(row)
 }
 
 /** Сохраняет заметку администратора (клиент её не видит). */
 export async function setTradeInAdminNote(id: string, note: string): Promise<TradeInRequest> {
-  await delay()
-  requireAdmin()
-  return mutate(['tradeIns'], (db) => {
-    const found = findTradeIn(db, id)
-    const adminNote = note.trim()
-    if (found.adminNote === adminNote) return clone(found)
-    found.adminNote = adminNote
-    found.updatedAt = nowISO()
-    addEvent(db, found, 'note_updated', adminNote ? 'Заметка администратора изменена' : 'Заметка администратора удалена')
-    return clone(found)
-  })
+  const row = unwrap(
+    await supabase.rpc('set_trade_in_admin_note', { p_trade_in_id: id, p_note: note }),
+  ) as TradeInRow
+  emit(['tradeIns'])
+  return fromRow(row)
 }

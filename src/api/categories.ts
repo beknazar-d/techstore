@@ -1,8 +1,29 @@
 import type { Category, CategoryFilters, CategoryInput, SpecField } from '../types'
 import { slugify } from '../utils/slugify'
-import { requireAdmin } from './auth'
-import { clone, createId, delay, mutate, readDb, uniqueSlug } from './db'
+import { emit, supabase, uniqueSlug, unwrap } from './client'
 import { ApiError } from './errors'
+
+const COLUMNS = 'id, name, slug, sort_order, is_active, spec_fields'
+
+interface CategoryRow {
+  id: string
+  name: string
+  slug: string
+  sort_order: number
+  is_active: boolean
+  spec_fields: SpecField[]
+}
+
+function fromRow(row: CategoryRow): Category {
+  return {
+    id: row.id,
+    name: row.name,
+    slug: row.slug,
+    sortOrder: row.sort_order,
+    isActive: row.is_active,
+    specFields: row.spec_fields ?? [],
+  }
+}
 
 /** Проверяет и чистит шаблон характеристик. Пустой ключ строится из подписи. */
 function cleanSpecFields(fields: SpecField[]): SpecField[] {
@@ -30,89 +51,101 @@ function cleanSpecFields(fields: SpecField[]): SpecField[] {
   })
 }
 
-function bySortOrder(a: Category, b: Category): number {
-  return a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, 'ru')
-}
-
-/** Категории по порядку `sortOrder`. */
+/** Категории по порядку `sortOrder`. Аноним видит только активные (RLS). */
 export async function listCategories(filters: CategoryFilters = {}): Promise<Category[]> {
-  await delay()
-  const { categories } = readDb()
-  const result = filters.onlyActive ? categories.filter((c) => c.isActive) : categories
-  return clone(result.sort(bySortOrder))
+  let query = supabase.from('categories').select(COLUMNS).order('sort_order').order('name')
+  if (filters.onlyActive) query = query.eq('is_active', true)
+  const rows = unwrap(await query, 'Не удалось загрузить категории') as CategoryRow[]
+  return rows.map(fromRow)
 }
 
 /** Для клиентской части: находит только активную категорию. */
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
-  await delay()
-  return clone(readDb().categories.find((c) => c.slug === slug && c.isActive) ?? null)
+  const row = unwrap(
+    await supabase.from('categories').select(COLUMNS).eq('slug', slug).eq('is_active', true).maybeSingle(),
+  ) as CategoryRow | null
+  return row ? fromRow(row) : null
 }
 
-/** Находит любую категорию, в том числе скрытую. */
+/** Находит любую категорию, в том числе скрытую (скрытые видит только админ). */
 export async function getCategory(id: string): Promise<Category | null> {
-  await delay()
-  return clone(readDb().categories.find((c) => c.id === id) ?? null)
+  const row = unwrap(await supabase.from('categories').select(COLUMNS).eq('id', id).maybeSingle()) as CategoryRow | null
+  return row ? fromRow(row) : null
 }
 
 export async function createCategory(input: CategoryInput): Promise<Category> {
-  await delay()
-  requireAdmin()
   const name = input.name.trim()
   if (!name) throw new ApiError('validation', 'Укажите название категории')
   const specFields = cleanSpecFields(input.specFields)
 
-  return mutate(['categories'], (db) => {
-    const maxOrder = Math.max(0, ...db.categories.map((c) => c.sortOrder))
-    const category: Category = {
-      id: createId(),
-      name,
-      slug: uniqueSlug(slugify(input.slug?.trim() || name), db.categories.map((c) => c.slug)),
-      sortOrder: input.sortOrder ?? maxOrder + 1,
-      isActive: input.isActive ?? true,
-      specFields,
-    }
-    db.categories.push(category)
-    return clone(category)
-  })
+  let sortOrder = input.sortOrder
+  if (sortOrder === undefined) {
+    const last = unwrap(
+      await supabase.from('categories').select('sort_order').order('sort_order', { ascending: false }).limit(1),
+    ) as { sort_order: number }[]
+    sortOrder = (last[0]?.sort_order ?? 0) + 1
+  }
+
+  const row = unwrap(
+    await supabase
+      .from('categories')
+      .insert({
+        name,
+        slug: await uniqueSlug('categories', slugify(input.slug?.trim() || name)),
+        sort_order: sortOrder,
+        is_active: input.isActive ?? true,
+        spec_fields: specFields,
+      })
+      .select(COLUMNS)
+      .single(),
+    'Не удалось создать категорию',
+  ) as CategoryRow
+  emit(['categories'])
+  return fromRow(row)
 }
 
 export async function updateCategory(id: string, patch: Partial<CategoryInput>): Promise<Category> {
-  await delay()
-  requireAdmin()
   const name = patch.name?.trim()
   if (patch.name !== undefined && !name) throw new ApiError('validation', 'Укажите название категории')
-  const specFields = patch.specFields ? cleanSpecFields(patch.specFields) : undefined
 
-  return mutate(['categories'], (db) => {
-    const category = db.categories.find((c) => c.id === id)
-    if (!category) throw new ApiError('not_found', 'Категория не найдена')
-
-    if (name) category.name = name
-    if (patch.slug !== undefined) {
-      const others = db.categories.filter((c) => c.id !== id).map((c) => c.slug)
-      category.slug = uniqueSlug(slugify(patch.slug.trim() || category.name), others)
+  const changes: Record<string, unknown> = {}
+  if (name) changes.name = name
+  if (patch.slug !== undefined) {
+    let base = patch.slug.trim()
+    if (!base) {
+      const current = await getCategory(id)
+      if (!current) throw new ApiError('not_found', 'Категория не найдена')
+      base = name ?? current.name
     }
-    if (patch.sortOrder !== undefined) category.sortOrder = patch.sortOrder
-    if (patch.isActive !== undefined) category.isActive = patch.isActive
-    if (specFields) category.specFields = specFields
-    return clone(category)
-  })
+    changes.slug = await uniqueSlug('categories', slugify(base), id)
+  }
+  if (patch.sortOrder !== undefined) changes.sort_order = patch.sortOrder
+  if (patch.isActive !== undefined) changes.is_active = patch.isActive
+  if (patch.specFields) changes.spec_fields = cleanSpecFields(patch.specFields)
+
+  const row = unwrap(
+    await supabase.from('categories').update(changes).eq('id', id).select(COLUMNS).maybeSingle(),
+    'Не удалось сохранить категорию',
+  ) as CategoryRow | null
+  if (!row) throw new ApiError('not_found', 'Категория не найдена')
+  emit(['categories'])
+  return fromRow(row)
 }
 
 /** Удаляет категорию. Если в ней есть товары — `ApiError('category_not_empty')`. */
 export async function deleteCategory(id: string): Promise<void> {
-  await delay()
-  requireAdmin()
-  mutate(['categories'], (db) => {
-    const index = db.categories.findIndex((c) => c.id === id)
-    if (index === -1) throw new ApiError('not_found', 'Категория не найдена')
-    const count = db.products.filter((p) => p.categoryId === id).length
-    if (count > 0) {
-      throw new ApiError(
-        'category_not_empty',
-        `В категории есть товары (${count} шт.). Сначала перенесите или удалите их.`,
-      )
-    }
-    db.categories.splice(index, 1)
-  })
+  const { count, error } = await supabase
+    .from('products')
+    .select('id', { count: 'exact', head: true })
+    .eq('category_id', id)
+  if (error) throw new ApiError('storage', 'Не удалось проверить товары категории')
+  if (count && count > 0) {
+    throw new ApiError(
+      'category_not_empty',
+      `В категории есть товары (${count} шт.). Сначала перенесите или удалите их.`,
+    )
+  }
+  const rows = unwrap(await supabase.from('categories').delete().eq('id', id).select('id')) as { id: string }[]
+  if (rows.length === 0) throw new ApiError('not_found', 'Категория не найдена')
+  emit(['categories'])
 }

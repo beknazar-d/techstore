@@ -24,7 +24,4 @@ export const shop = {
   /** Максимум фото в заявке на trade-in. */
   maxTradeInPhotos: 5,
 
-  /** Демо-вход в админку. Только для локальной версии — потом Supabase Auth. */
-  demoAdminEmail: 'admin@phone-market.local',
-  demoAdminPassword: 'admin123',
 } as const
