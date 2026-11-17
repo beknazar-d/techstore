@@ -4,6 +4,7 @@ import { getErrorMessage, login } from '../../api'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { PageLoader } from '../../components/ui/Spinner'
+import { ThemeToggle } from '../../components/ui/ThemeToggle'
 import { shop } from '../../config/shop'
 import { useAdminSession } from '../../hooks/useAdminSession'
 import styles from './LoginPage.module.css'
@@ -45,6 +46,7 @@ export function LoginPage() {
 
   return (
     <div className={styles.screen}>
+      <ThemeToggle className={styles.themeToggle} />
       <div className={styles.card}>
         <div>
           <div className={styles.shopName}>{shop.name}</div>

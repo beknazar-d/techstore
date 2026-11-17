@@ -73,8 +73,11 @@ export function AdminLayout() {
 
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
-          <div className={styles.shopName}>{shop.name}</div>
-          <div className={styles.caption}>Админка</div>
+          <div>
+            <div className={styles.shopName}>{shop.name}</div>
+            <div className={styles.caption}>Админка</div>
+          </div>
+          <ThemeToggle />
         </div>
         <nav aria-label="Разделы админки" className={styles.sideNav}>
           {NAV_ITEMS.map((item) => {

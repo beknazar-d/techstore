@@ -60,7 +60,7 @@
 }
 
 .filterButton[data-active='true'] {
-  border-color: rgba(37, 99, 235, 0.25);
+  border-color: var(--color-ring);
   background: var(--color-primary-soft);
   color: var(--color-primary);
 }
