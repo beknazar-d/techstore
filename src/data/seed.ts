@@ -2,7 +2,20 @@
 // Цены в рублях. Фото нет — интерфейс показывает заглушку.
 
 import type { Db } from '../api/db'
-import type { Category, Order, OrderEvent, Product, ProductSpecs, SpecField, TradeInEvent, TradeInRequest, UsedInfo } from '../types'
+import type {
+  BotChat,
+  BotMessage,
+  BotSettings,
+  Category,
+  Order,
+  OrderEvent,
+  Product,
+  ProductSpecs,
+  SpecField,
+  TradeInEvent,
+  TradeInRequest,
+  UsedInfo,
+} from '../types'
 
 const MEMORY = ['64 ГБ', '128 ГБ', '256 ГБ', '512 ГБ', '1 ТБ']
 const RAM = ['4 ГБ', '6 ГБ', '8 ГБ', '12 ГБ', '16 ГБ', '24 ГБ', '32 ГБ']
@@ -648,6 +661,7 @@ export function createSeed(): Db {
     tradeInEvents: demo.tradeInEvents,
     nextOrderNumber: 1001 + demo.orders.length,
     nextTradeInNumber: 501 + demo.tradeIns.length,
+    ...createBotSeed(demo.orders, base),
   }
 }
 
@@ -734,4 +748,87 @@ function createDemoRequests(seeded: Product[], base: number) {
   ]
 
   return { orders, orderEvents, tradeIns, tradeInEvents }
+}
+
+/** Настройки бота по умолчанию: бот не подключён, ИИ и торг включены. */
+export function defaultBotSettings(now = new Date().toISOString()): BotSettings {
+  return {
+    connected: false,
+    tokenHint: '',
+    botUsername: '',
+    isEnabled: true,
+    groupId: '',
+    notify: { newOrder: true, orderStatus: true, newTradeIn: true, lowStock: true },
+    aiEnabled: true,
+    greeting: 'Здравствуйте! Я помощник магазина. Подскажу по наличию и ценам, помогу оформить заявку. Оплата — при получении.',
+    aiInstructions:
+      'Отвечай коротко и вежливо, на «вы». Цены и наличие бери только из каталога, не выдумывай. ' +
+      'Онлайн-оплаты нет — оплата при получении. Если не знаешь ответа — позови менеджера.',
+    allowBargaining: true,
+    allowOrders: true,
+    handoffToManager: true,
+    updatedAt: now,
+  }
+}
+
+/**
+ * Демо-переписка из Telegram, чтобы раздел «Чаты» не был пустым.
+ * `orders` — уже созданные заказы (чат может ссылаться на заказ).
+ */
+export function createBotSeed(orders: Order[], base = Date.now()) {
+  const ago = (minutes: number) => new Date(base - minutes * 60_000).toISOString()
+  const linkedOrder = orders.find((order) => order.id === 'order-demo-1003') ?? null
+
+  const messages: Array<Omit<BotMessage, 'id'> & { minutesAgo: number }> = [
+    // Чат 1: клиент торгуется ниже допустимого — бот позвал менеджера.
+    { chatId: 'chat-demo-1', sender: 'customer', text: 'Здравствуйте! Galaxy S24 на 256 есть в наличии?', minutesAgo: 14, createdAt: '' },
+    { chatId: 'chat-demo-1', sender: 'bot', text: 'Здравствуйте! Да, Samsung Galaxy S24 8/256 ГБ есть в наличии. Цена — 64 990 ₽, оплата при получении. Оформить заявку?', minutesAgo: 14, createdAt: '' },
+    { chatId: 'chat-demo-1', sender: 'customer', text: 'А за 55 000 отдадите? Заберу сегодня', minutesAgo: 12, createdAt: '' },
+    { chatId: 'chat-demo-1', sender: 'bot', text: 'Могу предложить 61 990 ₽ — это лучшая цена, которую я могу дать. Если хотите обсудить ещё, подключу менеджера.', minutesAgo: 12, createdAt: '' },
+    { chatId: 'chat-demo-1', sender: 'customer', text: 'Давайте менеджера', minutesAgo: 11, createdAt: '' },
+    { chatId: 'chat-demo-1', sender: 'customer', text: 'И можно ли сдать мой старый iPhone 12?', minutesAgo: 10, createdAt: '' },
+    // Чат 2: бот сам ответил и оформил заявку.
+    { chatId: 'chat-demo-2', sender: 'customer', text: 'Добрый вечер, нужен Galaxy S24 с доставкой на Профсоюзную', minutesAgo: 40, createdAt: '' },
+    { chatId: 'chat-demo-2', sender: 'bot', text: 'Добрый вечер! Galaxy S24 8/256 ГБ в наличии, 64 990 ₽. Подскажите, пожалуйста, имя, телефон и удобное время доставки.', minutesAgo: 39, createdAt: '' },
+    { chatId: 'chat-demo-2', sender: 'customer', text: 'Алексей, +7 916 123-45-67, завтра после 18', minutesAgo: 30, createdAt: '' },
+    { chatId: 'chat-demo-2', sender: 'bot', text: 'Готово! Заявка №1003 принята. Менеджер позвонит для подтверждения. Оплата при получении.', minutesAgo: 25, createdAt: '' },
+    // Чат 3: вопрос закрыт.
+    { chatId: 'chat-demo-3', sender: 'customer', text: 'Вы работаете в воскресенье?', minutesAgo: 1440, createdAt: '' },
+    { chatId: 'chat-demo-3', sender: 'bot', text: 'Да, мы работаем каждый день с 10:00 до 21:00.', minutesAgo: 1440, createdAt: '' },
+    { chatId: 'chat-demo-3', sender: 'customer', text: 'Спасибо!', minutesAgo: 1438, createdAt: '' },
+  ]
+
+  const chatMessages: BotMessage[] = messages.map(({ minutesAgo, ...message }, index) => ({
+    ...message,
+    id: `msg-demo-${index + 1}`,
+    createdAt: ago(minutesAgo),
+  }))
+
+  const last = (chatId: string) => {
+    const list = chatMessages.filter((message) => message.chatId === chatId)
+    return list[list.length - 1]
+  }
+
+  const chats: BotChat[] = [
+    {
+      id: 'chat-demo-1', telegramChatId: 500100201, customerName: 'Анна', telegramUsername: 'anna_m',
+      customerPhone: '', mode: 'manager', handoffReason: 'Клиент просит скидку ниже допустимой и спрашивает про trade-in',
+      orderId: null, unreadCount: 2,
+      lastMessageText: last('chat-demo-1').text, lastMessageAt: last('chat-demo-1').createdAt, createdAt: ago(14),
+    },
+    {
+      id: 'chat-demo-2', telegramChatId: 500100202, customerName: 'Алексей Смирнов', telegramUsername: 'alex_smirnov',
+      customerPhone: '+79161234567', mode: 'bot', handoffReason: '',
+      orderId: linkedOrder?.id ?? null, unreadCount: 0,
+      lastMessageText: last('chat-demo-2').text, lastMessageAt: last('chat-demo-2').createdAt, createdAt: ago(40),
+    },
+    {
+      id: 'chat-demo-3', telegramChatId: 500100203, customerName: 'Виктор', telegramUsername: '',
+      customerPhone: '', mode: 'closed', handoffReason: '',
+      orderId: null, unreadCount: 0,
+      lastMessageText: last('chat-demo-3').text, lastMessageAt: last('chat-demo-3').createdAt, createdAt: ago(1440),
+    },
+  ]
+
+  return { botSettings: defaultBotSettings(new Date(base).toISOString()), chats, chatMessages }
 }

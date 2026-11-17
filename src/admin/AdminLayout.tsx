@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { listOrders, listTradeIns, logout } from '../api'
+import { listChats, listOrders, listTradeIns, logout } from '../api'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { shop } from '../config/shop'
 import { useAdminSession } from '../hooks/useAdminSession'
@@ -7,29 +7,38 @@ import { useApiQuery } from '../hooks/useApiQuery'
 import { cn } from '../utils/cn'
 import styles from './AdminLayout.module.css'
 
-type CounterKey = 'orders' | 'tradeIns'
+type CounterKey = 'orders' | 'tradeIns' | 'chats'
 
 interface NavItem {
   label: string
   to: string
   icon: string
   counter?: CounterKey
+  /** Не показывать в нижней панели на телефоне (там место на 5 пунктов). */
+  desktopOnly?: boolean
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Заказы', to: '/admin/orders', icon: 'receipt_long', counter: 'orders' },
   { label: 'Trade-in', to: '/admin/trade-in', icon: 'swap_horiz', counter: 'tradeIns' },
+  { label: 'Чаты', to: '/admin/chats', icon: 'forum', counter: 'chats' },
   { label: 'Товары', to: '/admin/products', icon: 'inventory_2' },
   { label: 'Категории', to: '/admin/categories', icon: 'category' },
+  { label: 'Настройки', to: '/admin/settings', icon: 'settings', desktopOnly: true },
 ]
+
+const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) => !item.desktopOnly)
 
 export function AdminLayout() {
   const { session } = useAdminSession()
   const newOrders = useApiQuery(() => listOrders({ status: 'new' }), [], ['orders'])
   const newTradeIns = useApiQuery(() => listTradeIns({ status: 'new' }), [], ['tradeIns'])
+  const managerChats = useApiQuery(() => listChats({ mode: 'manager' }), [], ['chats'])
   const counters: Record<CounterKey, number> = {
     orders: newOrders.data?.length ?? 0,
     tradeIns: newTradeIns.data?.length ?? 0,
+    // Чаты, где клиент ждёт ответа человека.
+    chats: managerChats.data?.length ?? 0,
   }
 
   function handleLogout() {
@@ -45,6 +54,15 @@ export function AdminLayout() {
         </div>
         <div className={styles.actions}>
           <ThemeToggle />
+          <NavLink
+            to="/admin/settings"
+            aria-label="Настройки"
+            className={({ isActive }) => cn(styles.iconButton, isActive && styles.iconButtonActive)}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              settings
+            </span>
+          </NavLink>
           <button type="button" className={styles.iconButton} aria-label="Выйти" onClick={handleLogout}>
             <span className="material-symbols-outlined" aria-hidden="true">
               logout
@@ -98,7 +116,7 @@ export function AdminLayout() {
       </main>
 
       <nav aria-label="Разделы админки" className={styles.bottomNav}>
-        {NAV_ITEMS.map((item) => {
+        {BOTTOM_NAV_ITEMS.map((item) => {
           const count = item.counter ? counters[item.counter] : 0
           return (
             <NavLink

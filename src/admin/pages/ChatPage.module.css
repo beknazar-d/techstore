@@ -1,0 +1,205 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+.telegramLink,
+.phoneLink {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  margin-right: var(--space-3);
+}
+
+.telegramLink:hover,
+.phoneLink:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+
+.loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.header {
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.messagesContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.message {
+  display: flex;
+  gap: var(--space-2);
+  max-width: 80%;
+  width: fit-content;
+}
+
+.message.customer {
+  align-self: flex-start;
+}
+
+.message.bot,
+.message.manager {
+  align-self: flex-end;
+}
+
+.bubble {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  position: relative;
+}
+
+.bubble.customer {
+  background: var(--color-surface-recessed);
+  color: var(--color-text);
+}
+
+.bubble.bot {
+  background: var(--color-surface-strong);
+  color: var(--color-text);
+}
+
+.bubble.manager {
+  background: var(--color-primary-soft);
+  color: var(--color-text);
+}
+
+.sender {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.sender.bot .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.time {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+}
+
+.handoffNotice {
+  margin: var(--space-3) var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-warning-soft);
+  color: var(--color-warning-text);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.orderLink {
+  display: inline-block;
+  margin: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-warm);
+  color: var(--color-text);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.orderLink:hover {
+  background: var(--color-surface-recessed);
+}
+
+.modeButtons {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.formContainer {
+  position: sticky;
+  bottom: calc(var(--admin-nav-height) + env(safe-area-inset-bottom));
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3) 0;
+}
+
+.formContainer::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--color-border);
+}
+
+@media (min-width: 768px) {
+  .formContainer {
+    bottom: 0;
+  }
+
+  .formContainer::after {
+    display: none;
+  }
+}
+
+.formHint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-2);
+}
+
+.form {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+}
+
+.formTextarea {
+  flex: 1;
+  min-height: 48px;
+  resize: vertical;
+}
+
+.formButton {
+  flex-shrink: 0;
+}
+
+.errorMessage {
+  font-size: 12px;
+  color: var(--color-error-text);
+  margin-top: var(--space-1);
+}
+
+@media (min-width: 768px) {
+  .modeButtons {
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .form {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 var(--space-4);
+  }
+}

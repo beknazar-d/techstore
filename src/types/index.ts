@@ -267,3 +267,96 @@ export interface AdminSession {
   email: string
   loggedInAt: string
 }
+
+// ---------- Telegram-бот: настройки ----------
+
+/** О каких событиях бот пишет в группу менеджеров. */
+export interface BotNotifySettings {
+  newOrder: boolean
+  orderStatus: boolean
+  newTradeIn: boolean
+  lowStock: boolean
+}
+
+/**
+ * Настройки Telegram-бота (одна запись на магазин).
+ * Токен бота — секрет: фронтенд его не читает, видна только подсказка `tokenHint` (`…a1B2`).
+ * В Supabase-версии токен сохраняет Edge Function в свои секреты.
+ */
+export interface BotSettings {
+  /** Бот подключён (токен сохранён). */
+  connected: boolean
+  /** Последние 4 символа токена, если подключён. */
+  tokenHint: string
+  /** Имя бота без @, например `phone_market_bot`. */
+  botUsername: string
+  /** Бот принимает сообщения и отвечает (можно временно выключить, не удаляя токен). */
+  isEnabled: boolean
+  /** ID группы менеджеров для уведомлений, например `-1001234567890`. */
+  groupId: string
+  notify: BotNotifySettings
+  /** Бот отвечает клиентам с помощью ИИ. Выключено — только пересылает сообщения менеджерам. */
+  aiEnabled: boolean
+  /** Приветствие для новых клиентов. */
+  greeting: string
+  /** Инструкция для ИИ: тон, что можно обещать, о чём молчать. */
+  aiInstructions: string
+  /** Бот может торговаться, но не ниже `Product.minPrice`. */
+  allowBargaining: boolean
+  /** Бот может сам оформить заявку на товар (с проверкой склада). */
+  allowOrders: boolean
+  /** Отдавать разговор менеджеру, если клиент просит человека или ИИ не уверен. */
+  handoffToManager: boolean
+  updatedAt: string
+}
+
+/** Что админ меняет в настройках (без токена — он задаётся отдельно). */
+export type BotSettingsInput = Partial<Omit<BotSettings, 'connected' | 'tokenHint' | 'updatedAt'>>
+
+export interface ConnectBotInput {
+  /** Токен от @BotFather: `123456789:AA...`. */
+  token: string
+  botUsername: string
+}
+
+// ---------- Telegram-бот: чаты ----------
+
+/** Кто сейчас отвечает клиенту: бот (ИИ) или менеджер. `closed` — разговор завершён. */
+export type ChatMode = 'bot' | 'manager' | 'closed'
+
+export type ChatSender = 'customer' | 'bot' | 'manager'
+
+/** Переписка с клиентом в Telegram (таблица bot_chats). */
+export interface BotChat {
+  id: string
+  /** chat_id в Telegram. */
+  telegramChatId: number
+  customerName: string
+  /** username в Telegram без @, если есть. */
+  telegramUsername: string
+  /** Телефон, если клиент поделился. */
+  customerPhone: string
+  mode: ChatMode
+  /** Почему бот передал разговор менеджеру. */
+  handoffReason: string
+  /** Заказ, оформленный в этом чате. */
+  orderId: string | null
+  /** Сообщения клиента, которые админ ещё не открыл. */
+  unreadCount: number
+  lastMessageText: string
+  lastMessageAt: string
+  createdAt: string
+}
+
+/** Сообщение в чате (таблица bot_messages). */
+export interface BotMessage {
+  id: string
+  chatId: string
+  sender: ChatSender
+  text: string
+  createdAt: string
+}
+
+export interface ChatFilters {
+  mode?: ChatMode
+}

@@ -3,8 +3,18 @@
 // При переходе на Supabase этот файл удаляется, а функции в соседних файлах
 // получают новую реализацию с теми же сигнатурами.
 
-import { createSeed } from '../data/seed'
-import type { Category, Order, OrderEvent, Product, TradeInEvent, TradeInRequest } from '../types'
+import { createBotSeed, createSeed } from '../data/seed'
+import type {
+  BotChat,
+  BotMessage,
+  BotSettings,
+  Category,
+  Order,
+  OrderEvent,
+  Product,
+  TradeInEvent,
+  TradeInRequest,
+} from '../types'
 import { ApiError } from './errors'
 
 /** Версия в ключе: при несовместимом изменении структуры меняем v1 → v2, и данные пересоздаются. */
@@ -19,12 +29,15 @@ export interface Db {
   tradeInEvents: TradeInEvent[]
   nextOrderNumber: number
   nextTradeInNumber: number
+  botSettings: BotSettings
+  chats: BotChat[]
+  chatMessages: BotMessage[]
 }
 
 /** «Таблицы», об изменении которых узнают подписчики. */
-export type DbTable = 'categories' | 'products' | 'orders' | 'tradeIns'
+export type DbTable = 'categories' | 'products' | 'orders' | 'tradeIns' | 'chats' | 'botSettings'
 
-const ALL_TABLES: DbTable[] = ['categories', 'products', 'orders', 'tradeIns']
+const ALL_TABLES: DbTable[] = ['categories', 'products', 'orders', 'tradeIns', 'chats', 'botSettings']
 
 type Listener = (tables: DbTable[]) => void
 
@@ -49,6 +62,22 @@ function isDb(value: unknown): value is Db {
 }
 
 /**
+ * Данные, сохранённые до появления Telegram-бота, дополняем демо-чатами и настройками,
+ * а не пересоздаём базу — товары и заказы админа остаются.
+ */
+function upgradeDb(db: Db): Db {
+  const raw = db as Partial<Db>
+  if (raw.botSettings && Array.isArray(raw.chats) && Array.isArray(raw.chatMessages)) return db
+  const bot = createBotSeed(db.orders)
+  return {
+    ...db,
+    botSettings: raw.botSettings ?? bot.botSettings,
+    chats: Array.isArray(raw.chats) ? raw.chats : bot.chats,
+    chatMessages: Array.isArray(raw.chatMessages) ? raw.chatMessages : bot.chatMessages,
+  }
+}
+
+/**
  * Читает базу. Каждый раз заново из localStorage, чтобы видеть изменения из других вкладок
  * (клиент оформил заказ — админка в соседней вкладке получает свежий остаток).
  */
@@ -58,7 +87,7 @@ export function readDb(): Db {
     const raw = localStorage.getItem(DB_KEY)
     if (raw) {
       const parsed: unknown = JSON.parse(raw)
-      if (isDb(parsed)) return parsed
+      if (isDb(parsed)) return upgradeDb(parsed)
     }
   } catch {
     // Битый JSON или localStorage недоступен — ниже создадим демо-данные.

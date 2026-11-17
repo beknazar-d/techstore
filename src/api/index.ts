@@ -35,6 +35,19 @@ export {
   getAllowedOrderStatuses,
 } from './orders'
 export {
+  getBotSettings,
+  updateBotSettings,
+  connectBot,
+  disconnectBot,
+  sendTestNotification,
+  listChats,
+  getChat,
+  listChatMessages,
+  sendChatMessage,
+  setChatMode,
+  markChatRead,
+} from './bot'
+export {
   createTradeIn,
   listTradeIns,
   getTradeIn,

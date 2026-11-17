@@ -1,4 +1,6 @@
 import type {
+  ChatMode,
+  ChatSender,
   DeliveryType,
   DeviceGrade,
   OrderSource,
@@ -67,3 +69,17 @@ export const TRADE_IN_DEVICE_CATEGORY_LABELS: Record<TradeInDeviceCategory, stri
 }
 
 export const TRADE_IN_DEVICE_CATEGORIES: TradeInDeviceCategory[] = ['smartphone', 'laptop', 'watch', 'other']
+
+export const CHAT_MODE_LABELS: Record<ChatMode, string> = {
+  bot: 'Отвечает бот',
+  manager: 'Нужен менеджер',
+  closed: 'Закрыт',
+}
+
+export const CHAT_MODES: ChatMode[] = ['manager', 'bot', 'closed']
+
+export const CHAT_SENDER_LABELS: Record<ChatSender, string> = {
+  customer: 'Клиент',
+  bot: 'Бот',
+  manager: 'Менеджер',
+}
