@@ -2,6 +2,14 @@
 
 Новые записи — сверху. Формат: дата, раздел, что сделано, ключевые файлы, решения, что дальше.
 
+## 2026-11-17 — Переход на Supabase и приём сообщений Telegram-бота
+
+- `src/api/` переписан на supabase-js (`src/lib/supabase.ts`, общий код — `src/api/client.ts`: ошибки HINT → ApiError, Realtime-подписки). `db.ts` и `notify.ts` удалены. Вход — Supabase Auth + `admins`.
+- Бот: миграция `20261117130100_telegram_bot.sql` (RPC `bot_receive_message`, `bot_record_outgoing`, только service_role); Edge Functions `telegram-webhook` (проверка секрета-заголовка = HMAC от токена) и `telegram-admin` (connect / disconnect / test / send). В «Настройках» токен больше не вводится — секрет `TELEGRAM_BOT_TOKEN` в Supabase.
+- Временно: фото trade-in как data URL (`20261117130000_trade_in_photos_interim.sql`) — до R2.
+- Проверено локально (Docker): 50 сценариев API через настоящий `src/api/` + вебхук/админ-функция. Миграции применены к боевой базе, функции развёрнуты.
+- Осталось: аккаунт админа в боевом Auth + строка в `admins`; секрет `TELEGRAM_BOT_TOKEN`; каталог в боевой базе (пустая); push фронтенда; ИИ-ответы и уведомления в группу; загрузка фото в R2.
+
 ## 2026-11-17 — Себестоимость, статистика, схема Supabase
 
 - Себестоимость: `costPrice` у товара (поле в форме товара, видит только админ, показывается наценка) и снимок `costPrice` в заказе — прибыль считается по цене закупки на момент заявки.
