@@ -73,7 +73,8 @@ Fable раздаёт задачи остальным агентам:
 - Склад, заказы, trade-in, статистика — функции базы (RPC); RLS на всех таблицах.
 - Вход в админку — Supabase Auth + таблица `admins` (строку добавляет Fable или пользователь).
 - Telegram: Edge Functions `telegram-webhook` (сообщения клиентов → «Чаты») и `telegram-admin`
-  (подключение, ответ менеджера, тест группы). Токен — секрет `TELEGRAM_BOT_TOKEN`.
+  (подключение, ответ менеджера, тест группы). Токен админ вставляет в «Настройках»,
+  он хранится зашифрованным в Supabase Vault (RPC `bot_token_*`, только service_role).
   ИИ-ответов и уведомлений в группу о заказах пока нет — следующий шаг.
 - Фото — **временно** сжатый data URL в базе (миграция `trade_in_photos_interim`). Дальше — R2.
 - `src/data/seed.ts` → `supabase/seed.sql` только для локальной базы (`supabase db reset`).
@@ -112,8 +113,10 @@ Fable раздаёт задачи остальным агентам:
   (Worker → Settings → Build → Variables), а не в репозитории.
 - **Supabase:** проект `zicvjjxrkpwcwtiepqdq` привязан к репозиторию (GitHub-интеграция).
   `supabase/config.toml` содержит боевые настройки входа — не возвращай туда localhost-значения.
-- **Секреты** (ключ Telegram-бота, ключи R2, service role Supabase) — только в секретах
-  Edge Functions. Во фронтенде — только `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`.
+- **Секреты** (ключи R2, service role Supabase) — только в секретах Edge Functions.
+  Токен Telegram-бота — в Supabase Vault: админ вводит его на сайте, Edge Function
+  `telegram-admin` проверяет и сохраняет, обратно во фронтенд он не возвращается.
+  Во фронтенде — только `VITE_SUPABASE_URL` и `VITE_SUPABASE_ANON_KEY`.
 
 ## Модель данных (Supabase)
 
@@ -157,8 +160,8 @@ Fable раздаёт задачи остальным агентам:
 
 **bot_settings** — одна строка: настройки Telegram-бота (имя бота, ID группы менеджеров,
 какие уведомления слать, приветствие, инструкция для ИИ, разрешён ли торг, может ли бот
-оформлять заявки, передавать ли разговор менеджеру). Токен бота сюда НЕ пишется — только
-в секреты Edge Functions; в таблице лишь последние 4 символа для показа.
+оформлять заявки, передавать ли разговор менеджеру). Токен бота сюда НЕ пишется — он
+в Supabase Vault; в таблице лишь последние 4 символа для показа.
 
 **bot_chats** — переписка с клиентом в Telegram: `telegram_chat_id`, имя, username, телефон,
 `mode` (`bot` | `manager` | `closed` — кто отвечает), `handoff_reason`, `order_id`,

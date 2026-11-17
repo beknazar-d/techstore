@@ -52,10 +52,11 @@ function describe(message: TgMessage): string {
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('ok')
 
-  const token = botToken()
-  if (!token) return new Response('bot token is not configured', { status: 503 })
-
   const secret = req.headers.get('x-telegram-bot-api-secret-token') ?? ''
+  let token = await botToken()
+  // Бота могли только что подключить или сменить токен — перечитываем Vault, если секрет не сошёлся.
+  if (!token || !safeEqual(secret, await webhookSecret(token))) token = await botToken(true)
+  if (!token) return new Response('bot is not connected', { status: 503 })
   if (!safeEqual(secret, await webhookSecret(token))) {
     return new Response('forbidden', { status: 403 })
   }

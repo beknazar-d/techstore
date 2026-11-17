@@ -1,18 +1,31 @@
 // Общий код Edge Functions для Telegram-бота.
-// Токен бота — только в секретах Edge Functions (TELEGRAM_BOT_TOKEN), в базу и во фронтенд не попадает.
+// Токен бота админ вводит в «Настройках»; он хранится зашифрованным в Supabase Vault
+// (RPC bot_token_get/set/clear — только service_role). Во фронтенд токен не возвращается.
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-
-export function botToken(): string | null {
-  const token = Deno.env.get('TELEGRAM_BOT_TOKEN')?.trim()
-  return token ? token : null
-}
 
 /** Клиент с правами service_role — в обход RLS. Только внутри Edge Functions. */
 export function adminDb() {
   return createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
     auth: { persistSession: false, autoRefreshToken: false },
   })
+}
+
+/** Кэш токена в памяти экземпляра функции, чтобы вебхук не читал Vault на каждое сообщение. */
+let cachedToken: { value: string | null; until: number } | null = null
+const TOKEN_TTL_MS = 30_000
+
+export async function botToken(fresh = false): Promise<string | null> {
+  if (!fresh && cachedToken && cachedToken.until > Date.now()) return cachedToken.value
+  const { data, error } = await adminDb().rpc('bot_token_get')
+  if (error) throw error
+  const value = typeof data === 'string' && data.trim() ? data.trim() : null
+  cachedToken = { value, until: Date.now() + TOKEN_TTL_MS }
+  return value
+}
+
+export function forgetBotToken(): void {
+  cachedToken = null
 }
 
 /**
@@ -62,7 +75,7 @@ export async function tg<T = unknown>(token: string, method: string, body: Recor
     const code = data?.error_code ?? response.status
     const description = data?.description ?? 'нет ответа'
     let message = `Telegram: ${description}`
-    if (code === 401 || code === 404) message = 'Telegram не принял токен бота. Проверьте секрет TELEGRAM_BOT_TOKEN.'
+    if (code === 401 || code === 404) message = 'Telegram не принял токен бота. Скопируйте токен из @BotFather ещё раз.'
     else if (code === 403) message = 'Telegram: бот заблокирован пользователем или его нет в группе'
     else if (/chat not found/i.test(description)) message = 'Telegram: чат не найден. Проверьте ID группы и что бот в ней есть.'
     throw new TelegramError(message, code)

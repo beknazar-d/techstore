@@ -1,15 +1,25 @@
 // Telegram-бот: настройки и переписка с клиентами. Всё доступно только администратору.
 //
-//   - Токен бота хранится только в секрете Edge Functions TELEGRAM_BOT_TOKEN.
-//     connectBot → Edge Function `telegram-admin`: проверяет токен (getMe), ставит webhook.
+//   - Токен бота админ вставляет в «Настройках». connectBot → Edge Function `telegram-admin`:
+//     проверяет токен (getMe), хранит его зашифрованным в Supabase Vault, ставит webhook.
+//     Обратно сайт получает только последние 4 символа.
 //   - Сообщения клиентов принимает Edge Function `telegram-webhook` и пишет в bot_chats / bot_messages.
 //   - sendChatMessage → `telegram-admin` (sendMessage в Telegram + запись в переписку).
 
 import { FunctionsHttpError } from '@supabase/supabase-js'
-import type { BotChat, BotMessage, BotSettings, BotSettingsInput, ChatFilters, ChatMode } from '../types'
+import type {
+  BotChat,
+  BotMessage,
+  BotSettings,
+  BotSettingsInput,
+  ChatFilters,
+  ChatMode,
+  ConnectBotInput,
+} from '../types'
 import { emit, supabase, unwrap } from './client'
 import { ApiError, type ApiErrorCode } from './errors'
 
+const TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,}$/
 const USERNAME_RE = /^[A-Za-z][A-Za-z0-9_]{3,31}$/
 const GROUP_ID_RE = /^-?\d{5,20}$/
 const MAX_GREETING = 1000
@@ -133,7 +143,7 @@ export async function getBotSettings(): Promise<BotSettings> {
   return settingsFromRow(row)
 }
 
-/** Меняет настройки бота. Токен здесь не задаётся — он в секретах Edge Functions. */
+/** Меняет настройки бота. Токен здесь не задаётся — для него `connectBot`. */
 export async function updateBotSettings(input: BotSettingsInput): Promise<BotSettings> {
   const changes: Record<string, unknown> = {}
   if (input.botUsername !== undefined) changes.bot_username = cleanUsername(input.botUsername)
@@ -177,16 +187,20 @@ export async function updateBotSettings(input: BotSettingsInput): Promise<BotSet
 }
 
 /**
- * Подключает бота: сервер берёт токен из секрета TELEGRAM_BOT_TOKEN, проверяет его
- * и направляет сообщения бота на сайт (webhook). Токен во фронтенд не попадает.
+ * Подключает бота по токену от @BotFather (или меняет токен). Сервер проверяет токен,
+ * сохраняет его в Vault и направляет сообщения бота на сайт (webhook).
  */
-export async function connectBot(): Promise<BotSettings> {
-  await callBotFunction({ action: 'connect' })
+export async function connectBot(input: ConnectBotInput): Promise<BotSettings> {
+  const token = input.token.trim()
+  if (!TOKEN_RE.test(token)) {
+    throw new ApiError('validation', 'Токен не похож на токен от @BotFather. Он выглядит так: 123456789:AAH…')
+  }
+  await callBotFunction({ action: 'connect', token })
   emit(['botSettings'])
   return getBotSettings()
 }
 
-/** Отключает бота: сообщения перестают приходить на сайт. Настройки и переписка остаются. */
+/** Отключает бота: токен удаляется с сервера, сообщения перестают приходить на сайт. Настройки и переписка остаются. */
 export async function disconnectBot(): Promise<BotSettings> {
   await callBotFunction({ action: 'disconnect' })
   emit(['botSettings'])

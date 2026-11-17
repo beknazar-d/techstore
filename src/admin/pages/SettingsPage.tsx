@@ -200,6 +200,7 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
 export function SettingsPage() {
   const { data, reload } = useApiQuery(() => getBotSettings(), [], ['botSettings'])
 
+  const [connectToken, setConnectToken] = useState('')
   const [connectLoading, setConnectLoading] = useState(false)
   const [connectError, setConnectError] = useState('')
 
@@ -221,7 +222,8 @@ export function SettingsPage() {
     setConnectLoading(true)
     setConnectError('')
     try {
-      await connectBot()
+      await connectBot({ token: connectToken })
+      setConnectToken('')
       await reload()
     } catch (err) {
       setConnectError(getErrorMessage(err))
@@ -264,26 +266,38 @@ export function SettingsPage() {
         {!data.connected ? (
           <div className={styles.connectBlock}>
             <ol className={styles.stepsList}>
-              <li>Откройте @BotFather в Telegram, выберите бота и скопируйте токен (/mybots → API Token)</li>
-              <li>
-                В Supabase откройте Edge Functions → Secrets и добавьте секрет <code>TELEGRAM_BOT_TOKEN</code> со
-                значением токена
-              </li>
+              <li>Откройте @BotFather в Telegram → /mybots → выберите бота → API Token</li>
+              <li>Скопируйте токен и вставьте ниже</li>
               <li>Нажмите «Подключить бота» — сообщения, которые пишут боту, начнут приходить в раздел «Чаты»</li>
             </ol>
 
-            <p className={styles.demoText}>Токен хранится только на сервере, сайт его не видит.</p>
+            <div className={styles.connectForm}>
+              <Input
+                label="Токен бота"
+                type="password"
+                autoComplete="off"
+                placeholder="123456789:AAH…"
+                hint="Токен хранится зашифрованным на сервере, сайт его больше не показывает"
+                value={connectToken}
+                onChange={(e) => setConnectToken(e.target.value)}
+              />
 
-            {connectError && (
-              <p className={styles.connectError} role="alert">
-                {connectError}
-              </p>
-            )}
+              {connectError && (
+                <p className={styles.connectError} role="alert">
+                  {connectError}
+                </p>
+              )}
 
-            <div>
-              <Button icon="link" onClick={handleConnect} loading={connectLoading}>
-                Подключить бота
-              </Button>
+              <div>
+                <Button
+                  icon="link"
+                  onClick={handleConnect}
+                  loading={connectLoading}
+                  disabled={!connectToken.trim()}
+                >
+                  Подключить бота
+                </Button>
+              </div>
             </div>
           </div>
         ) : (
