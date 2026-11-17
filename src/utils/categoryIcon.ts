@@ -1,10 +1,13 @@
-/** Иконки Material Symbols для категорий из демо-набора, по slug. */
+/** Иконки Material Symbols для категорий по slug. */
 const CATEGORY_ICONS: Record<string, string> = {
   smartfony: 'smartphone',
   noutbuki: 'laptop_mac',
   naushniki: 'headphones',
   'smart-chasy': 'watch',
   'feny-i-staylery': 'air',
+  'feny-dyson': 'air',
+  chekhly: 'phone_iphone',
+  zaryadki: 'battery_charging_full',
   pylesosy: 'vacuum',
   aksessuary: 'cable',
 }
