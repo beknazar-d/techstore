@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { listCategories, listProducts } from '../api'
 import { ProductGrid } from '../components/product/ProductGrid'
+import { Button } from '../components/ui/Button'
 import { Chips } from '../components/ui/Chips'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
@@ -30,8 +31,8 @@ export function CatalogPage() {
     return 'all'
   }, [searchParams])
 
-  const { data: categories } = useApiQuery(() => listCategories({ onlyActive: true }), [], ['categories'])
-  const { data: products } = useApiQuery(
+  const categoriesQuery = useApiQuery(() => listCategories({ onlyActive: true }), [], ['categories'])
+  const productsQuery = useApiQuery(
     () =>
       listProducts({
         onlyActive: true,
@@ -41,6 +42,9 @@ export function CatalogPage() {
     [categorySlug, currentCondition],
     ['products', 'categories'],
   )
+  const categories = categoriesQuery.data
+  const products = productsQuery.data
+  const loadError = categoriesQuery.error ?? productsQuery.error
   const loading = categories === undefined || products === undefined
 
   const selectedCategory = useMemo(
@@ -62,6 +66,33 @@ export function CatalogPage() {
   const subtitle = selectedCategory
     ? t.catalog.leadCategory
     : t.catalog.lead
+
+  // Ошибка загрузки — показываем её, а не бесконечный спиннер.
+  if (loading && loadError) {
+    return (
+      <main className={styles.page}>
+        <EmptyState
+          tone="error"
+          icon="cloud_off"
+          title={t.catalog.loadErrorTitle}
+          text={t.catalog.loadErrorText}
+          action={
+            <Button
+              type="button"
+              variant="secondary"
+              icon="refresh"
+              onClick={() => {
+                categoriesQuery.reload()
+                productsQuery.reload()
+              }}
+            >
+              {t.common.retry}
+            </Button>
+          }
+        />
+      </main>
+    )
+  }
 
   if (loading) {
     return (

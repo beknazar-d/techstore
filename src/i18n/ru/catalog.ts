@@ -14,6 +14,8 @@ export const catalog = {
   emptyTitle: 'Товаров по фильтру не найдено',
   emptyText: 'Попробуйте выбрать другую категорию или состояние товара.',
   showAll: 'Показать всё',
+  loadErrorTitle: 'Не удалось загрузить каталог',
+  loadErrorText: 'Проверьте интернет и попробуйте ещё раз.',
 }
 
 export type CatalogMessages = typeof catalog

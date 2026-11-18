@@ -16,4 +16,6 @@ export const catalog: CatalogMessages = {
   emptyTitle: 'Бул чыпка боюнча товар табылган жок',
   emptyText: 'Башка категорияны же товардын абалын тандап көрүңүз.',
   showAll: 'Баарын көрсөтүү',
+  loadErrorTitle: 'Каталогду жүктөө мүмкүн болгон жок',
+  loadErrorText: 'Интернетти текшерип, кайра аракет кылыңыз.',
 }
