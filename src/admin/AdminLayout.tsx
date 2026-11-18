@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { listChats, listOrders, listTradeIns, logout } from '../api'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
+import { LanguageSwitcher } from '../components/ui/LanguageSwitcher'
 import { shop } from '../config/shop'
 import { useAdminSession } from '../hooks/useAdminSession'
 import { useApiQuery } from '../hooks/useApiQuery'
@@ -55,6 +56,7 @@ export function AdminLayout() {
           <div className={styles.caption}>Админка</div>
         </div>
         <div className={styles.actions}>
+          <LanguageSwitcher />
           <ThemeToggle />
           <NavLink
             to="/admin/settings"
@@ -79,7 +81,10 @@ export function AdminLayout() {
             <div className={styles.shopName}>{shop.name}</div>
             <div className={styles.caption}>Админка</div>
           </div>
-          <ThemeToggle />
+          <div className={styles.brandActions}>
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
         </div>
         <nav aria-label="Разделы админки" className={styles.sideNav}>
           {NAV_ITEMS.map((item) => {

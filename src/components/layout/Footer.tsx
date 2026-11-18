@@ -2,28 +2,30 @@ import { Link } from 'react-router-dom'
 import { shop } from '../../config/shop'
 import { formatPhone, telHref } from '../../utils/phone'
 import { telegramHref, whatsappHref } from '../../utils/links'
+import { useT } from '../../i18n'
 import styles from './Footer.module.css'
 
 const currentYear = new Date().getFullYear()
 
 export function Footer() {
+  const t = useT()
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
         <div className={styles.grid}>
           <div>
             <p className={styles.brand}>{shop.name}</p>
-            <p className={styles.text}>{shop.tagline}</p>
-            <p className={styles.text}>Оплата при получении. Без предоплаты.</p>
+            <p className={styles.text}>{t.layout.tagline}</p>
+            <p className={styles.text}>{t.layout.payOnDelivery}</p>
           </div>
           <div>
-            <h2 className={styles.title}>Магазин</h2>
+            <h2 className={styles.title}>{t.layout.shopTitle}</h2>
             <p className={styles.text}>{shop.city}</p>
             <p className={styles.text}>{shop.pickupAddress}</p>
-            <p className={styles.text}>{shop.workingHours}</p>
+            <p className={styles.text}>{t.layout.workingHours}</p>
           </div>
           <div>
-            <h2 className={styles.title}>Связь</h2>
+            <h2 className={styles.title}>{t.layout.contactsTitle}</h2>
             <a href={telHref(shop.phone)} className={styles.phone}>
               {formatPhone(shop.phone)}
             </a>
@@ -37,11 +39,11 @@ export function Footer() {
             </div>
           </div>
           <div>
-            <h2 className={styles.title}>Покупателям</h2>
+            <h2 className={styles.title}>{t.layout.customersTitle}</h2>
             <ul className={styles.links}>
-              <li><Link to="/catalog" className={styles.link}>Каталог</Link></li>
-              <li><Link to="/catalog?condition=used" className={styles.link}>Б/У техника</Link></li>
-              <li><Link to="/trade-in" className={styles.link}>Trade-in</Link></li>
+              <li><Link to="/catalog" className={styles.link}>{t.layout.catalog}</Link></li>
+              <li><Link to="/catalog?condition=used" className={styles.link}>{t.layout.usedDevices}</Link></li>
+              <li><Link to="/trade-in" className={styles.link}>{t.layout.tradeIn}</Link></li>
             </ul>
           </div>
         </div>
