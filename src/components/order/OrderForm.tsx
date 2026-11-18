@@ -10,6 +10,7 @@ import { cn } from '../../utils/cn'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
 import { Textarea } from '../ui/Textarea'
+import { useT } from '../../i18n'
 import styles from './OrderForm.module.css'
 
 interface OrderFormProps {
@@ -32,6 +33,7 @@ const IDS = {
 }
 
 export function OrderForm({ product, onSuccess }: OrderFormProps) {
+  const t = useT().order
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [quantity, setQuantity] = useState(1)
@@ -48,7 +50,7 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
   const [submitting, setSubmitting] = useState(false)
 
   if (product.stock <= 0) {
-    return <p className={styles.empty}>Товара нет в наличии</p>
+    return <p className={styles.empty}>{t.noStock}</p>
   }
 
   const canGeo = 'geolocation' in navigator
@@ -66,8 +68,8 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
         setGeoState('error')
         setGeoError(
           error.code === 1
-            ? 'Доступ к геолокации запрещён. Разрешите его в настройках браузера или укажите адрес.'
-            : 'Не удалось определить местоположение. Укажите адрес вручную.',
+            ? t.geoDenied
+            : t.geoFailed,
         )
       },
       { enableHighAccuracy: true, timeout: 10000 },
@@ -79,10 +81,10 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
     if (submitting) return
 
     const next: Errors = {}
-    if (!customerName.trim()) next.name = 'Укажите ваше имя'
-    if (!isValidPhone(customerPhone)) next.phone = 'Укажите корректный номер телефона'
+    if (!customerName.trim()) next.name = t.errName
+    if (!isValidPhone(customerPhone)) next.phone = t.errPhone
     if (deliveryType === 'delivery' && !address.trim() && !location) {
-      next.address = 'Укажите адрес или отправьте геолокацию'
+      next.address = t.errAddress
     }
     setErrors(next)
     const firstId = next.name ? IDS.name : next.phone ? IDS.phone : next.address ? IDS.address : null
@@ -118,10 +120,10 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
     <form className={styles.form} noValidate onSubmit={handleSubmit}>
       <Input
         id={IDS.name}
-        label="Ваше имя"
+        label={t.name}
         required
         autoComplete="name"
-        placeholder="Как к вам обращаться"
+        placeholder={t.namePlaceholder}
         value={customerName}
         error={errors.name}
         onChange={(e) => {
@@ -131,14 +133,14 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
       />
       <Input
         id={IDS.phone}
-        label="Телефон"
+        label={t.phone}
         required
         type="tel"
         inputMode="tel"
         autoComplete="tel"
         icon="call"
         placeholder="+7 900 000-00-00"
-        hint="Позвоним, чтобы подтвердить заявку"
+        hint={t.phoneHint}
         value={customerPhone}
         error={errors.phone}
         onChange={(e) => {
@@ -148,12 +150,12 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
       />
 
       <div className={styles.quantity}>
-        <span className={styles.groupLabel}>Количество</span>
+        <span className={styles.groupLabel}>{t.quantity}</span>
         <div className={styles.quantityRow}>
           <button
             type="button"
             className={styles.stepper}
-            aria-label="Уменьшить количество"
+            aria-label={t.decrease}
             disabled={quantity <= 1}
             onClick={() => setQuantity((q) => Math.max(1, q - 1))}
           >
@@ -165,18 +167,18 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
           <button
             type="button"
             className={styles.stepper}
-            aria-label="Увеличить количество"
+            aria-label={t.increase}
             disabled={quantity >= product.stock}
             onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
           >
             +
           </button>
-          <span className={styles.stockNote}>В наличии: {product.stock} шт.</span>
+          <span className={styles.stockNote}>{t.inStock(product.stock)}</span>
         </div>
       </div>
 
       <fieldset className={styles.fieldset}>
-        <legend className={styles.groupLabel}>Способ получения</legend>
+        <legend className={styles.groupLabel}>{t.method}</legend>
         <div className={styles.options}>
           <label className={cn(styles.option, deliveryType === 'pickup' && styles.optionSelected)}>
             <input
@@ -188,7 +190,7 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
               onChange={() => setDeliveryType('pickup')}
             />
             <span className={styles.optionText}>
-              <span className={styles.optionTitle}>Самовывоз</span>
+              <span className={styles.optionTitle}>{t.pickup}</span>
               <span className={styles.optionHint}>{shop.pickupAddress}</span>
               <span className={styles.optionHint}>{shop.workingHours}</span>
             </span>
@@ -203,9 +205,9 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
               onChange={() => setDeliveryType('delivery')}
             />
             <span className={styles.optionText}>
-              <span className={styles.optionTitle}>Доставка</span>
+              <span className={styles.optionTitle}>{t.delivery}</span>
               <span className={styles.optionHint}>
-                Привезём по адресу, о времени договоримся по телефону
+                {t.deliveryHint}
               </span>
             </span>
           </label>
@@ -216,9 +218,9 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
         <div className={styles.block}>
           <Textarea
             id={IDS.address}
-            label="Адрес доставки"
+            label={t.address}
             rows={2}
-            placeholder="Улица, дом, квартира, ориентир"
+            placeholder={t.addressPlaceholder}
             value={address}
             error={errors.address}
             onChange={(e) => {
@@ -232,9 +234,9 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
                 <span className={cn('material-symbols-outlined', styles.geoOkIcon)} aria-hidden="true">
                   check_circle
                 </span>
-                <span>Геолокация прикреплена</span>
+                <span>{t.geoAttached}</span>
                 <button type="button" className={styles.linkButton} onClick={() => setLocation(null)}>
-                  Убрать
+                  {t.geoRemove}
                 </button>
               </div>
             ) : (
@@ -245,7 +247,7 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
                   loading={geoState === 'loading'}
                   onClick={requestLocation}
                 >
-                  Отправить мою геолокацию
+                  {t.geoSend}
                 </Button>
                 {geoState === 'error' && <p className={styles.geoError}>{geoError}</p>}
               </>
@@ -255,18 +257,18 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
 
       <div className={styles.block}>
         <span className={styles.groupLabel}>
-          {deliveryType === 'pickup' ? 'Когда вам удобно прийти' : 'Когда вам удобно принять доставку'}
+          {deliveryType === 'pickup' ? t.whenPickup : t.whenDelivery}
         </span>
         <div className={styles.dateTime}>
           <Input
-            label="Дата"
+            label={t.date}
             type="date"
             min={todayISO()}
             value={desiredDate}
             onChange={(e) => setDesiredDate(e.target.value)}
           />
           <Input
-            label="Время"
+            label={t.time}
             type="time"
             value={desiredTime}
             onChange={(e) => setDesiredTime(e.target.value)}
@@ -275,8 +277,8 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
       </div>
 
       <Textarea
-        label="Комментарий"
-        hint="Необязательно"
+        label={t.comment}
+        hint={t.optional}
         value={comment}
         onChange={(e) => setComment(e.target.value)}
       />
@@ -288,13 +290,13 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
       )}
 
       <Button type="submit" fullWidth loading={submitting}>
-        Отправить заявку · {formatPrice(product.price * quantity)}
+        {t.submit(formatPrice(product.price * quantity))}
       </Button>
       <p className={styles.payNote}>
         <span className={cn('material-symbols-outlined', styles.payIcon)} aria-hidden="true">
           payments
         </span>
-        Оплата при получении
+        {t.payNote}
       </p>
     </form>
   )

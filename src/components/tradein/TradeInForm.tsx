@@ -17,6 +17,7 @@ import { ImagePicker } from '../ui/ImagePicker'
 import { Input } from '../ui/Input'
 import { Select } from '../ui/Select'
 import { Textarea } from '../ui/Textarea'
+import { useT } from '../../i18n'
 import styles from './TradeInForm.module.css'
 
 interface TradeInFormProps {
@@ -41,18 +42,15 @@ const IDS = {
   phone: 'trade-in-phone',
 }
 
-const GRADE_HINTS: Record<DeviceGrade, string> = {
-  excellent: 'Как новое: без царапин и сколов, всё работает',
-  good: 'Мелкие следы использования, всё работает',
-  fair: 'Заметные царапины, сколы или есть неисправности',
+function getCategoryOptions() {
+  return TRADE_IN_DEVICE_CATEGORIES.map((value) => ({
+    value,
+    label: TRADE_IN_DEVICE_CATEGORY_LABELS[value],
+  }))
 }
 
-const CATEGORY_OPTIONS = TRADE_IN_DEVICE_CATEGORIES.map((value) => ({
-  value,
-  label: TRADE_IN_DEVICE_CATEGORY_LABELS[value],
-}))
-
 export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }: TradeInFormProps) {
+  const t = useT().tradeIn
   const [category, setCategory] = useState<TradeInDeviceCategory>('smartphone')
   const [brand, setBrand] = useState('')
   const [model, setModel] = useState('')
@@ -78,16 +76,16 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
     if (submitting) return
 
     const next: Errors = {}
-    if (!brand.trim()) next.brand = 'Укажите марку'
-    if (!model.trim()) next.model = 'Укажите модель'
+    if (!brand.trim()) next.brand = t.errBrand
+    if (!model.trim()) next.model = t.errModel
     if (battery.trim() !== '') {
       const value = Number(battery)
       if (!Number.isInteger(value) || value < 1 || value > 100) {
-        next.battery = 'Введите число от 1 до 100'
+        next.battery = t.errBattery
       }
     }
-    if (!customerName.trim()) next.name = 'Укажите ваше имя'
-    if (!isValidPhone(customerPhone)) next.phone = 'Укажите корректный номер телефона'
+    if (!customerName.trim()) next.name = t.errName
+    if (!isValidPhone(customerPhone)) next.phone = t.errPhone
     setErrors(next)
 
     const order: (keyof Errors)[] = ['brand', 'model', 'battery', 'name', 'phone']
@@ -130,28 +128,28 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
       {desiredProduct && (
         <div className={styles.desired}>
           <div className={styles.desiredText}>
-            <span className={styles.desiredLabel}>Хочу обменять на:</span>
+            <span className={styles.desiredLabel}>{t.wantFor}</span>
             <span className={styles.desiredName}>{desiredProduct.name}</span>
             <span className={styles.desiredPrice}>{formatPrice(desiredProduct.price)}</span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => onClearDesiredProduct?.()}>
-            Убрать
+            {t.remove}
           </Button>
         </div>
       )}
 
       <section className={styles.card}>
-        <h3 className={styles.title}>Ваше устройство</h3>
+        <h3 className={styles.title}>{t.device}</h3>
         <Select
-          label="Тип устройства"
-          options={CATEGORY_OPTIONS}
+          label={t.deviceType}
+          options={getCategoryOptions()}
           value={category}
           onChange={(e) => setCategory(e.target.value as TradeInDeviceCategory)}
         />
         <div className={styles.row}>
           <Input
             id={IDS.brand}
-            label="Марка"
+            label={t.brand}
             required
             placeholder="Apple, Samsung, Xiaomi…"
             value={brand}
@@ -163,7 +161,7 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
           />
           <Input
             id={IDS.model}
-            label="Модель"
+            label={t.model}
             required
             placeholder="iPhone 12"
             value={model}
@@ -175,14 +173,14 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
           />
         </div>
         <Input
-          label="Память"
-          placeholder="128 ГБ"
+          label={t.memory}
+          placeholder={t.memoryPlaceholder}
           value={memory}
           onChange={(e) => setMemory(e.target.value)}
         />
 
         <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Состояние</legend>
+          <legend className={styles.legend}>{t.grade}</legend>
           <div className={styles.grades}>
             {DEVICE_GRADES.map((value) => (
               <label
@@ -199,7 +197,7 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
                 />
                 <span className={styles.optionText}>
                   <span className={styles.optionTitle}>{DEVICE_GRADE_LABELS[value]}</span>
-                  <span className={styles.optionHint}>{GRADE_HINTS[value]}</span>
+                  <span className={styles.optionHint}>{t.gradeHints[value]}</span>
                 </span>
               </label>
             ))}
@@ -208,12 +206,12 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
 
         <Input
           id={IDS.battery}
-          label="Ёмкость аккумулятора, %"
+          label={t.battery}
           type="number"
           inputMode="numeric"
           min={1}
           max={100}
-          hint="Для iPhone: Настройки → Аккумулятор → Состояние. Если не знаете — оставьте пустым"
+          hint={t.batteryHint}
           value={battery}
           error={errors.battery}
           onChange={(e) => {
@@ -222,35 +220,35 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
           }}
         />
         <Textarea
-          label="Дефекты"
+          label={t.defects}
           rows={2}
-          placeholder="Царапины, сколы, что не работает"
+          placeholder={t.defectsPlaceholder}
           value={defects}
           onChange={(e) => setDefects(e.target.value)}
         />
         <Input
-          label="Комплект"
-          placeholder="Коробка, зарядка, чехол"
+          label={t.kit}
+          placeholder={t.kitPlaceholder}
           value={kit}
           onChange={(e) => setKit(e.target.value)}
         />
       </section>
 
       <section className={styles.card}>
-        <h3 className={styles.title}>Фото устройства</h3>
+        <h3 className={styles.title}>{t.photos}</h3>
         <ImagePicker
           value={photos}
           onChange={setPhotos}
           max={shop.maxTradeInPhotos}
-          hint="Экран, задняя крышка, грани. С фото оценим точнее."
+          hint={t.photosHint}
         />
       </section>
 
       <section className={styles.card}>
-        <h3 className={styles.title}>Контакты</h3>
+        <h3 className={styles.title}>{t.contacts}</h3>
         <Input
           id={IDS.name}
-          label="Ваше имя"
+          label={t.name}
           required
           autoComplete="name"
           value={customerName}
@@ -262,7 +260,7 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
         />
         <Input
           id={IDS.phone}
-          label="Телефон"
+          label={t.phone}
           required
           type="tel"
           inputMode="tel"
@@ -277,8 +275,8 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
           }}
         />
         <Textarea
-          label="Комментарий"
-          hint="Необязательно"
+          label={t.comment}
+          hint={t.optional}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />
@@ -291,10 +289,10 @@ export function TradeInForm({ desiredProduct, onClearDesiredProduct, onSuccess }
       )}
 
       <Button type="submit" fullWidth loading={submitting}>
-        Отправить на оценку
+        {t.submit}
       </Button>
       <p className={styles.note}>
-        Оценка бесплатная. Точную сумму назовём после осмотра устройства в магазине.
+        {t.note}
       </p>
     </form>
   )

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { runStarThemeTransition, type ThemeMode } from '../../utils/starThemeTransition'
+import { msg } from '../../i18n'
 import styles from './ThemeToggle.module.css'
 
 const STORAGE_KEY = 'theme'
@@ -45,7 +46,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     if (started) setBusy(true)
   }
 
-  const label = theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'
+  const label = theme === 'dark' ? msg().ui.themeLight : msg().ui.themeDark
 
   return (
     <button

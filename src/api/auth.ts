@@ -6,6 +6,7 @@ import type { Session } from '@supabase/supabase-js'
 import type { AdminSession } from '../types'
 import { supabase } from './client'
 import { ApiError } from './errors'
+import { msg } from '../i18n'
 
 type AuthListener = (session: AdminSession | null) => void
 
@@ -42,15 +43,15 @@ export async function login(email: string, password: string): Promise<AdminSessi
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
   if (error || !data.session) {
     if (error && /fetch|network/i.test(error.message)) {
-      throw new ApiError('storage', 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.')
+      throw new ApiError('storage', msg().errors.offline)
     }
-    throw new ApiError('auth', 'Неверный email или пароль')
+    throw new ApiError('auth', msg().errors.wrongLogin)
   }
   adminCheck.delete(data.session.user.id)
   const session = await toAdminSession(data.session)
   if (!session) {
     await supabase.auth.signOut()
-    throw new ApiError('auth', 'У этого пользователя нет доступа к админке')
+    throw new ApiError('auth', msg().errors.notAdmin)
   }
   return session
 }

@@ -1,3 +1,26 @@
 import type { ProductMessages } from '../ru/product'
 
-export const product: ProductMessages = {}
+export const product: ProductMessages = {
+  specYes: 'Бар',
+  specNo: 'Жок',
+  notFoundTitle: 'Товар табылган жок',
+  notFoundText: 'Балким, ал өчүрүлгөн же убактылуу жеткиликсиз.',
+  backToCatalog: 'Каталогго кайтуу',
+  back: '← Каталогго кайтуу',
+  photoAlt: (name: string, index: number) => `${name}, ${index}-сүрөт`,
+  inStock: 'Кампада бар',
+  outOfStock: 'Кампада жок',
+  lowStock: (count: number) => `${count} даана калды`,
+  order: 'Заказ берүү',
+  tradeIn: 'Эскисин алмаштыруу',
+  orderAccepted: (number: number) => `№${number} заявка кабыл алынды`,
+  orderAcceptedText: 'Заказды ырастоо үчүн сиз менен байланышабыз.',
+  grade: (value: string) => `Абалы: ${value}`,
+  battery: (percent: number) => `Аккумулятор: ${percent}%`,
+  batteryShort: (percent: number) => `Аккумулятор ${percent}%`,
+  defects: (value: string) => `Кемчиликтери: ${value}`,
+  kit: (value: string) => `Комплекти: ${value}`,
+  warranty: (months: number) => `Кепилдик: ${months} ай`,
+  specs: 'Мүнөздөмөлөрү',
+  orderTitle: 'Заказ берүү',
+}

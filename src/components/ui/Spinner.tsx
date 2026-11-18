@@ -1,4 +1,5 @@
 import { cn } from '../../utils/cn'
+import { msg } from '../../i18n'
 import styles from './Spinner.module.css'
 
 interface SpinnerProps {
@@ -10,7 +11,7 @@ export function Spinner({ size = 'md', className }: SpinnerProps) {
   return (
     <span
       role="status"
-      aria-label="Загрузка"
+      aria-label={msg().common.loading}
       className={cn(styles.spinner, size === 'sm' ? styles.sm : styles.md, className)}
     />
   )
@@ -20,7 +21,7 @@ interface PageLoaderProps {
   label?: string
 }
 
-export function PageLoader({ label = 'Загрузка…' }: PageLoaderProps) {
+export function PageLoader({ label = msg().common.loading }: PageLoaderProps) {
   return (
     <div className={styles.pageLoader}>
       <Spinner />

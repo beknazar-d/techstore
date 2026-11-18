@@ -14,6 +14,7 @@ import type {
 import { isValidPhone, normalizePhone } from '../utils/phone'
 import { emit, supabase, unwrap } from './client'
 import { ApiError } from './errors'
+import { msg } from '../i18n'
 
 const COLUMNS =
   'id, number, status, customer_name, customer_phone, device, photos, desired_product_id, desired_product_name, desired_product_price, comment, admin_estimate, admin_note, created_at, updated_at'
@@ -91,15 +92,15 @@ export function canEvaluateTradeIn(status: TradeInStatus): boolean {
 function cleanDevice(device: TradeInDevice): TradeInDevice {
   const brand = device.brand.trim()
   const model = device.model.trim()
-  if (!brand) throw new ApiError('validation', 'Укажите марку устройства')
-  if (!model) throw new ApiError('validation', 'Укажите модель устройства')
+  if (!brand) throw new ApiError('validation', msg().errors.brand)
+  if (!model) throw new ApiError('validation', msg().errors.model)
 
   const clean: TradeInDevice = { category: device.category, brand, model, grade: device.grade }
   if (device.memory?.trim()) clean.memory = device.memory.trim()
   if (device.batteryHealth !== undefined) {
     const value = device.batteryHealth
     if (!Number.isInteger(value) || value < 1 || value > 100) {
-      throw new ApiError('validation', 'Ёмкость аккумулятора — целое число от 1 до 100')
+      throw new ApiError('validation', msg().errors.battery)
     }
     clean.batteryHealth = value
   }
@@ -115,12 +116,12 @@ function cleanDevice(device: TradeInDevice): TradeInDevice {
 export async function createTradeIn(input: CreateTradeInInput): Promise<TradeInRequest> {
   const customerName = input.customerName.trim()
   const customerPhone = normalizePhone(input.customerPhone)
-  if (!customerName) throw new ApiError('validation', 'Укажите ваше имя')
-  if (!isValidPhone(customerPhone)) throw new ApiError('validation', 'Укажите корректный номер телефона')
+  if (!customerName) throw new ApiError('validation', msg().errors.name)
+  if (!isValidPhone(customerPhone)) throw new ApiError('validation', msg().errors.phone)
   const device = cleanDevice(input.device)
   const photos = input.photos ?? []
   if (photos.length > shop.maxTradeInPhotos) {
-    throw new ApiError('validation', `Не больше ${shop.maxTradeInPhotos} фото`)
+    throw new ApiError('validation', msg().errors.photosMax(shop.maxTradeInPhotos))
   }
 
   const result = unwrap(
@@ -132,10 +133,10 @@ export async function createTradeIn(input: CreateTradeInInput): Promise<TradeInR
       p_desired_product_id: input.desiredProductId ?? null,
       p_comment: input.comment?.trim() ?? '',
     }),
-    'Не удалось отправить заявку. Попробуйте ещё раз.',
+    msg().errors.sendFailed,
   ) as { trade_in_id: string; trade_in_number: number }[]
   const created = result[0]
-  if (!created) throw new ApiError('storage', 'Не удалось отправить заявку. Попробуйте ещё раз.')
+  if (!created) throw new ApiError('storage', msg().errors.sendFailed)
 
   emit(['tradeIns'])
   const now = new Date().toISOString()
@@ -162,7 +163,7 @@ export async function createTradeIn(input: CreateTradeInInput): Promise<TradeInR
 export async function listTradeIns(filters: TradeInFilters = {}): Promise<TradeInRequest[]> {
   let query = supabase.from('trade_ins').select(COLUMNS).order('created_at', { ascending: false })
   if (filters.status) query = query.eq('status', filters.status)
-  const rows = unwrap(await query, 'Не удалось загрузить заявки') as TradeInRow[]
+  const rows = unwrap(await query, msg().errors.tradeInsLoad) as TradeInRow[]
   return rows.map(fromRow)
 }
 
@@ -198,7 +199,7 @@ export async function listTradeInEvents(tradeInId: string): Promise<TradeInEvent
  */
 export async function evaluateTradeIn(id: string, estimate: number, note?: string): Promise<TradeInRequest> {
   if (!Number.isInteger(estimate) || estimate <= 0) {
-    throw new ApiError('validation', 'Оценка — целое число больше нуля')
+    throw new ApiError('validation', msg().errors.estimate)
   }
   const row = unwrap(
     await supabase.rpc('evaluate_trade_in', { p_trade_in_id: id, p_estimate: estimate, p_note: note ?? null }),

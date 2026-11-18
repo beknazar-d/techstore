@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '../../utils/cn';
+import { msg } from '../../i18n';
 import styles from './Modal.module.css';
 
 interface ModalProps {
@@ -87,7 +88,7 @@ function ModalContent({
               {title}
             </h2>
           )}
-          <button type="button" className={styles.closeButton} aria-label="Закрыть" onClick={onClose}>
+          <button type="button" className={styles.closeButton} aria-label={msg().common.close} onClick={onClose}>
             <span className="material-symbols-outlined" aria-hidden="true">
               close
             </span>

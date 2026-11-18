@@ -1,3 +1,5 @@
+import { msg } from '../i18n'
+
 export type ApiErrorCode =
   | 'validation' // неверно заполнены поля
   | 'not_found'
@@ -24,5 +26,5 @@ export class ApiError extends Error {
 export function getErrorMessage(error: unknown): string {
   if (error instanceof ApiError) return error.message
   if (error instanceof Error && error.message) return error.message
-  return 'Что-то пошло не так. Попробуйте ещё раз.'
+  return msg().errors.generic
 }

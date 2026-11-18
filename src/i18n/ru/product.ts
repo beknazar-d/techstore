@@ -1,3 +1,26 @@
-export const product = {}
+export const product = {
+  specYes: 'Есть',
+  specNo: 'Нет',
+  notFoundTitle: 'Товар не найден',
+  notFoundText: 'Возможно, он был удалён или временно недоступен.',
+  backToCatalog: 'Вернуться в каталог',
+  back: '← Назад в каталог',
+  photoAlt: (name: string, index: number) => `${name} фото ${index}`,
+  inStock: 'В наличии',
+  outOfStock: 'Нет в наличии',
+  lowStock: (count: number) => `Осталось ${count} шт.`,
+  order: 'Заказать',
+  tradeIn: 'Обменять старый',
+  orderAccepted: (number: number) => `Заявка №${number} принята`,
+  orderAcceptedText: 'Мы свяжемся с вами, чтобы подтвердить заказ.',
+  grade: (value: string) => `Состояние: ${value}`,
+  battery: (percent: number) => `Аккумулятор: ${percent}%`,
+  batteryShort: (percent: number) => `Аккумулятор ${percent}%`,
+  defects: (value: string) => `Дефекты: ${value}`,
+  kit: (value: string) => `Комплект: ${value}`,
+  warranty: (months: number) => `Гарантия: ${months} мес.`,
+  specs: 'Характеристики',
+  orderTitle: 'Оформить заказ',
+}
 
 export type ProductMessages = typeof product

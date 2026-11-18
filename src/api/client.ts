@@ -4,6 +4,7 @@
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { ApiError, type ApiErrorCode } from './errors'
+import { getLang, msg } from '../i18n'
 
 export { supabase }
 
@@ -30,27 +31,30 @@ interface DbError {
  * Переводит ошибку Supabase в ApiError с русским текстом.
  * Функции базы бросают ошибки через private.fail: текст по-русски, код — в HINT.
  */
-export function toApiError(error: DbError, fallback = 'Не удалось выполнить запрос. Попробуйте ещё раз.'): ApiError {
+export function toApiError(error: DbError, fallback = msg().errors.requestFailed): ApiError {
   const hint = error.hint ?? ''
   if ((KNOWN_CODES as string[]).includes(hint) && error.message) {
+    // Функции базы пишут по-русски; для других языков берём общий текст по коду.
+    const translated = getLang() === 'ru' ? undefined : msg().errors.codes[hint]
+    if (translated) return new ApiError(hint as ApiErrorCode, translated)
     return new ApiError(hint as ApiErrorCode, error.message)
   }
   switch (error.code) {
     case '23505':
-      return new ApiError('conflict', 'Такая запись уже есть (совпадает адрес страницы или название)')
+      return new ApiError('conflict', msg().errors.duplicate)
     case '23503':
-      return new ApiError('category_not_empty', 'Запись используется в других данных — сначала уберите связи')
+      return new ApiError('category_not_empty', msg().errors.inUse)
     case '23514':
-      return new ApiError('validation', 'Проверьте заполнение полей: значение вне допустимых границ')
+      return new ApiError('validation', msg().errors.outOfBounds)
     case '42501':
     case 'PGRST301':
     case 'PGRST302':
-      return new ApiError('auth', 'Нужно войти в админку')
+      return new ApiError('auth', msg().errors.needLogin)
     default:
       break
   }
   if (error.message && /fetch|network/i.test(error.message)) {
-    return new ApiError('storage', 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.')
+    return new ApiError('storage', msg().errors.offline)
   }
   return new ApiError('storage', fallback)
 }

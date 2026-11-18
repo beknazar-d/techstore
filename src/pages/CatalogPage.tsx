@@ -6,17 +6,22 @@ import { Chips } from '../components/ui/Chips'
 import { EmptyState } from '../components/ui/EmptyState'
 import { Spinner } from '../components/ui/Spinner'
 import { useApiQuery } from '../hooks/useApiQuery'
+import { msg, useT } from '../i18n'
 import styles from './CatalogPage.module.css'
 
 type ConditionFilter = 'all' | 'new' | 'used'
 
-const conditionOptions: Array<{ value: ConditionFilter; label: string }> = [
-  { value: 'all', label: 'Все' },
-  { value: 'new', label: 'Новые' },
-  { value: 'used', label: 'Б/У' },
-]
+function getConditionOptions(): Array<{ value: ConditionFilter; label: string }> {
+  const t = msg().catalog
+  return [
+    { value: 'all', label: t.conditionAll },
+    { value: 'new', label: t.conditionNew },
+    { value: 'used', label: t.conditionUsed },
+  ]
+}
 
 export function CatalogPage() {
+  const t = useT()
   const { categorySlug } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const currentCondition = useMemo<ConditionFilter>(() => {
@@ -53,10 +58,10 @@ export function CatalogPage() {
     setSearchParams(nextParams)
   }
 
-  const title = selectedCategory ? selectedCategory.name : 'Каталог товаров'
+  const title = selectedCategory ? selectedCategory.name : t.catalog.title
   const subtitle = selectedCategory
-    ? 'Подберите технику по категориям и состоянию.'
-    : 'Смартфоны, ноутбуки, аксессуары и техника для дома.'
+    ? t.catalog.leadCategory
+    : t.catalog.lead
 
   if (loading) {
     return (
@@ -72,31 +77,31 @@ export function CatalogPage() {
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.kicker}>Каталог</p>
+          <p className={styles.kicker}>{t.catalog.kicker}</p>
           <h1 className={styles.title}>{title}</h1>
           <p className={styles.subtitle}>{subtitle}</p>
         </div>
-        <Link to="/" className={styles.backLink}>На главную</Link>
+        <Link to="/" className={styles.backLink}>{t.catalog.toHome}</Link>
       </header>
 
       <section className={styles.filterBar}>
-        <p className={styles.filterLabel}>Состояние</p>
+        <p className={styles.filterLabel}>{t.catalog.conditionLabel}</p>
         <Chips
-          ariaLabel="Фильтр по состоянию товара"
-          options={conditionOptions}
+          ariaLabel={t.catalog.conditionFilterAria}
+          options={getConditionOptions()}
           value={currentCondition}
           onChange={changeCondition}
           className={styles.chips}
         />
       </section>
 
-      <nav className={styles.categoryNav} aria-label="Категории товаров">
+      <nav className={styles.categoryNav} aria-label={t.catalog.categoriesAria}>
         <Link
           to="/catalog"
           className={styles.categoryLink}
           data-active={!categorySlug}
         >
-          Все товары
+          {t.catalog.allProducts}
         </Link>
         {categories.map((category) => (
           <Link
@@ -113,9 +118,9 @@ export function CatalogPage() {
       {products.length === 0 ? (
         <EmptyState
           icon="search_off"
-          title="Товаров по фильтру не найдено"
-          text="Попробуйте выбрать другую категорию или состояние товара."
-          action={<Link to="/catalog" className={styles.emptyLink}>Показать всё</Link>}
+          title={t.catalog.emptyTitle}
+          text={t.catalog.emptyText}
+          action={<Link to="/catalog" className={styles.emptyLink}>{t.catalog.showAll}</Link>}
         />
       ) : (
         <ProductGrid products={products} />

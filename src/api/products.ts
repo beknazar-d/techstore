@@ -4,6 +4,7 @@ import { slugify } from '../utils/slugify'
 import { getCategory } from './categories'
 import { emit, supabase, uniqueSlug, unwrap } from './client'
 import { ApiError } from './errors'
+import { msg } from '../i18n'
 
 /** Колонки, доступные всем. min_price и cost_price анониму не выданы (права на колонки). */
 const PUBLIC_COLUMNS =
@@ -75,17 +76,17 @@ function cleanSpecs(specs: ProductSpecs, category: Category): ProductSpecs {
 }
 
 function cleanUsedInfo(info: UsedInfo | null | undefined): UsedInfo {
-  if (!info) throw new ApiError('validation', 'Для Б/У товара укажите состояние')
+  if (!info) throw new ApiError('validation', msg().errorsMore.usedGrade)
   const clean: UsedInfo = { grade: info.grade }
   if (info.batteryHealth !== undefined) {
     if (!isInt(info.batteryHealth) || info.batteryHealth < 1 || info.batteryHealth > 100) {
-      throw new ApiError('validation', 'Ёмкость аккумулятора — целое число от 1 до 100')
+      throw new ApiError('validation', msg().errorsMore.battery)
     }
     clean.batteryHealth = info.batteryHealth
   }
   if (info.warrantyMonths !== undefined) {
     if (!isInt(info.warrantyMonths) || info.warrantyMonths < 0) {
-      throw new ApiError('validation', 'Гарантия — целое число месяцев')
+      throw new ApiError('validation', msg().errorsMore.warranty)
     }
     clean.warrantyMonths = info.warrantyMonths
   }
@@ -99,25 +100,25 @@ type ProductFields = Omit<Product, 'id' | 'slug' | 'createdAt' | 'updatedAt'>
 /** Проверяет товар целиком (после слияния с изменениями) и возвращает строку для базы. */
 async function validate(product: ProductFields): Promise<Record<string, unknown>> {
   const name = product.name.trim()
-  if (!name) throw new ApiError('validation', 'Укажите название товара')
+  if (!name) throw new ApiError('validation', msg().errorsMore.productName)
   const category = product.categoryId ? await getCategory(product.categoryId) : null
-  if (!category) throw new ApiError('validation', 'Выберите категорию')
+  if (!category) throw new ApiError('validation', msg().errorsMore.category)
   if (!isInt(product.price) || product.price <= 0) {
-    throw new ApiError('validation', 'Цена — целое число больше нуля')
+    throw new ApiError('validation', msg().errorsMore.price)
   }
   if (product.minPrice !== null) {
     if (!isInt(product.minPrice) || product.minPrice <= 0 || product.minPrice > product.price) {
-      throw new ApiError('validation', 'Минимальная цена должна быть больше нуля и не выше обычной цены')
+      throw new ApiError('validation', msg().errorsMore.minPrice)
     }
   }
   if (product.costPrice !== null && (!isInt(product.costPrice) || product.costPrice < 0)) {
-    throw new ApiError('validation', 'Себестоимость — целое число, не меньше нуля')
+    throw new ApiError('validation', msg().errorsMore.costPrice)
   }
   if (!isInt(product.stock) || product.stock < 0) {
-    throw new ApiError('validation', 'Остаток — целое число, не меньше нуля')
+    throw new ApiError('validation', msg().errorsMore.stock)
   }
   if (product.images.length > shop.maxProductImages) {
-    throw new ApiError('validation', `Не больше ${shop.maxProductImages} фото на товар`)
+    throw new ApiError('validation', msg().errorsMore.imagesMax(shop.maxProductImages))
   }
   return {
     category_id: product.categoryId,
@@ -157,7 +158,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
   if (search) query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%`)
   if (filters.limit) query = query.limit(filters.limit)
 
-  const rows = unwrap(await query, 'Не удалось загрузить товары') as unknown as ProductRow[]
+  const rows = unwrap(await query, msg().errorsMore.productsLoad) as unknown as ProductRow[]
   return rows.map(fromRow)
 }
 
@@ -202,7 +203,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
   const slug = await uniqueSlug('products', slugify(input.slug?.trim() || String(fields.name)))
   const row = unwrap(
     await supabase.from('products').insert({ ...fields, slug }).select(ADMIN_COLUMNS).single(),
-    'Не удалось создать товар',
+    msg().errorsMore.productCreate,
   ) as unknown as ProductRow
   emit(['products'])
   return fromRow(row)
@@ -210,7 +211,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
 
 export async function updateProduct(id: string, patch: Partial<ProductInput>): Promise<Product> {
   const current = await getProduct(id)
-  if (!current) throw new ApiError('not_found', 'Товар не найден')
+  if (!current) throw new ApiError('not_found', msg().errorsMore.productNotFound)
 
   const { slug, ...fields } = patch
   // undefined в patch означает «не менять».
@@ -223,9 +224,9 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
 
   const updated = unwrap(
     await supabase.from('products').update(row).eq('id', id).select(ADMIN_COLUMNS).maybeSingle(),
-    'Не удалось сохранить товар',
+    msg().errorsMore.productSave,
   ) as unknown as ProductRow | null
-  if (!updated) throw new ApiError('not_found', 'Товар не найден')
+  if (!updated) throw new ApiError('not_found', msg().errorsMore.productNotFound)
   emit(['products'])
   return fromRow(updated)
 }
@@ -233,7 +234,7 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
 /** Удаляет товар. Заказы и заявки trade-in остаются: в них сохранены название и цена. */
 export async function deleteProduct(id: string): Promise<void> {
   const rows = unwrap(await supabase.from('products').delete().eq('id', id).select('id')) as { id: string }[]
-  if (rows.length === 0) throw new ApiError('not_found', 'Товар не найден')
+  if (rows.length === 0) throw new ApiError('not_found', msg().errorsMore.productNotFound)
   emit(['products', 'orders', 'tradeIns'])
 }
 
@@ -242,10 +243,10 @@ export async function deleteProduct(id: string): Promise<void> {
  * Остаток не может стать меньше нуля → `ApiError('out_of_stock')`.
  */
 export async function adjustStock(id: string, delta: number): Promise<Product> {
-  if (!isInt(delta)) throw new ApiError('validation', 'Изменение остатка — целое число')
+  if (!isInt(delta)) throw new ApiError('validation', msg().errorsMore.stockDelta)
   unwrap(await supabase.rpc('adjust_stock', { p_product_id: id, p_delta: delta }))
   const product = await getProduct(id)
-  if (!product) throw new ApiError('not_found', 'Товар не найден')
+  if (!product) throw new ApiError('not_found', msg().errorsMore.productNotFound)
   emit(['products'])
   return product
 }

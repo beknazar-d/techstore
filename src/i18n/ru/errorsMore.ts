@@ -1,3 +1,31 @@
-export const errorsMore = {}
+// Ошибки админки: товары и категории.
+export const errorsMore = {
+  usedGrade: 'Для Б/У товара укажите состояние',
+  battery: 'Ёмкость аккумулятора — целое число от 1 до 100',
+  warranty: 'Гарантия — целое число месяцев',
+  productName: 'Укажите название товара',
+  category: 'Выберите категорию',
+  price: 'Цена — целое число больше нуля',
+  minPrice: 'Минимальная цена должна быть больше нуля и не выше обычной цены',
+  costPrice: 'Себестоимость — целое число, не меньше нуля',
+  stock: 'Остаток — целое число, не меньше нуля',
+  imagesMax: (max: number) => `Не больше ${max} фото на товар`,
+  productsLoad: 'Не удалось загрузить товары',
+  productCreate: 'Не удалось создать товар',
+  productSave: 'Не удалось сохранить товар',
+  productNotFound: 'Товар не найден',
+  stockDelta: 'Изменение остатка — целое число',
+  specLabel: 'У каждой характеристики должно быть название',
+  specKey: (label: string) => `Не удалось построить ключ для характеристики «${label}»`,
+  specDuplicate: (label: string) => `Характеристика «${label}» повторяется`,
+  specOptions: (label: string) => `Добавьте варианты выбора для характеристики «${label}»`,
+  categoriesLoad: 'Не удалось загрузить категории',
+  categoryName: 'Укажите название категории',
+  categoryCreate: 'Не удалось создать категорию',
+  categorySave: 'Не удалось сохранить категорию',
+  categoryNotFound: 'Категория не найдена',
+  categoryCheck: 'Не удалось проверить товары категории',
+  categoryNotEmpty: (count: number) => `В категории есть товары (${count} шт.). Сначала перенесите или удалите их.`,
+}
 
 export type ErrorsMoreMessages = typeof errorsMore

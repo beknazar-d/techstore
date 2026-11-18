@@ -1,6 +1,8 @@
 // Сжатие фото в браузере перед сохранением: canvas, без библиотек.
 // Длинная сторона не больше 1600px, WebP ~0.8, а если браузер WebP не умеет — JPEG.
 
+import { msg } from '../i18n'
+
 export interface CompressImageOptions {
   /** Максимальная длинная сторона, px. По умолчанию 1600. */
   maxSide?: number
@@ -20,7 +22,7 @@ function loadViaImgTag(file: File): Promise<HTMLImageElement> {
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
-      reject(new Error('Не удалось прочитать изображение'))
+      reject(new Error(msg().ui.imageReadFailed))
     }
     img.src = url
   })
@@ -44,7 +46,7 @@ function draw(source: Source, width: number, height: number, background?: string
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext('2d')
-  if (!ctx) throw new Error('Браузер не поддерживает обработку изображений')
+  if (!ctx) throw new Error(msg().ui.imageUnsupported)
   if (background) {
     ctx.fillStyle = background
     ctx.fillRect(0, 0, width, height)
@@ -61,14 +63,14 @@ function draw(source: Source, width: number, height: number, background?: string
 export async function compressImage(file: File, options: CompressImageOptions = {}): Promise<string> {
   const { maxSide = 1600, quality = 0.8 } = options
   if (!file.type.startsWith('image/')) {
-    throw new Error('Можно загружать только изображения')
+    throw new Error(msg().ui.imageOnly)
   }
 
   const source = await loadSource(file)
   try {
     const srcWidth = source.width
     const srcHeight = source.height
-    if (!srcWidth || !srcHeight) throw new Error('Не удалось прочитать изображение')
+    if (!srcWidth || !srcHeight) throw new Error(msg().ui.imageReadFailed)
 
     const scale = Math.min(1, maxSide / Math.max(srcWidth, srcHeight))
     const width = Math.max(1, Math.round(srcWidth * scale))

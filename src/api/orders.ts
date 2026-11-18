@@ -6,6 +6,7 @@ import type { CreateOrderInput, Order, OrderEvent, OrderFilters, OrderStatus } f
 import { isValidPhone, normalizePhone } from '../utils/phone'
 import { emit, supabase, unwrap } from './client'
 import { ApiError } from './errors'
+import { msg } from '../i18n'
 
 const COLUMNS =
   'id, number, status, source, product_id, product_name, price, cost_price, quantity, customer_name, customer_phone, delivery_type, address, location_lat, location_lng, desired_date, desired_time, comment, admin_note, created_at, updated_at'
@@ -96,13 +97,13 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const address = input.address?.trim() ?? ''
   const location = input.location ?? null
 
-  if (!customerName) throw new ApiError('validation', 'Укажите ваше имя')
-  if (!isValidPhone(customerPhone)) throw new ApiError('validation', 'Укажите корректный номер телефона')
+  if (!customerName) throw new ApiError('validation', msg().errors.name)
+  if (!isValidPhone(customerPhone)) throw new ApiError('validation', msg().errors.phone)
   if (!Number.isInteger(input.quantity) || input.quantity < 1) {
-    throw new ApiError('validation', 'Количество должно быть не меньше 1')
+    throw new ApiError('validation', msg().errors.quantity)
   }
   if (input.deliveryType === 'delivery' && !address && !location) {
-    throw new ApiError('validation', 'Укажите адрес доставки или отправьте геолокацию')
+    throw new ApiError('validation', msg().errors.address)
   }
   const isDelivery = input.deliveryType === 'delivery'
 
@@ -120,10 +121,10 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
       p_desired_time: input.desiredTime?.trim() || null,
       p_comment: input.comment?.trim() ?? '',
     }),
-    'Не удалось отправить заявку. Попробуйте ещё раз.',
+    msg().errors.sendFailed,
   ) as { order_id: string; order_number: number }[]
   const created = result[0]
-  if (!created) throw new ApiError('storage', 'Не удалось отправить заявку. Попробуйте ещё раз.')
+  if (!created) throw new ApiError('storage', msg().errors.sendFailed)
 
   const product = unwrap(
     await supabase.from('products').select('name, price').eq('id', input.productId).maybeSingle(),
@@ -159,7 +160,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
 export async function listOrders(filters: OrderFilters = {}): Promise<Order[]> {
   let query = supabase.from('orders').select(COLUMNS).order('created_at', { ascending: false })
   if (filters.status) query = query.eq('status', filters.status)
-  const rows = unwrap(await query, 'Не удалось загрузить заказы') as OrderRow[]
+  const rows = unwrap(await query, msg().errors.ordersLoad) as OrderRow[]
   return rows.map(orderFromRow)
 }
 

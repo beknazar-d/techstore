@@ -1,5 +1,6 @@
 import { shop } from '../config/shop'
 import type { Category, Product, SpecField, SpecValue } from '../types'
+import { msg } from '../i18n'
 
 const NBSP = ' '
 
@@ -27,7 +28,7 @@ export function formatTradeInNumber(number: number): string {
 
 /** Значение характеристики для показа: `6.1 дюйм`, `Да`, `256 ГБ`. */
 export function formatSpecValue(field: SpecField, value: SpecValue): string {
-  if (typeof value === 'boolean') return value ? 'Да' : 'Нет'
+  if (typeof value === 'boolean') return value ? msg().common.yes : msg().common.no
   const text = typeof value === 'number' ? String(value).replace('.', ',') : value
   return field.unit ? `${text}${NBSP}${field.unit}` : text
 }

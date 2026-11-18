@@ -5,6 +5,7 @@ import { cn } from '../../utils/cn'
 import { ProductImage } from '../ui/ProductImage'
 import { StockBadge } from '../ui/StockBadge'
 import { ConditionBadge } from '../ui/ConditionBadge'
+import { useT } from '../../i18n'
 import styles from './ProductCard.module.css'
 
 interface ProductCardProps {
@@ -12,6 +13,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const t = useT()
   const soldOut = product.stock <= 0
   const batteryHealth = product.usedInfo?.batteryHealth
 
@@ -32,7 +34,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {product.condition === 'used' && batteryHealth != null && (
           <p className={styles.battery}>
             <span className={cn('material-symbols-outlined', styles.batteryIcon)} aria-hidden="true">battery_full</span>
-            Аккумулятор {batteryHealth}%
+            {t.product.batteryShort(batteryHealth)}
           </p>
         )}
         <p className={cn(styles.price, soldOut && styles.dimmed)}>{formatPrice(product.price)}</p>

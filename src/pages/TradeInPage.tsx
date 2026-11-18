@@ -4,9 +4,11 @@ import { listProducts } from '../api'
 import { TradeInForm } from '../components/tradein/TradeInForm'
 import type { Product, TradeInRequest } from '../types'
 import { formatPrice } from '../utils/format'
+import { useT } from '../i18n'
 import styles from './TradeInPage.module.css'
 
 export function TradeInPage() {
+  const t = useT().tradeIn
   const [popularProducts, setPopularProducts] = useState<Product[]>([])
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
   const [submittedTradeIn, setSubmittedTradeIn] = useState<TradeInRequest | null>(null)
@@ -32,35 +34,35 @@ export function TradeInPage() {
       <header className={styles.header}>
         <div>
           <p className={styles.kicker}>Trade-in</p>
-          <h1 className={styles.title}>Обменяйте старое устройство на новое</h1>
+          <h1 className={styles.title}>{t.title}</h1>
           <p className={styles.subtitle}>
-            Быстро оценим вашу технику и поможем с доплатой. Условия простые: без предоплаты, без сложных формальностей.
+            {t.lead}
           </p>
         </div>
-        <Link to="/catalog" className={styles.backLink}>В каталог</Link>
+        <Link to="/catalog" className={styles.backLink}>{t.toCatalog}</Link>
       </header>
 
-      <section className={styles.steps} aria-label="Как работает трейд-ин">
+      <section className={styles.steps} aria-label={t.stepsAria}>
         <article className={styles.stepCard}>
           <span className="material-symbols-outlined" aria-hidden="true">photo_camera</span>
-          <h2>1. Пришлите фото</h2>
-          <p>Сфотографируйте устройство, укажите состояние и комплект.</p>
+          <h2>{t.step1Title}</h2>
+          <p>{t.step1Text}</p>
         </article>
         <article className={styles.stepCard}>
           <span className="material-symbols-outlined" aria-hidden="true">sell</span>
-          <h2>2. Оценим</h2>
-          <p>Менеджер назовёт цену выкупа и предложит подходящий вариант обмена.</p>
+          <h2>{t.step2Title}</h2>
+          <p>{t.step2Text}</p>
         </article>
         <article className={styles.stepCard}>
           <span className="material-symbols-outlined" aria-hidden="true">sync</span>
-          <h2>3. Обменяйте</h2>
-          <p>Сдадите старое устройство и доплатите разницу при получении.</p>
+          <h2>{t.step3Title}</h2>
+          <p>{t.step3Text}</p>
         </article>
       </section>
 
       <div className={styles.layout}>
         <section className={styles.infoCard}>
-          <h2>На что можно обменять</h2>
+          <h2>{t.whatFor}</h2>
           <div className={styles.productList}>
             {popularProducts.map((product) => (
               <button
@@ -77,7 +79,7 @@ export function TradeInPage() {
           </div>
           {selectedProduct && (
             <div className={styles.preview}>
-              <span className={styles.previewLabel}>Выбрано для обмена</span>
+              <span className={styles.previewLabel}>{t.selected}</span>
               <strong>{selectedProduct.name}</strong>
               <span>{formatPrice(selectedProduct.price)}</span>
             </div>
@@ -88,9 +90,9 @@ export function TradeInPage() {
           {submittedTradeIn ? (
             <div className={styles.successState}>
               <span className="material-symbols-outlined" aria-hidden="true">check_circle</span>
-              <h2>Заявка №{submittedTradeIn.number} принята</h2>
-              <p>Мы проверим ваше устройство и свяжемся с вами для уточнения оценки.</p>
-              <Link to="/catalog" className={styles.successLink}>Вернуться в каталог</Link>
+              <h2>{t.accepted(submittedTradeIn.number)}</h2>
+              <p>{t.acceptedText}</p>
+              <Link to="/catalog" className={styles.successLink}>{t.backToCatalog}</Link>
             </div>
           ) : (
             <TradeInForm

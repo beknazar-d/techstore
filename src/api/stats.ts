@@ -5,13 +5,14 @@
 import type { ShopStats, StatsPeriod } from '../types'
 import { supabase, unwrap } from './client'
 import { ApiError } from './errors'
+import { msg } from '../i18n'
 
 const PERIODS: StatsPeriod[] = [7, 30, 90]
 
 export async function getShopStats(period: StatsPeriod): Promise<ShopStats> {
-  if (!PERIODS.includes(period)) throw new ApiError('validation', 'Период — 7, 30 или 90 дней')
+  if (!PERIODS.includes(period)) throw new ApiError('validation', msg().errors.period)
   return unwrap(
     await supabase.rpc('admin_stats', { p_days: period }),
-    'Не удалось загрузить статистику',
+    msg().errors.statsLoad,
   ) as ShopStats
 }

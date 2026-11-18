@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { compressImage } from '../../utils/compressImage'
 import { cn } from '../../utils/cn'
+import { msg } from '../../i18n'
 import styles from './ImagePicker.module.css'
 
 interface ImagePickerProps {
@@ -43,7 +44,7 @@ export function ImagePicker({
 
     const free = Math.max(0, max - value.length)
     const accepted = files.slice(0, free)
-    let message: string | null = files.length > free ? `Можно добавить не больше ${max} фото` : null
+    let message: string | null = files.length > free ? msg().ui.photosLimit(max) : null
 
     setBusy(true)
     const added: string[] = []
@@ -51,7 +52,7 @@ export function ImagePicker({
       try {
         added.push(await compressImage(file))
       } catch (e) {
-        message = e instanceof Error ? e.message : 'Не удалось обработать фото'
+        message = e instanceof Error ? e.message : msg().ui.photoFailed
       }
     }
     if (!mountedRef.current) return
@@ -88,12 +89,12 @@ export function ImagePicker({
       <div className={styles.grid}>
         {value.map((src, index) => (
           <div key={`${index}-${src.slice(-24)}`} className={styles.tile}>
-            <img className={styles.img} src={src} alt={`Фото ${index + 1}`} />
-            {markFirst && index === 0 && <span className={styles.mark}>Главное</span>}
+            <img className={styles.img} src={src} alt={msg().ui.photoAlt(index + 1)} />
+            {markFirst && index === 0 && <span className={styles.mark}>{msg().ui.photoMain}</span>}
             <button
               type="button"
               className={cn(styles.iconButton, styles.remove)}
-              aria-label={`Удалить фото ${index + 1}`}
+              aria-label={msg().ui.photoRemove(index + 1)}
               disabled={disabled}
               onClick={() => remove(index)}
             >
@@ -105,7 +106,7 @@ export function ImagePicker({
               <button
                 type="button"
                 className={cn(styles.iconButton, styles.left)}
-                aria-label={`Переместить фото ${index + 1} влево`}
+                aria-label={msg().ui.photoLeft(index + 1)}
                 disabled={disabled}
                 onClick={() => move(index, -1)}
               >
@@ -118,7 +119,7 @@ export function ImagePicker({
               <button
                 type="button"
                 className={cn(styles.iconButton, styles.right)}
-                aria-label={`Переместить фото ${index + 1} вправо`}
+                aria-label={msg().ui.photoRight(index + 1)}
                 disabled={disabled}
                 onClick={() => move(index, 1)}
               >
@@ -135,14 +136,14 @@ export function ImagePicker({
             {busy ? (
               <>
                 <span className={styles.spinner} aria-hidden="true" />
-                <span className={styles.addText}>Сжимаем…</span>
+                <span className={styles.addText}>{msg().ui.compressing}</span>
               </>
             ) : (
               <>
                 <span className={cn('material-symbols-outlined', styles.addIcon)} aria-hidden="true">
                   add_a_photo
                 </span>
-                <span className={styles.addText}>Добавить</span>
+                <span className={styles.addText}>{msg().ui.add}</span>
               </>
             )}
             <input

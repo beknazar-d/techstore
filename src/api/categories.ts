@@ -2,6 +2,7 @@ import type { Category, CategoryFilters, CategoryInput, SpecField } from '../typ
 import { slugify } from '../utils/slugify'
 import { emit, supabase, uniqueSlug, unwrap } from './client'
 import { ApiError } from './errors'
+import { msg } from '../i18n'
 
 const COLUMNS = 'id, name, slug, sort_order, is_active, spec_fields'
 
@@ -30,11 +31,11 @@ function cleanSpecFields(fields: SpecField[]): SpecField[] {
   const keys = new Set<string>()
   return fields.map((field) => {
     const label = field.label.trim()
-    if (!label) throw new ApiError('validation', 'У каждой характеристики должно быть название')
+    if (!label) throw new ApiError('validation', msg().errorsMore.specLabel)
 
     const key = slugify(field.key.trim() || label, '_')
-    if (!key) throw new ApiError('validation', `Не удалось построить ключ для характеристики «${label}»`)
-    if (keys.has(key)) throw new ApiError('validation', `Характеристика «${label}» повторяется`)
+    if (!key) throw new ApiError('validation', msg().errorsMore.specKey(label))
+    if (keys.has(key)) throw new ApiError('validation', msg().errorsMore.specDuplicate(label))
     keys.add(key)
 
     const clean: SpecField = { key, label, type: field.type }
@@ -43,7 +44,7 @@ function cleanSpecFields(fields: SpecField[]): SpecField[] {
     if (field.type === 'select') {
       const options = [...new Set((field.options ?? []).map((o) => o.trim()).filter(Boolean))]
       if (options.length === 0) {
-        throw new ApiError('validation', `Добавьте варианты выбора для характеристики «${label}»`)
+        throw new ApiError('validation', msg().errorsMore.specOptions(label))
       }
       clean.options = options
     }
@@ -55,7 +56,7 @@ function cleanSpecFields(fields: SpecField[]): SpecField[] {
 export async function listCategories(filters: CategoryFilters = {}): Promise<Category[]> {
   let query = supabase.from('categories').select(COLUMNS).order('sort_order').order('name')
   if (filters.onlyActive) query = query.eq('is_active', true)
-  const rows = unwrap(await query, 'Не удалось загрузить категории') as CategoryRow[]
+  const rows = unwrap(await query, msg().errorsMore.categoriesLoad) as CategoryRow[]
   return rows.map(fromRow)
 }
 
@@ -75,7 +76,7 @@ export async function getCategory(id: string): Promise<Category | null> {
 
 export async function createCategory(input: CategoryInput): Promise<Category> {
   const name = input.name.trim()
-  if (!name) throw new ApiError('validation', 'Укажите название категории')
+  if (!name) throw new ApiError('validation', msg().errorsMore.categoryName)
   const specFields = cleanSpecFields(input.specFields)
 
   let sortOrder = input.sortOrder
@@ -98,7 +99,7 @@ export async function createCategory(input: CategoryInput): Promise<Category> {
       })
       .select(COLUMNS)
       .single(),
-    'Не удалось создать категорию',
+    msg().errorsMore.categoryCreate,
   ) as CategoryRow
   emit(['categories'])
   return fromRow(row)
@@ -106,7 +107,7 @@ export async function createCategory(input: CategoryInput): Promise<Category> {
 
 export async function updateCategory(id: string, patch: Partial<CategoryInput>): Promise<Category> {
   const name = patch.name?.trim()
-  if (patch.name !== undefined && !name) throw new ApiError('validation', 'Укажите название категории')
+  if (patch.name !== undefined && !name) throw new ApiError('validation', msg().errorsMore.categoryName)
 
   const changes: Record<string, unknown> = {}
   if (name) changes.name = name
@@ -114,7 +115,7 @@ export async function updateCategory(id: string, patch: Partial<CategoryInput>):
     let base = patch.slug.trim()
     if (!base) {
       const current = await getCategory(id)
-      if (!current) throw new ApiError('not_found', 'Категория не найдена')
+      if (!current) throw new ApiError('not_found', msg().errorsMore.categoryNotFound)
       base = name ?? current.name
     }
     changes.slug = await uniqueSlug('categories', slugify(base), id)
@@ -125,9 +126,9 @@ export async function updateCategory(id: string, patch: Partial<CategoryInput>):
 
   const row = unwrap(
     await supabase.from('categories').update(changes).eq('id', id).select(COLUMNS).maybeSingle(),
-    'Не удалось сохранить категорию',
+    msg().errorsMore.categorySave,
   ) as CategoryRow | null
-  if (!row) throw new ApiError('not_found', 'Категория не найдена')
+  if (!row) throw new ApiError('not_found', msg().errorsMore.categoryNotFound)
   emit(['categories'])
   return fromRow(row)
 }
@@ -138,14 +139,14 @@ export async function deleteCategory(id: string): Promise<void> {
     .from('products')
     .select('id', { count: 'exact', head: true })
     .eq('category_id', id)
-  if (error) throw new ApiError('storage', 'Не удалось проверить товары категории')
+  if (error) throw new ApiError('storage', msg().errorsMore.categoryCheck)
   if (count && count > 0) {
     throw new ApiError(
       'category_not_empty',
-      `В категории есть товары (${count} шт.). Сначала перенесите или удалите их.`,
+      msg().errorsMore.categoryNotEmpty(count ?? 0),
     )
   }
   const rows = unwrap(await supabase.from('categories').delete().eq('id', id).select('id')) as { id: string }[]
-  if (rows.length === 0) throw new ApiError('not_found', 'Категория не найдена')
+  if (rows.length === 0) throw new ApiError('not_found', msg().errorsMore.categoryNotFound)
   emit(['categories'])
 }

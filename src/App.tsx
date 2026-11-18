@@ -6,6 +6,7 @@ import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ProductPage } from './pages/ProductPage'
 import { TradeInPage } from './pages/TradeInPage'
+import { msg } from './i18n'
 
 // Админка — отдельный чанк: клиенты её код не скачивают.
 const AdminApp = lazy(() => import('./admin/AdminApp'))
@@ -24,7 +25,7 @@ export default function App() {
       <Route
         path="admin/*"
         element={
-          <Suspense fallback={<p>Загрузка…</p>}>
+          <Suspense fallback={<p>{msg().common.loading}</p>}>
             <AdminApp />
           </Suspense>
         }

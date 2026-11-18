@@ -11,9 +11,12 @@ import { StockBadge } from '../components/ui/StockBadge'
 import { useApiQuery } from '../hooks/useApiQuery'
 import type { Order } from '../types'
 import { formatPrice } from '../utils/format'
+import { DEVICE_GRADE_LABELS } from '../config/labels'
+import { useT } from '../i18n'
 import styles from './ProductPage.module.css'
 
 export function ProductPage() {
+  const t = useT()
   const { slug } = useParams()
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [submittedOrder, setSubmittedOrder] = useState<Order | null>(null)
@@ -44,8 +47,8 @@ export function ProductPage() {
         const displayValue =
           typeof value === 'boolean'
             ? value
-              ? 'Есть'
-              : 'Нет'
+              ? t.product.specYes
+              : t.product.specNo
             : typeof value === 'number' && field.unit
               ? `${value} ${field.unit}`
               : String(value)
@@ -56,7 +59,7 @@ export function ProductPage() {
         }
       })
       .filter(Boolean) as Array<{ label: string; value: string }>
-  }, [category, product])
+  }, [category, product, t])
 
   if (loading) {
     return (
@@ -72,9 +75,9 @@ export function ProductPage() {
     return (
       <main className={styles.page}>
         <div className={styles.emptyWrap}>
-          <h1 className={styles.title}>Товар не найден</h1>
-          <p className={styles.emptyText}>Возможно, он был удалён или временно недоступен.</p>
-          <LinkButton to="/catalog" icon="grid_view">Вернуться в каталог</LinkButton>
+          <h1 className={styles.title}>{t.product.notFoundTitle}</h1>
+          <p className={styles.emptyText}>{t.product.notFoundText}</p>
+          <LinkButton to="/catalog" icon="grid_view">{t.product.backToCatalog}</LinkButton>
         </div>
       </main>
     )
@@ -86,7 +89,7 @@ export function ProductPage() {
   return (
     <main className={styles.page}>
       <Link to={category ? `/catalog/${category.slug}` : '/catalog'} className={styles.backLink}>
-        ← Назад в каталог
+        {t.product.back}
       </Link>
 
       <article className={styles.productCard}>
@@ -98,7 +101,7 @@ export function ProductPage() {
             <div className={styles.thumbRow}>
               {product.images.map((image, index) => (
                 <div key={`${image}-${index}`} className={styles.thumbWrap}>
-                  <ProductImage src={image} alt={`${product.name} фото ${index + 1}`} className={styles.thumbImage} />
+                  <ProductImage src={image} alt={t.product.photoAlt(product.name, index + 1)} className={styles.thumbImage} />
                 </div>
               ))}
             </div>
@@ -117,15 +120,15 @@ export function ProductPage() {
 
           <div className={styles.priceRow}>
             <p className={styles.price}>{formatPrice(product.price)}</p>
-            <p className={styles.stockText}>{product.stock > 0 ? 'В наличии' : 'Нет в наличии'}</p>
+            <p className={styles.stockText}>{product.stock > 0 ? t.product.inStock : t.product.outOfStock}</p>
           </div>
 
           <div className={styles.actions}>
             <Button type="button" onClick={() => setShowOrderModal(true)}>
-              Заказать
+              {t.product.order}
             </Button>
             {product.condition === 'new' && (
-              <LinkButton to="/trade-in" variant="secondary">Обменять старый</LinkButton>
+              <LinkButton to="/trade-in" variant="secondary">{t.product.tradeIn}</LinkButton>
             )}
           </div>
 
@@ -133,19 +136,19 @@ export function ProductPage() {
             <div className={styles.successMessage} role="status">
               <span className="material-symbols-outlined" aria-hidden="true">check_circle</span>
               <div>
-                <strong>Заявка №{submittedOrder.number} принята</strong>
-                <p>Мы свяжемся с вами, чтобы подтвердить заказ.</p>
+                <strong>{t.product.orderAccepted(submittedOrder.number)}</strong>
+                <p>{t.product.orderAcceptedText}</p>
               </div>
             </div>
           )}
 
           {usedInfo && (
             <div className={styles.usedBlock}>
-              {usedInfo.grade && <p>Состояние: {usedInfo.grade}</p>}
-              {batteryHealth != null && <p>Аккумулятор: {batteryHealth}%</p>}
-              {usedInfo.defects && <p>Дефекты: {usedInfo.defects}</p>}
-              {usedInfo.kit && <p>Комплект: {usedInfo.kit}</p>}
-              {usedInfo.warrantyMonths != null && <p>Гарантия: {usedInfo.warrantyMonths} мес.</p>}
+              {usedInfo.grade && <p>{t.product.grade(DEVICE_GRADE_LABELS[usedInfo.grade])}</p>}
+              {batteryHealth != null && <p>{t.product.battery(batteryHealth)}</p>}
+              {usedInfo.defects && <p>{t.product.defects(usedInfo.defects)}</p>}
+              {usedInfo.kit && <p>{t.product.kit(usedInfo.kit)}</p>}
+              {usedInfo.warrantyMonths != null && <p>{t.product.warranty(usedInfo.warrantyMonths)}</p>}
             </div>
           )}
         </div>
@@ -153,7 +156,7 @@ export function ProductPage() {
 
       {specEntries.length > 0 && (
         <section className={styles.specSection}>
-          <h2 className={styles.specTitle}>Характеристики</h2>
+          <h2 className={styles.specTitle}>{t.product.specs}</h2>
           <dl className={styles.specList}>
             {specEntries.map((entry) => (
               <div key={entry.label} className={styles.specRow}>
@@ -168,7 +171,7 @@ export function ProductPage() {
       <Modal
         open={showOrderModal}
         onClose={() => setShowOrderModal(false)}
-        title="Оформить заказ"
+        title={t.product.orderTitle}
         size="lg"
       >
         <OrderForm

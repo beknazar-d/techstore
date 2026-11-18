@@ -1,3 +1,30 @@
 import type { ErrorsMoreMessages } from '../ru/errorsMore'
 
-export const errorsMore: ErrorsMoreMessages = {}
+export const errorsMore: ErrorsMoreMessages = {
+  usedGrade: 'Колдонулган товардын абалын көрсөтүңүз',
+  battery: 'Аккумулятордун сыйымдуулугу — 1ден 100гө чейинки бүтүн сан',
+  warranty: 'Кепилдик — айлардын бүтүн саны',
+  productName: 'Товардын аталышын жазыңыз',
+  category: 'Категорияны тандаңыз',
+  price: 'Баасы — нөлдөн чоң бүтүн сан',
+  minPrice: 'Минималдуу баа нөлдөн чоң жана кадимки баадан жогору болбошу керек',
+  costPrice: 'Өздүк наркы — нөлдөн кем эмес бүтүн сан',
+  stock: 'Калдык — нөлдөн кем эмес бүтүн сан',
+  imagesMax: (max: number) => `Бир товарга ${max} сүрөттөн ашпашы керек`,
+  productsLoad: 'Товарларды жүктөө мүмкүн болгон жок',
+  productCreate: 'Товарды түзүү мүмкүн болгон жок',
+  productSave: 'Товарды сактоо мүмкүн болгон жок',
+  productNotFound: 'Товар табылган жок',
+  stockDelta: 'Калдыктын өзгөрүүсү — бүтүн сан',
+  specLabel: 'Ар бир мүнөздөмөнүн аталышы болушу керек',
+  specKey: (label: string) => `«${label}» мүнөздөмөсү үчүн ачкыч түзүү мүмкүн болгон жок`,
+  specDuplicate: (label: string) => `«${label}» мүнөздөмөсү кайталанат`,
+  specOptions: (label: string) => `«${label}» мүнөздөмөсүнө тандоо варианттарын кошуңуз`,
+  categoriesLoad: 'Категорияларды жүктөө мүмкүн болгон жок',
+  categoryName: 'Категориянын аталышын жазыңыз',
+  categoryCreate: 'Категорияны түзүү мүмкүн болгон жок',
+  categorySave: 'Категорияны сактоо мүмкүн болгон жок',
+  categoryNotFound: 'Категория табылган жок',
+  categoryCheck: 'Категориянын товарларын текшерүү мүмкүн болгон жок',
+  categoryNotEmpty: (count: number) => `Категорияда товарлар бар (${count} даана). Адегенде аларды көчүрүңүз же өчүрүңүз.`,
+}
