@@ -16,7 +16,7 @@
   height: 100%;
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .logo {
@@ -47,8 +47,8 @@
 .nav {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
-  margin-left: var(--space-2);
+  gap: 0;
+  margin-left: var(--space-1);
   min-width: 0;
 }
 
@@ -75,8 +75,21 @@
 }
 
 .navIcon {
-  display: none;
   font-size: 20px;
+}
+
+/* На узком телефоне в меню только иконки; подпись остаётся для экранных чтецов. */
+.navText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.langFull {
+  display: none;
 }
 
 .contacts {
@@ -116,9 +129,22 @@
   }
 }
 
-@media (min-width: 480px) {
-  .navIcon {
-    display: inline-block;
+@media (min-width: 600px) {
+  .inner {
+    gap: var(--space-2);
+  }
+
+  .nav {
+    gap: var(--space-1);
+    margin-left: var(--space-2);
+  }
+
+  .navText {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
   }
 
   .navLink {
@@ -145,6 +171,14 @@
 
   .themeToggle {
     margin-left: 0;
+  }
+
+  .langFull {
+    display: inline-flex;
+  }
+
+  .langCompact {
+    display: none;
   }
 
   .phone {

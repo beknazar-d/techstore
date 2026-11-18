@@ -1,11 +1,13 @@
 // ИИ-ответы Telegram-бота клиентам. Вызывается из telegram-webhook в фоне.
+// Модель — та, что админ выбрал для бота (Claude, ChatGPT или Gemini).
 // Данные о товарах модель берёт только из базы через инструменты, а не выдумывает.
 // Торг — не ниже min_price товара; заявку создаёт тот же RPC create_order, что и сайт.
+// Отвечает на языке клиента (русский или кыргызский); на голосовое — ещё и голосом.
 
 import { adminDb, tg } from './telegram.ts'
-import { aiClient, aiKey, aiSettings, ask, replyText, type Anthropic } from './ai.ts'
-
-type Tool = Anthropic.Beta.BetaTool
+import type { AiSettingsRow } from './ai.ts'
+import { chatStep, type ChatMessage, type ToolDef, type ToolResult } from './llm.ts'
+import { sendTelegramVoice, synthesize } from './voice.ts'
 
 export interface BotBehavior {
   ai_instructions: string
@@ -14,24 +16,37 @@ export interface BotBehavior {
   handoff_to_manager: boolean
 }
 
-interface ChatInfo {
+export interface ChatInfo {
   id: string
   telegram_chat_id: number
   customer_name: string
 }
 
+export interface BotAi {
+  settings: AiSettingsRow
+  key: string
+}
+
 const SITE_URL = (Deno.env.get('SITE_URL') ?? 'https://techstore.sadyrbekov981-ae2.workers.dev').replace(/\/$/, '')
 const HISTORY_LIMIT = 30
 const MAX_STEPS = 6
-const FALLBACK_REPLY = 'Передал ваш вопрос менеджеру — он скоро ответит.'
+const FALLBACK_REPLY = {
+  ru: 'Передал ваш вопрос менеджеру — он скоро ответит.',
+  ky: 'Сурооңузду менеджерге өткөрүп бердим — ал жакында жооп берет.',
+}
 
-function tools(behavior: BotBehavior): Tool[] {
-  const list: Tool[] = [
+/** Буквы, которых нет в русском: ң, ө, ү. */
+export function looksKyrgyz(text: string): boolean {
+  return /[ңөүҢӨҮ]/.test(text)
+}
+
+function tools(behavior: BotBehavior): ToolDef[] {
+  const list: ToolDef[] = [
     {
       name: 'search_products',
       description:
-        'Поиск товаров в наличии и под заказ в каталоге магазина. Пустой запрос — популярные товары. Возвращает цены, остаток, характеристики, ссылку.',
-      input_schema: {
+        'Поиск товаров в наличии и под заказ в каталоге магазина. Пустой запрос — популярные товары. Возвращает цены, остаток, характеристики, ссылку. Запрос пиши так, как товар называется в каталоге (бренд, модель, по-русски или латиницей).',
+      parameters: {
         type: 'object',
         properties: {
           query: { type: 'string', description: 'Модель, бренд или тип: «iPhone 15», «фен», «наушники»' },
@@ -45,7 +60,7 @@ function tools(behavior: BotBehavior): Tool[] {
       name: 'create_order',
       description:
         'Оформить заявку на товар. Оплата при получении. Нужны имя и телефон клиента и способ получения; для доставки — адрес. Перед вызовом подтверди с клиентом товар, количество и цену.',
-      input_schema: {
+      parameters: {
         type: 'object',
         properties: {
           productId: { type: 'string' },
@@ -68,9 +83,9 @@ function tools(behavior: BotBehavior): Tool[] {
       name: 'handoff_to_manager',
       description:
         'Передать разговор живому менеджеру: клиент просит человека, жалоба, сложный вопрос, нет нужных данных, trade-in-оценка. После этого бот в чате замолкает.',
-      input_schema: {
+      parameters: {
         type: 'object',
-        properties: { reason: { type: 'string', description: 'Коротко, что нужно клиенту' } },
+        properties: { reason: { type: 'string', description: 'Коротко по-русски, что нужно клиенту' } },
         required: ['reason'],
       },
     })
@@ -81,7 +96,8 @@ function tools(behavior: BotBehavior): Tool[] {
 function system(behavior: BotBehavior, customerName: string): string {
   const today = new Date().toISOString().slice(0, 10)
   const rules = [
-    'Ты — консультант магазина электроники в Telegram. Отвечаешь клиентам по-русски, коротко и вежливо, на «вы».',
+    'Ты — консультант магазина электроники в Telegram. Отвечаешь клиентам коротко и вежливо, на «вы».',
+    'Язык ответа — язык клиента: если клиент пишет по-кыргызски, отвечай на грамотном кыргызском языке; иначе — по-русски. Названия товаров не переводи.',
     'Цены, наличие и характеристики бери только из search_products. Если товара нет в выдаче — так и скажи, не выдумывай.',
     'Онлайн-оплаты, корзины и рассрочки нет: клиент оставляет заявку на один товар, оплата при получении (самовывоз или доставка).',
     'Есть trade-in: старое устройство оценивают в магазине, разницу доплачивают на месте. Заявку на trade-in с фото клиент оставляет на сайте: ' +
@@ -95,6 +111,7 @@ function system(behavior: BotBehavior, customerName: string): string {
     behavior.handoff_to_manager
       ? 'Если не можешь помочь или клиент просит человека — вызови handoff_to_manager.'
       : 'Если не можешь помочь — предложи оставить заявку на сайте, менеджер перезвонит.',
+    'Сообщения клиента с пометкой [Голосовое] — расшифровка его голосового. Если пришло «[Голосовое сообщение]» без текста — его не удалось разобрать: вежливо попроси написать текстом.',
     'Пиши обычным текстом без Markdown, ссылки — полным адресом.',
     `Сегодня ${today}.` + (customerName ? ` Клиента в Telegram зовут ${customerName}.` : ''),
   ]
@@ -102,7 +119,7 @@ function system(behavior: BotBehavior, customerName: string): string {
   return rules.join('\n') + (extra ? `\n\nУказания магазина:\n${extra}` : '')
 }
 
-async function history(chatId: string): Promise<Anthropic.Beta.BetaMessageParam[]> {
+async function history(chatId: string): Promise<ChatMessage[]> {
   const { data } = await adminDb()
     .from('bot_messages')
     .select('sender, text')
@@ -110,12 +127,14 @@ async function history(chatId: string): Promise<Anthropic.Beta.BetaMessageParam[
     .order('created_at', { ascending: false })
     .limit(HISTORY_LIMIT)
   const rows = ((data ?? []) as { sender: string; text: string }[]).reverse()
-  const messages: Anthropic.Beta.BetaMessageParam[] = []
+  const messages: ChatMessage[] = []
   for (const row of rows) {
-    const role = row.sender === 'customer' ? 'user' : 'assistant'
-    const text = row.sender === 'manager' ? `[Менеджер] ${row.text}` : row.text
-    if (messages.length === 0 && role === 'assistant') continue // первым должен быть клиент
-    messages.push({ role, content: text })
+    if (row.sender === 'customer') {
+      messages.push({ role: 'user', text: row.text })
+    } else {
+      if (messages.length === 0) continue // первым должен быть клиент
+      messages.push({ role: 'assistant', text: row.sender === 'manager' ? `[Менеджер] ${row.text}` : row.text })
+    }
   }
   return messages
 }
@@ -215,46 +234,58 @@ async function handoff(chat: ChatInfo, reason: string) {
   return { ok: true, note: 'Менеджер подключится к чату. Сообщи клиенту, что передал вопрос.' }
 }
 
+/** Текст для озвучки: без ссылок — их клиент увидит в текстовом сообщении. */
+function speakable(text: string): string {
+  return text.replace(/https?:\/\/\S+/g, '').replace(/[ \t]+\n/g, '\n').trim()
+}
+
+export interface ReplyOptions {
+  /** Клиент прислал голосовое — ответить ещё и голосом. */
+  voice?: boolean
+}
+
 /**
  * Генерирует и отправляет ответ клиенту. Любая ошибка ИИ → чат уходит менеджеру,
  * клиент не остаётся без ответа.
  */
-export async function replyWithAi(token: string, chat: ChatInfo, behavior: BotBehavior): Promise<void> {
+export async function replyWithAi(
+  token: string,
+  chat: ChatInfo,
+  behavior: BotBehavior,
+  ai: BotAi,
+  options: ReplyOptions = {},
+): Promise<void> {
   const db = adminDb()
   try {
-    const key = await aiKey()
-    const settings = await aiSettings()
-    if (!key || !settings?.connected) throw new Error('ai not connected')
-
-    const client = aiClient(key)
     const messages = await history(chat.id)
     if (messages.length === 0) return
+    const lastCustomer = [...messages].reverse().find((m) => m.role === 'user')
+    const lang = lastCustomer && looksKyrgyz(lastCustomer.text) ? 'ky' : 'ru'
     const toolList = tools(behavior)
     let reply = ''
     let handedOff = false
 
     for (let step = 0; step < MAX_STEPS; step++) {
-      const response = await ask(client, {
-        model: settings.bot_model,
+      const response = await chatStep({
+        provider: ai.settings.bot_provider,
+        apiKey: ai.key,
+        model: ai.settings.bot_model,
         system: system(behavior, chat.customer_name),
         tools: toolList,
         messages,
         effort: 'low',
         maxTokens: 8000,
       })
-      if (response.stop_reason === 'refusal') break
-      reply = replyText(response)
-      const calls = response.content.filter(
-        (block): block is Anthropic.Beta.BetaToolUseBlock => block.type === 'tool_use',
-      )
-      if (calls.length === 0) break
+      if (response.stop === 'refusal') break
+      reply = response.text
+      if (response.toolCalls.length === 0) break
 
-      messages.push({ role: 'assistant', content: response.content })
-      const results: Anthropic.Beta.BetaToolResultBlockParam[] = []
-      for (const call of calls) {
+      messages.push({ role: 'assistant', text: response.text, toolCalls: response.toolCalls, raw: response.raw })
+      const results: ToolResult[] = []
+      for (const call of response.toolCalls) {
         let result: unknown
         try {
-          const input = call.input as Record<string, unknown>
+          const input = call.input
           if (call.name === 'search_products') {
             result = await searchProducts(input as { query?: string }, behavior.allow_bargaining)
           } else if (call.name === 'create_order' && behavior.allow_orders) {
@@ -269,15 +300,24 @@ export async function replyWithAi(token: string, chat: ChatInfo, behavior: BotBe
           console.error('bot tool failed', call.name, toolError)
           result = { error: 'Не получилось, попробуйте позже' }
         }
-        results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(result) })
+        results.push({ id: call.id, name: call.name, content: JSON.stringify(result) })
       }
-      messages.push({ role: 'user', content: results })
+      messages.push({ role: 'tool', results })
       reply = ''
     }
 
     if (!reply) {
       if (!handedOff) await handoff(chat, 'Бот не смог ответить — ответьте клиенту')
-      reply = FALLBACK_REPLY
+      reply = FALLBACK_REPLY[lang]
+    }
+
+    if (options.voice && ai.settings.voice_replies) {
+      try {
+        const audio = await synthesize(ai.settings, speakable(reply))
+        if (audio) await sendTelegramVoice(token, chat.telegram_chat_id, audio)
+      } catch (voiceError) {
+        console.error('bot voice reply failed', voiceError) // текст всё равно уйдёт
+      }
     }
     await tg(token, 'sendMessage', { chat_id: chat.telegram_chat_id, text: reply.slice(0, 4096) })
     await db.rpc('bot_record_outgoing', { p_chat_id: chat.id, p_sender: 'bot', p_text: reply })

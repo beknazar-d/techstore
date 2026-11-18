@@ -2,9 +2,9 @@
 // вызывая те же функции src/api, что и формы админки. Имена и поля должны совпадать
 // с обработчиками в src/api/ai.ts.
 
-import type { Anthropic } from '../_shared/ai.ts'
+import type { ToolDef } from '../_shared/llm.ts'
 
-type Tool = Anthropic.Beta.BetaTool
+type Tool = ToolDef
 
 const specField = {
   type: 'object',
@@ -54,12 +54,12 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'list_categories',
     description: 'Все категории магазина с id и шаблоном характеристик (specFields).',
-    input_schema: { type: 'object', properties: {} },
+    parameters: { type: 'object', properties: {} },
   },
   {
     name: 'create_category',
     description: 'Создать категорию. Шаблон характеристик — поля, которые заполняются у товаров этой категории.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         name: { type: 'string' },
@@ -72,7 +72,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'update_category',
     description: 'Изменить категорию: название, видимость, порядок, шаблон характеристик (передавайте шаблон целиком).',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         id: { type: 'string' },
@@ -87,7 +87,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'list_products',
     description: 'Найти товары (до 50). Возвращает id, название, цену, остаток, категорию, характеристики.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         search: { type: 'string', description: 'Часть названия или бренда' },
@@ -100,7 +100,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
     name: 'create_product',
     description:
       'Создать товар. Фото так не добавить — их загружают в карточке товара. Обязательны категория, название, цена, остаток.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: productFields,
       required: ['categoryId', 'name', 'price', 'stock'],
@@ -109,7 +109,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'update_product',
     description: 'Изменить поля товара. Передавайте только то, что меняется.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: { id: { type: 'string' }, ...productFields },
       required: ['id'],
@@ -118,7 +118,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'adjust_stock',
     description: 'Изменить остаток на складе: +5 — приход, −1 — списание.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: { productId: { type: 'string' }, delta: { type: 'integer' } },
       required: ['productId', 'delta'],
@@ -127,7 +127,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'list_orders',
     description: 'Заказы (новые сверху, до 50).',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: { status: { type: 'string', enum: ['new', 'confirmed', 'completed', 'cancelled'] } },
     },
@@ -135,7 +135,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'update_order_status',
     description: 'Сменить статус заказа. cancelled возвращает товар на склад.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         orderId: { type: 'string' },
@@ -147,7 +147,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'list_trade_ins',
     description: 'Заявки на trade-in (новые сверху, до 50).',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: {
         status: { type: 'string', enum: ['new', 'evaluated', 'accepted', 'rejected', 'completed'] },
@@ -157,7 +157,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'get_stats',
     description: 'Статистика магазина за 7, 30 или 90 дней: выручка, прибыль, заказы, товары.',
-    input_schema: {
+    parameters: {
       type: 'object',
       properties: { days: { type: 'integer', enum: [7, 30, 90] } },
       required: ['days'],
@@ -177,7 +177,7 @@ export function assistantSystem(extra: string): string {
 - Новый товар по умолчанию виден на сайте (isActive: true).
 - Удалять ты не умеешь: удаление делается вручную в админке. Фото загружаются в карточке товара.
 - Перед массовыми изменениями (больше 5 товаров или отмена заказов) коротко опиши план и дождись согласия.
-- После действий коротко отчитайся, что сделано. Пиши по-русски, просто, без таблиц.`
+- После действий коротко отчитайся, что сделано. Пиши на языке администратора (по-русски или по-кыргызски — как он пишет), просто, без таблиц.`
   const trimmed = extra.trim()
   return trimmed ? `${base}\n\nДополнительные указания администратора:\n${trimmed}` : base
 }

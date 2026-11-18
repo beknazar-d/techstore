@@ -1,32 +1,87 @@
 // ИИ для админки. Только для администратора (JWT + таблица admins).
 //
-// POST { action: 'connect', key }        — проверить API-ключ Anthropic и сохранить в Vault
-// POST { action: 'disconnect' }          — удалить ключ
-// POST { action: 'chat', messages }      — один шаг ИИ-ассистента
+// POST { action: 'connect', provider, key } — проверить ключ (anthropic | openai | google | elevenlabs)
+//                                             и сохранить в Vault; для ИИ — запомнить список моделей
+// POST { action: 'disconnect', provider }   — удалить ключ
+// POST { action: 'voices' }                 — голоса ElevenLabs по сохранённому ключу
+// POST { action: 'chat', messages }         — один шаг ИИ-ассистента
 //
-// Ассистент работает так: функция отправляет переписку в Claude вместе с фиксированным
-// набором инструментов и возвращает ответ модели. Вызовы инструментов (создать категорию,
-// товар, поменять остаток…) выполняет браузер через слой src/api — с теми же проверками
-// и правами (RLS), что и обычные формы админки, — и присылает результаты следующим шагом.
+// Ассистент работает так: функция отправляет переписку выбранной модели вместе с фиксированным
+// набором инструментов и возвращает ответ. Вызовы инструментов (создать категорию, товар,
+// поменять остаток…) выполняет браузер через слой src/api — с теми же проверками и правами
+// (RLS), что и обычные формы админки, — и присылает результаты следующим шагом.
 
 import { adminDb, corsHeaders, json } from '../_shared/telegram.ts'
 import { isAdmin } from '../_shared/auth.ts'
-import { aiClient, aiErrorMessage, aiKey, aiSettings, Anthropic, ask, forgetAiKey, KEY_RE } from '../_shared/ai.ts'
+import {
+  aiSecret,
+  aiSettings,
+  forgetAiSecret,
+  KEY_NAMES,
+  KEY_PATTERNS,
+  SECRET_PROVIDERS,
+  type AiSettingsRow,
+  type SecretProvider,
+} from '../_shared/ai.ts'
+import {
+  chatStep,
+  listElevenLabsVoices,
+  listModels,
+  LlmError,
+  PROVIDERS,
+  type ChatMessage,
+  type Provider,
+} from '../_shared/llm.ts'
 import { ASSISTANT_TOOLS, assistantSystem } from './tools.ts'
 
 type Body =
-  | { action: 'connect'; key: string }
-  | { action: 'disconnect' }
-  | { action: 'chat'; messages: Anthropic.Beta.BetaMessageParam[] }
+  | { action: 'connect'; provider: SecretProvider; key: string }
+  | { action: 'disconnect'; provider: SecretProvider }
+  | { action: 'voices' }
+  | { action: 'chat'; messages: ChatMessage[] }
 
 const MAX_MESSAGES = 300
 const MAX_BODY_CHARS = 600_000
+const MAX_MODELS = 40
 
 function fail(message: string, code: string, status = 400): Response {
   return json({ error: message, code }, status)
 }
 
-const NOT_CONNECTED = 'ИИ не подключён: вставьте API-ключ Anthropic в «Настройках» → «Искусственный интеллект»'
+const NOT_CONNECTED = 'ИИ не подключён: вставьте API-ключ в «Настройках» → «Искусственный интеллект»'
+
+function isSecretProvider(value: unknown): value is SecretProvider {
+  return SECRET_PROVIDERS.includes(value as SecretProvider)
+}
+
+function validMessages(messages: unknown): messages is ChatMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) return false
+  if ((messages[0] as ChatMessage)?.role !== 'user') return false
+  return messages.every((m: ChatMessage) => {
+    if (m?.role === 'user') return typeof m.text === 'string'
+    if (m?.role === 'assistant') return typeof m.text === 'string' && (!m.toolCalls || Array.isArray(m.toolCalls))
+    if (m?.role === 'tool') return Array.isArray(m.results)
+    return false
+  })
+}
+
+/**
+ * После подключения ключа: если у ассистента или бота ещё нет рабочего провайдера —
+ * переключаем их на этот; если модель пропала из списка — берём первую.
+ */
+function rolesAfterConnect(settings: AiSettingsRow, provider: Provider, models: string[]) {
+  const patch: Partial<AiSettingsRow> = {}
+  const hints = settings.key_hints ?? {}
+  for (const role of ['assistant', 'bot'] as const) {
+    const current = settings[`${role}_provider`]
+    const model = settings[`${role}_model`]
+    if (!hints[current] || (current === provider && !models.includes(model))) {
+      patch[`${role}_provider`] = provider
+      patch[`${role}_model`] = models[0]
+    }
+  }
+  return patch
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -51,53 +106,82 @@ Deno.serve(async (req) => {
   try {
     switch (body.action) {
       case 'connect': {
+        const provider = body.provider
+        if (!isSecretProvider(provider)) return fail('Неизвестный провайдер', 'validation')
         const key = String(body.key ?? '').trim()
-        if (!KEY_RE.test(key)) {
-          return fail('Ключ не похож на API-ключ Anthropic. Он начинается с sk-ant-…', 'validation')
+        if (!KEY_PATTERNS[provider].test(key)) {
+          return fail(`Ключ не похож на API-ключ ${KEY_NAMES[provider]}`, 'validation')
         }
         const settings = await aiSettings()
-        // Проверяем ключ бесплатным запросом — неверный ключ не сохраняем.
-        await aiClient(key).models.retrieve(settings?.assistant_model ?? 'claude-opus-5-5')
+        if (!settings) return fail('Нет строки настроек ИИ', 'storage', 500)
 
-        const saved = await db.rpc('ai_key_set', { p_key: key })
+        // Проверяем ключ бесплатным запросом (список моделей / голосов) — неверный ключ не сохраняем.
+        let models: string[] = []
+        let voices: { id: string; name: string }[] = []
+        if (provider === 'elevenlabs') {
+          voices = await listElevenLabsVoices(key)
+        } else {
+          models = (await listModels(provider, key)).slice(0, MAX_MODELS)
+          if (models.length === 0) return fail('По этому ключу нет доступных моделей для чата', 'validation')
+        }
+
+        const saved = await db.rpc('ai_secret_set', { p_provider: provider, p_key: key })
         if (saved.error) throw saved.error
-        forgetAiKey()
-        const updated = await db
-          .from('ai_settings')
-          .update({ connected: true, key_hint: key.slice(-4) })
-          .eq('id', true)
+        forgetAiSecret(provider)
+
+        const patch: Record<string, unknown> = { key_hints: { ...settings.key_hints, [provider]: key.slice(-4) } }
+        if (provider !== 'elevenlabs') {
+          patch.models = { ...settings.models, [provider]: models }
+          Object.assign(patch, rolesAfterConnect(settings, provider, models))
+        }
+        const updated = await db.from('ai_settings').update(patch).eq('id', true)
         if (updated.error) throw updated.error
-        return json({ ok: true })
+        return json({ ok: true, models, voices })
       }
 
       case 'disconnect': {
-        const cleared = await db.rpc('ai_key_clear')
+        const provider = body.provider
+        if (!isSecretProvider(provider)) return fail('Неизвестный провайдер', 'validation')
+        const settings = await aiSettings()
+        const cleared = await db.rpc('ai_secret_clear', { p_provider: provider })
         if (cleared.error) throw cleared.error
-        forgetAiKey()
-        const updated = await db.from('ai_settings').update({ connected: false, key_hint: '' }).eq('id', true)
+        forgetAiSecret(provider)
+        const hints = { ...(settings?.key_hints ?? {}) }
+        const models = { ...(settings?.models ?? {}) }
+        delete hints[provider]
+        if (provider !== 'elevenlabs') delete models[provider]
+        const updated = await db.from('ai_settings').update({ key_hints: hints, models }).eq('id', true)
         if (updated.error) throw updated.error
         return json({ ok: true })
       }
 
+      case 'voices': {
+        const key = await aiSecret('elevenlabs')
+        if (!key) return fail('Сначала подключите ключ ElevenLabs', 'not_found', 409)
+        return json({ voices: await listElevenLabsVoices(key) })
+      }
+
       case 'chat': {
-        const messages = body.messages
-        if (!Array.isArray(messages) || messages.length === 0 || messages.length > MAX_MESSAGES) {
-          return fail('Пустая или слишком длинная переписка', 'validation')
-        }
-        if (messages[0]?.role !== 'user') return fail('Переписка должна начинаться с сообщения', 'validation')
+        if (!validMessages(body.messages)) return fail('Пустая или неверная переписка', 'validation')
 
-        const key = await aiKey()
         const settings = await aiSettings()
-        if (!key || !settings?.connected) return fail(NOT_CONNECTED, 'not_found', 409)
+        const provider = settings?.assistant_provider
+        if (!settings || !provider || !PROVIDERS.includes(provider) || !settings.key_hints?.[provider]) {
+          return fail(NOT_CONNECTED, 'not_found', 409)
+        }
+        const key = await aiSecret(provider)
+        if (!key) return fail(NOT_CONNECTED, 'not_found', 409)
 
-        const response = await ask(aiClient(key), {
+        const step = await chatStep({
+          provider,
+          apiKey: key,
           model: settings.assistant_model,
           system: assistantSystem(settings.assistant_instructions),
           tools: ASSISTANT_TOOLS,
-          messages,
+          messages: body.messages,
           effort: 'medium',
         })
-        return json({ content: response.content, stopReason: response.stop_reason })
+        return json(step)
       }
 
       default:
@@ -105,7 +189,7 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.error('ai-admin failed', error)
-    if (error instanceof Anthropic.APIError) return fail(aiErrorMessage(error), 'storage', 502)
+    if (error instanceof LlmError) return fail(error.message, 'storage', 502)
     return fail('Не удалось выполнить действие на сервере. Повторите через минуту.', 'storage', 500)
   }
 })

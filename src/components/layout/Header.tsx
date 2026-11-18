@@ -17,13 +17,13 @@ export function Header() {
           <span className={styles.logoCity}>{shop.city}</span>
         </Link>
         <nav className={styles.nav} aria-label={t.layout.mainNav}>
-          <NavLink to="/catalog" className={({ isActive }) => cn(styles.navLink, isActive && styles.active)}>
+          <NavLink to="/catalog" title={t.layout.catalog} className={({ isActive }) => cn(styles.navLink, isActive && styles.active)}>
             <span className={cn('material-symbols-outlined', styles.navIcon)} aria-hidden="true">grid_view</span>
-            {t.layout.catalog}
+            <span className={styles.navText}>{t.layout.catalog}</span>
           </NavLink>
-          <NavLink to="/trade-in" className={({ isActive }) => cn(styles.navLink, isActive && styles.active)}>
+          <NavLink to="/trade-in" title={t.layout.tradeIn} className={({ isActive }) => cn(styles.navLink, isActive && styles.active)}>
             <span className={cn('material-symbols-outlined', styles.navIcon)} aria-hidden="true">swap_horiz</span>
-            {t.layout.tradeIn}
+            <span className={styles.navText}>{t.layout.tradeIn}</span>
           </NavLink>
         </nav>
         <div className={styles.contacts}>
@@ -32,7 +32,8 @@ export function Header() {
           </a>
           <span className={styles.hours}>{t.layout.workingHours}</span>
         </div>
-        <LanguageSwitcher className={styles.themeToggle} />
+        <LanguageSwitcher className={cn(styles.themeToggle, styles.langFull)} />
+        <LanguageSwitcher compact className={cn(styles.themeToggle, styles.langCompact)} />
         <ThemeToggle />
         <a href={telHref(shop.phone)} className={styles.callButton} aria-label={t.layout.callShop}>
           <span className="material-symbols-outlined" aria-hidden="true">call</span>

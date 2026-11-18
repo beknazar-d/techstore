@@ -1,20 +1,23 @@
-// Искусственный интеллект (Claude, Anthropic): настройки и ИИ-ассистент админки.
+// Искусственный интеллект: настройки, ключи провайдеров и ИИ-ассистент админки.
 //
-//   - API-ключ Anthropic админ вставляет в «Настройках». connectAi → Edge Function `ai-admin`:
-//     проверяет ключ и хранит его зашифрованным в Supabase Vault. Обратно — только 4 символа.
-//   - Ассистент: `ai-admin` (action 'chat') отправляет переписку в Claude и возвращает ответ.
-//     Если модель вызывает инструменты (создать категорию, товар…), их выполняет этот файл —
+//   - Ключи Claude (Anthropic), ChatGPT (OpenAI), Gemini (Google) и ElevenLabs админ вставляет
+//     в «Настройках». connectAiKey → Edge Function `ai-admin`: проверяет ключ у провайдера
+//     и хранит его зашифрованным в Supabase Vault. Обратно — только 4 символа и список моделей.
+//   - Ассистент: `ai-admin` (action 'chat') отправляет переписку выбранной модели и возвращает
+//     ответ. Если модель вызывает инструменты (создать категорию, товар…), их выполняет этот файл —
 //     через те же функции слоя api, что и формы админки (проверки, RLS, обновление экранов).
 
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import type {
-  AiModel,
+  AiProvider,
+  AiSecretProvider,
   AiSettings,
   AiSettingsInput,
   AssistantAction,
   AssistantChatItem,
   CategoryInput,
   DeviceGrade,
+  ElevenLabsVoice,
   OrderStatus,
   ProductCondition,
   ProductInput,
@@ -23,7 +26,9 @@ import type {
   StatsPeriod,
   TradeInStatus,
   UsedInfo,
+  VoiceProvider,
 } from '../types'
+import { msg } from '../i18n'
 import { emit, supabase, unwrap } from './client'
 import { ApiError, getErrorMessage, type ApiErrorCode } from './errors'
 import { createCategory, listCategories, updateCategory } from './categories'
@@ -32,35 +37,77 @@ import { listOrders, updateOrderStatus } from './orders'
 import { listTradeIns } from './tradeIns'
 import { getShopStats } from './stats'
 
-export const AI_MODEL_OPTIONS: { value: AiModel; label: string }[] = [
-  { value: 'claude-opus-5-5', label: 'Claude Opus 5.5 — самый умный' },
-  { value: 'claude-sonnet-5-5', label: 'Claude Sonnet 5.5 — быстрее и дешевле' },
-  { value: 'claude-haiku-5-5', label: 'Claude Haiku 5.5 — самый быстрый и дешёвый' },
-]
+export const AI_PROVIDERS: AiProvider[] = ['anthropic', 'openai', 'google']
+export const AI_SECRET_PROVIDERS: AiSecretProvider[] = ['anthropic', 'openai', 'google', 'elevenlabs']
 
-const KEY_RE = /^sk-ant-[A-Za-z0-9_-]{20,}$/
+export const AI_PROVIDER_NAMES: Record<AiSecretProvider, string> = {
+  anthropic: 'Claude',
+  openai: 'ChatGPT',
+  google: 'Gemini',
+  elevenlabs: 'ElevenLabs',
+}
+
+export const AI_KEY_PLACEHOLDERS: Record<AiSecretProvider, string> = {
+  anthropic: 'sk-ant-…',
+  openai: 'sk-…',
+  google: 'AIza…',
+  elevenlabs: 'sk_…',
+}
+
+const KEY_PATTERNS: Record<AiSecretProvider, RegExp> = {
+  anthropic: /^sk-ant-[A-Za-z0-9_-]{20,}$/,
+  openai: /^sk-[A-Za-z0-9_-]{20,}$/,
+  google: /^AIza[A-Za-z0-9_-]{30,}$/,
+  elevenlabs: /^[A-Za-z0-9_]{20,}$/,
+}
+
+export const OPENAI_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer', 'verse']
+export const ELEVENLABS_MODELS = ['eleven_v3', 'eleven_multilingual_v2', 'eleven_flash_v2_5']
+
+const VOICE_ID_RE = /^[A-Za-z0-9_-]{5,64}$/
 const MAX_INSTRUCTIONS = 4000
 const MAX_STEPS = 15
-const SETTINGS_COLUMNS = 'connected, key_hint, assistant_model, bot_model, assistant_instructions, updated_at'
+const SETTINGS_COLUMNS =
+  'assistant_provider, assistant_model, bot_provider, bot_model, assistant_instructions, key_hints, models, ' +
+  'voice_replies, voice_provider, elevenlabs_voice_id, elevenlabs_model, openai_voice, updated_at'
 
 interface SettingsRow {
-  connected: boolean
-  key_hint: string
-  assistant_model: AiModel
-  bot_model: AiModel
+  assistant_provider: AiProvider
+  assistant_model: string
+  bot_provider: AiProvider
+  bot_model: string
   assistant_instructions: string
+  key_hints: AiSettings['keyHints'] | null
+  models: AiSettings['models'] | null
+  voice_replies: boolean
+  voice_provider: VoiceProvider
+  elevenlabs_voice_id: string
+  elevenlabs_model: string
+  openai_voice: string
   updated_at: string
 }
 
 function settingsFromRow(row: SettingsRow): AiSettings {
   return {
-    connected: row.connected,
-    keyHint: row.key_hint,
+    assistantProvider: row.assistant_provider,
     assistantModel: row.assistant_model,
+    botProvider: row.bot_provider,
     botModel: row.bot_model,
     assistantInstructions: row.assistant_instructions,
+    keyHints: row.key_hints ?? {},
+    models: row.models ?? {},
+    voiceReplies: row.voice_replies,
+    voiceProvider: row.voice_provider,
+    elevenlabsVoiceId: row.elevenlabs_voice_id,
+    elevenlabsModel: row.elevenlabs_model,
+    openaiVoice: row.openai_voice,
     updatedAt: row.updated_at,
   }
+}
+
+/** Подключён ли ИИ, выбранный для ассистента. */
+export function isAssistantReady(settings: AiSettings | null | undefined): boolean {
+  return Boolean(settings && settings.keyHints[settings.assistantProvider])
 }
 
 async function callAiFunction<T>(body: Record<string, unknown>): Promise<T> {
@@ -70,7 +117,7 @@ async function callAiFunction<T>(body: Record<string, unknown>): Promise<T> {
       const payload = (await error.context.json().catch(() => null)) as { error?: string; code?: string } | null
       if (payload?.error) throw new ApiError((payload.code as ApiErrorCode) ?? 'storage', payload.error)
     }
-    throw new ApiError('storage', 'Сервер ИИ не ответил. Проверьте интернет и повторите.')
+    throw new ApiError('storage', msg().assistant.serverDown)
   }
   return data as T
 }
@@ -80,73 +127,99 @@ async function callAiFunction<T>(body: Record<string, unknown>): Promise<T> {
 export async function getAiSettings(): Promise<AiSettings> {
   const row = unwrap(
     await supabase.from('ai_settings').select(SETTINGS_COLUMNS).eq('id', true).single(),
-    'Не удалось загрузить настройки ИИ',
-  ) as SettingsRow
+    msg().adminSettings.errAiLoad,
+  ) as unknown as SettingsRow
   return settingsFromRow(row)
 }
 
 export async function updateAiSettings(input: AiSettingsInput): Promise<AiSettings> {
+  const t = msg().adminSettings
   const changes: Record<string, unknown> = {}
+  if (input.assistantProvider !== undefined) changes.assistant_provider = input.assistantProvider
   if (input.assistantModel !== undefined) changes.assistant_model = input.assistantModel
+  if (input.botProvider !== undefined) changes.bot_provider = input.botProvider
   if (input.botModel !== undefined) changes.bot_model = input.botModel
   if (input.assistantInstructions !== undefined) {
     const text = input.assistantInstructions.trim()
-    if (text.length > MAX_INSTRUCTIONS) {
-      throw new ApiError('validation', `Указания ассистенту — не длиннее ${MAX_INSTRUCTIONS} символов`)
-    }
+    if (text.length > MAX_INSTRUCTIONS) throw new ApiError('validation', t.errAssistantInstructions(MAX_INSTRUCTIONS))
     changes.assistant_instructions = text
   }
+  if (input.voiceReplies !== undefined) changes.voice_replies = input.voiceReplies
+  if (input.voiceProvider !== undefined) changes.voice_provider = input.voiceProvider
+  if (input.elevenlabsVoiceId !== undefined) {
+    const id = input.elevenlabsVoiceId.trim()
+    if (id && !VOICE_ID_RE.test(id)) throw new ApiError('validation', t.voiceIdError)
+    changes.elevenlabs_voice_id = id
+  }
+  if (input.elevenlabsModel !== undefined) changes.elevenlabs_model = input.elevenlabsModel
+  if (input.openaiVoice !== undefined) changes.openai_voice = input.openaiVoice
   const row = unwrap(
     await supabase.from('ai_settings').update(changes).eq('id', true).select(SETTINGS_COLUMNS).single(),
-    'Не удалось сохранить настройки ИИ',
-  ) as SettingsRow
+    t.errAiSave,
+  ) as unknown as SettingsRow
   emit(['aiSettings'])
   return settingsFromRow(row)
 }
 
-/** Сохраняет API-ключ Anthropic на сервере (сначала сервер проверяет его в Anthropic). */
-export async function connectAi(key: string): Promise<AiSettings> {
+/** Сохраняет API-ключ на сервере (сначала сервер проверяет его у провайдера). */
+export async function connectAiKey(provider: AiSecretProvider, key: string): Promise<{ voices: ElevenLabsVoice[] }> {
   const clean = key.trim()
-  if (!KEY_RE.test(clean)) {
-    throw new ApiError('validation', 'Ключ не похож на API-ключ Anthropic. Он начинается с sk-ant-…')
+  if (!KEY_PATTERNS[provider].test(clean)) {
+    throw new ApiError('validation', msg().adminSettings.errKeyFormat(AI_PROVIDER_NAMES[provider]))
   }
-  await callAiFunction({ action: 'connect', key: clean })
+  const result = await callAiFunction<{ voices?: ElevenLabsVoice[] }>({ action: 'connect', provider, key: clean })
   emit(['aiSettings'])
-  return getAiSettings()
+  return { voices: result.voices ?? [] }
 }
 
-/** Удаляет ключ с сервера: ассистент и ИИ-ответы бота перестают работать. */
-export async function disconnectAi(): Promise<AiSettings> {
-  await callAiFunction({ action: 'disconnect' })
+/** Удаляет ключ с сервера. */
+export async function disconnectAiKey(provider: AiSecretProvider): Promise<void> {
+  await callAiFunction({ action: 'disconnect', provider })
   emit(['aiSettings'])
-  return getAiSettings()
+}
+
+/** Голоса из аккаунта ElevenLabs (по сохранённому ключу). */
+export async function listElevenLabsVoices(): Promise<ElevenLabsVoice[]> {
+  const result = await callAiFunction<{ voices?: ElevenLabsVoice[] }>({ action: 'voices' })
+  return result.voices ?? []
 }
 
 // ---------- Ассистент ----------
 
-interface ContentBlock {
-  type: string
-  text?: string
-  id?: string
-  name?: string
-  input?: unknown
+interface ToolCall {
+  id: string
+  name: string
+  input: Record<string, unknown>
 }
 
-interface ApiMessage {
-  role: 'user' | 'assistant'
-  content: string | ContentBlock[] | Record<string, unknown>[]
-}
+/** Переписка в общем формате ai-admin (одинаковом для Claude, ChatGPT и Gemini). */
+type ChatMessage =
+  | { role: 'user'; text: string }
+  | { role: 'assistant'; text: string; toolCalls?: ToolCall[]; raw?: unknown }
+  | { role: 'tool'; results: { id: string; name: string; content: string; isError?: boolean }[] }
 
 /**
- * Разговор с ассистентом. `messages` — переписка в формате Claude (с блоками размышлений
- * и вызовами инструментов, передаётся обратно без изменений), `items` — то, что видит админ.
+ * Разговор с ассистентом. `messages` — переписка для сервера (служебные данные модели
+ * передаются обратно без изменений), `items` — то, что видит админ.
  */
 export interface AssistantConversation {
-  messages: ApiMessage[]
+  messages: ChatMessage[]
   items: AssistantChatItem[]
 }
 
 export const EMPTY_CONVERSATION: AssistantConversation = { messages: [], items: [] }
+
+/** Проверка сохранённого разговора (в старом формате его нельзя продолжить). */
+export function isAssistantConversation(value: unknown): value is AssistantConversation {
+  if (!value || typeof value !== 'object') return false
+  const v = value as AssistantConversation
+  if (!Array.isArray(v.items) || !Array.isArray(v.messages)) return false
+  return v.messages.every((m) =>
+    m?.role === 'user' || m?.role === 'assistant'
+      ? typeof (m as { text?: unknown }).text === 'string'
+      : m?.role === 'tool' && Array.isArray(m.results),
+  )
+}
 
 type Input = Record<string, unknown>
 
@@ -156,7 +229,7 @@ const int = (value: unknown): number | undefined =>
 const bool = (value: unknown): boolean | undefined => (typeof value === 'boolean' ? value : undefined)
 
 function need(value: string | undefined, field: string): string {
-  if (!value?.trim()) throw new ApiError('validation', `Не указано поле ${field}`)
+  if (!value?.trim()) throw new ApiError('validation', msg().assistant.missingField(field))
   return value
 }
 
@@ -205,7 +278,7 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
       const categories = await listCategories()
       return {
         data: categories.map(({ id, name, isActive, specFields }) => ({ id, name, isActive, specFields })),
-        summary: `Просмотрены категории (${categories.length})`,
+        summary: msg().assistant.viewedCategories(categories.length),
       }
     }
     case 'create_category': {
@@ -215,7 +288,7 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
         specFields: specFields(input.specFields) ?? [],
       }
       const category = await createCategory(input2)
-      return { data: { id: category.id, name: category.name }, summary: `Создана категория «${category.name}»` }
+      return { data: { id: category.id, name: category.name }, summary: msg().assistant.createdCategory(category.name) }
     }
     case 'update_category': {
       const category = await updateCategory(need(str(input.id), 'id'), {
@@ -224,7 +297,7 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
         sortOrder: int(input.sortOrder),
         specFields: specFields(input.specFields),
       })
-      return { data: category, summary: `Изменена категория «${category.name}»` }
+      return { data: category, summary: msg().assistant.updatedCategory(category.name) }
     }
     case 'list_products': {
       const products = await listProducts({
@@ -248,7 +321,7 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
           specs: p.specs,
           photos: p.images.length,
         })),
-        summary: `Найдено товаров: ${products.length}`,
+        summary: msg().assistant.foundProducts(products.length),
       }
     }
     case 'create_product': {
@@ -267,12 +340,12 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
       })
       return {
         data: { id: product.id, name: product.name, slug: product.slug },
-        summary: `Добавлен товар «${product.name}»`,
+        summary: msg().assistant.createdProduct(product.name),
       }
     }
     case 'update_product': {
       const product = await updateProduct(need(str(input.id), 'id'), productPatch(input))
-      return { data: { id: product.id, name: product.name }, summary: `Изменён товар «${product.name}»` }
+      return { data: { id: product.id, name: product.name }, summary: msg().assistant.updatedProduct(product.name) }
     }
     case 'adjust_stock': {
       const delta = int(input.delta) ?? Number.NaN
@@ -280,7 +353,7 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
       const sign = delta > 0 ? `+${delta}` : String(delta)
       return {
         data: { id: product.id, stock: product.stock },
-        summary: `Остаток «${product.name}»: ${sign}, теперь ${product.stock} шт.`,
+        summary: msg().assistant.stockChanged(product.name, sign, product.stock),
       }
     }
     case 'list_orders': {
@@ -303,7 +376,7 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
           comment: o.comment,
           createdAt: o.createdAt,
         })),
-        summary: `Просмотрены заказы (${orders.length})`,
+        summary: msg().assistant.viewedOrders(orders.length),
       }
     }
     case 'update_order_status': {
@@ -311,14 +384,14 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
         need(str(input.orderId), 'orderId'),
         need(str(input.status), 'status') as OrderStatus,
       )
-      return { data: { number: order.number, status: order.status }, summary: `Заказ №${order.number}: статус изменён` }
+      return { data: { number: order.number, status: order.status }, summary: msg().assistant.orderStatus(order.number) }
     }
     case 'list_trade_ins': {
       const tradeIns = await listTradeIns({ status: str(input.status) as TradeInStatus | undefined })
       return {
         // Фото не отправляем — это тяжёлые data URL.
         data: tradeIns.slice(0, 50).map(({ photos, ...rest }) => ({ ...rest, photos: photos.length })),
-        summary: `Просмотрены заявки trade-in (${tradeIns.length})`,
+        summary: msg().assistant.viewedTradeIns(tradeIns.length),
       }
     }
     case 'get_stats': {
@@ -327,17 +400,19 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
       const stats = await getShopStats(period)
       return {
         data: Object.fromEntries(Object.entries(stats).filter(([key]) => key !== 'daily')),
-        summary: `Просмотрена статистика за ${period} дней`,
+        summary: msg().assistant.viewedStats(period),
       }
     }
     default:
-      throw new ApiError('validation', `Неизвестный инструмент ${name}`)
+      throw new ApiError('validation', msg().assistant.unknownTool(name))
   }
 }
 
-interface ChatResponse {
-  content: ContentBlock[]
-  stopReason: string | null
+interface StepResponse {
+  text: string
+  toolCalls: ToolCall[]
+  raw: unknown
+  stop: 'end' | 'tool_use' | 'refusal' | 'max_tokens'
 }
 
 /**
@@ -349,10 +424,11 @@ export async function askAssistant(
   text: string,
   onProgress?: (conversation: AssistantConversation) => void,
 ): Promise<AssistantConversation> {
+  const t = msg().assistant
   const clean = text.trim()
-  if (!clean) throw new ApiError('validation', 'Напишите поручение')
+  if (!clean) throw new ApiError('validation', t.emptyTask)
 
-  const messages: ApiMessage[] = [...conversation.messages, { role: 'user', content: clean }]
+  const messages: ChatMessage[] = [...conversation.messages, { role: 'user', text: clean }]
   const items: AssistantChatItem[] = [...conversation.items, { role: 'user', text: clean }]
   const actions: AssistantAction[] = []
   const texts: string[] = []
@@ -360,37 +436,32 @@ export async function askAssistant(
 
   try {
     for (let step = 0; step < MAX_STEPS; step++) {
-      const response = await callAiFunction<ChatResponse>({ action: 'chat', messages })
-      messages.push({ role: 'assistant', content: response.content })
+      const response = await callAiFunction<StepResponse>({ action: 'chat', messages })
+      messages.push({ role: 'assistant', text: response.text, toolCalls: response.toolCalls, raw: response.raw })
+      if (response.text.trim()) texts.push(response.text.trim())
 
-      const said = response.content
-        .filter((block) => block.type === 'text' && block.text?.trim())
-        .map((block) => block.text!.trim())
-      texts.push(...said)
-
-      if (response.stopReason === 'refusal') {
-        texts.push('ИИ отказался выполнять это поручение.')
+      if (response.stop === 'refusal') {
+        texts.push(t.refused)
         break
       }
-      const calls = response.content.filter((block) => block.type === 'tool_use')
-      if (calls.length === 0) break
+      if (response.toolCalls.length === 0) break
 
-      const results: Record<string, unknown>[] = []
-      for (const call of calls) {
+      const results: { id: string; name: string; content: string; isError?: boolean }[] = []
+      for (const call of response.toolCalls) {
         try {
-          const { data, summary } = await runTool(call.name ?? '', (call.input ?? {}) as Input)
-          actions.push({ tool: call.name ?? '', summary, ok: true })
-          results.push({ type: 'tool_result', tool_use_id: call.id, content: JSON.stringify(data) })
+          const { data, summary } = await runTool(call.name, call.input ?? {})
+          actions.push({ tool: call.name, summary, ok: true })
+          results.push({ id: call.id, name: call.name, content: JSON.stringify(data) })
         } catch (error) {
           const message = getErrorMessage(error)
-          actions.push({ tool: call.name ?? '', summary: `Ошибка: ${message}`, ok: false })
-          results.push({ type: 'tool_result', tool_use_id: call.id, content: message, is_error: true })
+          actions.push({ tool: call.name, summary: t.error(message), ok: false })
+          results.push({ id: call.id, name: call.name, content: message, isError: true })
         }
       }
-      messages.push({ role: 'user', content: results })
+      messages.push({ role: 'tool', results })
       onProgress?.({ messages, items: [...items, reply()] })
 
-      if (step === MAX_STEPS - 1) texts.push('Остановился: слишком много шагов. Напишите, продолжить ли.')
+      if (step === MAX_STEPS - 1) texts.push(t.tooManySteps)
     }
   } catch (error) {
     // Сбой может быть только на запросе к серверу, когда последнее сообщение — от админа

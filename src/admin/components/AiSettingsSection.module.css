@@ -1,0 +1,169 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.intro {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.loader {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+}
+
+.subTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.keyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.keyRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.keyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.keyName {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.keyWhere {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.keyForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.keyActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.role {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.roleTitle {
+  padding: 0;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-text);
+}
+
+.roleHint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.pair {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.note {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-recessed);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.checkboxHint {
+  margin: 0;
+  padding-left: 24px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.voicePicker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: flex-start;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.error {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-error-text);
+}
+
+.success {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-success-text);
+}
+
+.modalText {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+@media (min-width: 768px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  }
+}

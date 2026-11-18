@@ -18,6 +18,7 @@ import type {
 } from '../types'
 import { emit, supabase, unwrap } from './client'
 import { ApiError, type ApiErrorCode } from './errors'
+import { msg } from '../i18n'
 
 const TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,}$/
 const USERNAME_RE = /^[A-Za-z][A-Za-z0-9_]{3,31}$/
@@ -27,7 +28,7 @@ const MAX_INSTRUCTIONS = 4000
 const MAX_MESSAGE = 4096 // предел Telegram на одно сообщение
 
 const SETTINGS_COLUMNS =
-  'connected, token_hint, bot_username, is_enabled, group_id, notify, ai_enabled, greeting, ai_instructions, allow_bargaining, allow_orders, handoff_to_manager, updated_at'
+  'connected, token_hint, bot_username, is_enabled, group_id, notify, ai_enabled, greeting, greeting_ky, ai_instructions, allow_bargaining, allow_orders, handoff_to_manager, updated_at'
 const CHAT_COLUMNS =
   'id, telegram_chat_id, customer_name, telegram_username, customer_phone, mode, handoff_reason, order_id, unread_count, last_message_text, last_message_at, created_at'
 
@@ -40,6 +41,7 @@ interface SettingsRow {
   notify: BotSettings['notify']
   ai_enabled: boolean
   greeting: string
+  greeting_ky: string
   ai_instructions: string
   allow_bargaining: boolean
   allow_orders: boolean
@@ -80,6 +82,7 @@ function settingsFromRow(row: SettingsRow): BotSettings {
     notify: row.notify,
     aiEnabled: row.ai_enabled,
     greeting: row.greeting,
+    greetingKy: row.greeting_ky ?? '',
     aiInstructions: row.ai_instructions,
     allowBargaining: row.allow_bargaining,
     allowOrders: row.allow_orders,
@@ -112,10 +115,10 @@ function messageFromRow(row: MessageRow): BotMessage {
 function cleanUsername(value: string): string {
   const username = value.trim().replace(/^@/, '')
   if (!USERNAME_RE.test(username)) {
-    throw new ApiError('validation', 'Имя бота — латиница, цифры и «_», от 4 до 32 символов, например phone_market_bot')
+    throw new ApiError('validation', msg().adminSettings.errBotUsername)
   }
   if (!username.toLowerCase().endsWith('bot')) {
-    throw new ApiError('validation', 'Имя Telegram-бота должно заканчиваться на «bot»')
+    throw new ApiError('validation', msg().adminSettings.errBotSuffix)
   }
   return username
 }
@@ -128,7 +131,7 @@ async function callBotFunction<T>(body: Record<string, unknown>): Promise<T> {
       const payload = (await error.context.json().catch(() => null)) as { error?: string; code?: string } | null
       if (payload?.error) throw new ApiError((payload.code as ApiErrorCode) ?? 'storage', payload.error)
     }
-    throw new ApiError('storage', 'Сервер бота не ответил. Проверьте, что Edge Function telegram-admin развёрнута.')
+    throw new ApiError('storage', msg().adminSettings.errBotServer)
   }
   return data as T
 }
@@ -138,7 +141,7 @@ async function callBotFunction<T>(body: Record<string, unknown>): Promise<T> {
 export async function getBotSettings(): Promise<BotSettings> {
   const row = unwrap(
     await supabase.from('bot_settings').select(SETTINGS_COLUMNS).eq('id', true).single(),
-    'Не удалось загрузить настройки бота',
+    msg().adminSettings.errBotLoad,
   ) as SettingsRow
   return settingsFromRow(row)
 }
@@ -150,21 +153,26 @@ export async function updateBotSettings(input: BotSettingsInput): Promise<BotSet
   if (input.groupId !== undefined) {
     const groupId = input.groupId.trim()
     if (groupId && !GROUP_ID_RE.test(groupId)) {
-      throw new ApiError('validation', 'ID группы — число, обычно начинается с -100, например -1001234567890')
+      throw new ApiError('validation', msg().adminSettings.errGroupId)
     }
     changes.group_id = groupId
   }
   if (input.greeting !== undefined) {
     const greeting = input.greeting.trim()
     if (greeting.length > MAX_GREETING) {
-      throw new ApiError('validation', `Приветствие — не длиннее ${MAX_GREETING} символов`)
+      throw new ApiError('validation', msg().adminSettings.errGreeting(MAX_GREETING))
     }
     changes.greeting = greeting
+  }
+  if (input.greetingKy !== undefined) {
+    const greeting = input.greetingKy.trim()
+    if (greeting.length > MAX_GREETING) throw new ApiError('validation', msg().adminSettings.errGreeting(MAX_GREETING))
+    changes.greeting_ky = greeting
   }
   if (input.aiInstructions !== undefined) {
     const instructions = input.aiInstructions.trim()
     if (instructions.length > MAX_INSTRUCTIONS) {
-      throw new ApiError('validation', `Инструкция для ИИ — не длиннее ${MAX_INSTRUCTIONS} символов`)
+      throw new ApiError('validation', msg().adminSettings.errInstructions(MAX_INSTRUCTIONS))
     }
     changes.ai_instructions = instructions
   }
@@ -180,7 +188,7 @@ export async function updateBotSettings(input: BotSettingsInput): Promise<BotSet
 
   const row = unwrap(
     await supabase.from('bot_settings').update(changes).eq('id', true).select(SETTINGS_COLUMNS).single(),
-    'Не удалось сохранить настройки бота',
+    msg().adminSettings.errBotSave,
   ) as SettingsRow
   emit(['botSettings'])
   return settingsFromRow(row)
@@ -193,7 +201,7 @@ export async function updateBotSettings(input: BotSettingsInput): Promise<BotSet
 export async function connectBot(input: ConnectBotInput): Promise<BotSettings> {
   const token = input.token.trim()
   if (!TOKEN_RE.test(token)) {
-    throw new ApiError('validation', 'Токен не похож на токен от @BotFather. Он выглядит так: 123456789:AAH…')
+    throw new ApiError('validation', msg().adminSettings.errToken)
   }
   await callBotFunction({ action: 'connect', token })
   emit(['botSettings'])
@@ -218,13 +226,13 @@ export async function sendTestNotification(): Promise<void> {
 export async function listChats(filters: ChatFilters = {}): Promise<BotChat[]> {
   let query = supabase.from('bot_chats').select(CHAT_COLUMNS).order('last_message_at', { ascending: false })
   if (filters.mode) query = query.eq('mode', filters.mode)
-  const rows = unwrap(await query, 'Не удалось загрузить чаты') as ChatRow[]
+  const rows = unwrap(await query, msg().adminSettings.errChatsLoad) as ChatRow[]
   return rows.map(chatFromRow)
 }
 
 export async function getChat(id: string): Promise<BotChat> {
   const row = unwrap(await supabase.from('bot_chats').select(CHAT_COLUMNS).eq('id', id).maybeSingle()) as ChatRow | null
-  if (!row) throw new ApiError('not_found', 'Чат не найден')
+  if (!row) throw new ApiError('not_found', msg().adminSettings.errChatNotFound)
   return chatFromRow(row)
 }
 
@@ -236,7 +244,7 @@ export async function listChatMessages(chatId: string): Promise<BotMessage[]> {
       .select('id, chat_id, sender, text, created_at')
       .eq('chat_id', chatId)
       .order('created_at'),
-    'Не удалось загрузить сообщения',
+    msg().adminSettings.errMessagesLoad,
   ) as MessageRow[]
   return rows.map(messageFromRow)
 }
@@ -247,8 +255,8 @@ export async function listChatMessages(chatId: string): Promise<BotMessage[]> {
  */
 export async function sendChatMessage(chatId: string, text: string): Promise<BotMessage> {
   const clean = text.trim()
-  if (!clean) throw new ApiError('validation', 'Введите сообщение')
-  if (clean.length > MAX_MESSAGE) throw new ApiError('validation', `Сообщение — не длиннее ${MAX_MESSAGE} символов`)
+  if (!clean) throw new ApiError('validation', msg().adminSettings.errEmptyMessage)
+  if (clean.length > MAX_MESSAGE) throw new ApiError('validation', msg().adminSettings.errMessageLong(MAX_MESSAGE))
   const result = await callBotFunction<{ message: MessageRow }>({ action: 'send', chatId, text: clean })
   emit(['chats'])
   return messageFromRow(result.message)
@@ -261,7 +269,7 @@ export async function setChatMode(chatId: string, mode: ChatMode): Promise<BotCh
   const row = unwrap(
     await supabase.from('bot_chats').update(changes).eq('id', chatId).select(CHAT_COLUMNS).maybeSingle(),
   ) as ChatRow | null
-  if (!row) throw new ApiError('not_found', 'Чат не найден')
+  if (!row) throw new ApiError('not_found', msg().adminSettings.errChatNotFound)
   emit(['chats'])
   return chatFromRow(row)
 }

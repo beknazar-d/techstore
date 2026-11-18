@@ -9,8 +9,9 @@
 // Подлинность проверяем по заголовку X-Telegram-Bot-Api-Secret-Token.
 
 import { adminDb, botToken, safeEqual, tg, webhookSecret } from '../_shared/telegram.ts'
-import { aiKey } from '../_shared/ai.ts'
-import { replyWithAi } from '../_shared/botAi.ts'
+import { aiSettings, botAiKey } from '../_shared/ai.ts'
+import { replyWithAi, type BotAi, type BotBehavior, type ChatInfo } from '../_shared/botAi.ts'
+import { downloadTelegramFile, transcribe } from '../_shared/voice.ts'
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined
 
@@ -18,6 +19,7 @@ interface TgUser {
   first_name?: string
   last_name?: string
   username?: string
+  language_code?: string
 }
 
 interface TgMessage {
@@ -27,7 +29,7 @@ interface TgMessage {
   text?: string
   caption?: string
   photo?: unknown[]
-  voice?: unknown
+  voice?: { file_id: string; duration?: number }
   video?: unknown
   document?: unknown
   sticker?: { emoji?: string }
@@ -54,6 +56,35 @@ function describe(message: TgMessage): string {
   return '[Сообщение]'
 }
 
+/** Голосовое → расшифровка (видна менеджеру в «Чатах») → ответ ИИ, на голосовое — голосом. */
+async function answer(token: string, chat: ChatInfo, behavior: BotBehavior, ai: BotAi, message: TgMessage) {
+  let voice = false
+  if (message.voice?.file_id) {
+    try {
+      const audio = await downloadTelegramFile(token, message.voice.file_id)
+      const transcript = await transcribe(ai.settings, audio)
+      if (transcript) {
+        const text = `[Голосовое] ${transcript}`.slice(0, 4096)
+        const db = adminDb()
+        const { data: last } = await db
+          .from('bot_messages')
+          .select('id')
+          .eq('chat_id', chat.id)
+          .eq('sender', 'customer')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (last) await db.from('bot_messages').update({ text }).eq('id', last.id)
+        await db.from('bot_chats').update({ last_message_text: text }).eq('id', chat.id)
+        voice = true
+      }
+    } catch (error) {
+      console.error('voice transcription failed', error) // ИИ попросит написать текстом
+    }
+  }
+  await replyWithAi(token, chat, behavior, ai, { voice })
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('ok')
 
@@ -74,13 +105,19 @@ Deno.serve(async (req) => {
   const db = adminDb()
   const { data: settings } = await db
     .from('bot_settings')
-    .select('is_enabled, greeting, ai_enabled, ai_instructions, allow_bargaining, allow_orders, handoff_to_manager')
+    .select('is_enabled, greeting, greeting_ky, ai_enabled, ai_instructions, allow_bargaining, allow_orders, handoff_to_manager')
     .eq('id', true)
     .maybeSingle()
 
   const text = describe(message)
   const isStart = /^\/start\b/.test(text)
-  const aiReady = Boolean(settings?.is_enabled && settings.ai_enabled && (await aiKey().catch(() => null)))
+  let ai: BotAi | null = null
+  if (settings?.is_enabled && settings.ai_enabled) {
+    const aiRow = await aiSettings().catch(() => null)
+    const key = await botAiKey(aiRow).catch(() => null)
+    if (aiRow && key) ai = { settings: aiRow, key }
+  }
+  const aiReady = Boolean(ai)
   const name = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(' ')
 
   const { data: chat, error } = await db.rpc('bot_receive_message', {
@@ -96,18 +133,21 @@ Deno.serve(async (req) => {
     return new Response('db error', { status: 500 })
   }
 
-  if (isStart && settings?.is_enabled && settings.greeting?.trim()) {
+  // Клиенту с Telegram на кыргызском — приветствие на кыргызском (если админ его заполнил).
+  const greeting =
+    message.from?.language_code === 'ky' && settings?.greeting_ky?.trim() ? settings.greeting_ky : settings?.greeting
+  if (isStart && settings?.is_enabled && greeting?.trim()) {
     try {
-      await tg(token, 'sendMessage', { chat_id: message.chat.id, text: settings.greeting })
-      await db.rpc('bot_record_outgoing', { p_chat_id: chat.id, p_sender: 'bot', p_text: settings.greeting })
+      await tg(token, 'sendMessage', { chat_id: message.chat.id, text: greeting })
+      await db.rpc('bot_record_outgoing', { p_chat_id: chat.id, p_sender: 'bot', p_text: greeting })
     } catch (sendError) {
       console.error('greeting failed', sendError)
     }
   }
 
-  if (!isStart && aiReady && settings && chat.mode !== 'manager') {
+  if (!isStart && ai && settings && chat.mode !== 'manager') {
     if (chat.mode === 'closed') await db.from('bot_chats').update({ mode: 'bot' }).eq('id', chat.id)
-    const work = replyWithAi(token, chat, settings)
+    const work = answer(token, chat, settings, ai, message)
     // Отвечаем Telegram сразу, ИИ работает в фоне — иначе долгий ответ вызовет повторную доставку.
     if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(work)
     else await work

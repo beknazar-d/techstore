@@ -1,7 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { useApiQuery } from '../../hooks/useApiQuery'
-import { askAssistant, getAiSettings, EMPTY_CONVERSATION, getErrorMessage, type AssistantConversation } from '../../api'
+import {
+  askAssistant,
+  getAiSettings,
+  EMPTY_CONVERSATION,
+  getErrorMessage,
+  isAssistantConversation,
+  isAssistantReady,
+  type AssistantConversation,
+} from '../../api'
+import { msg } from '../../i18n'
 import { Spinner } from '../../components/ui/Spinner'
 import { cn } from '../../utils/cn'
 import styles from './AiAssistant.module.css'
@@ -13,16 +22,11 @@ const EDGE_OFFSET = 8
 const DEFAULT_BOTTOM = 96 // above bottom nav on phone
 const DEFAULT_RIGHT = 16
 
-const EXAMPLE_PROMPTS = [
-  'Добавь категорию Планшеты с характеристиками экран, память, процессор',
-  'Какие товары заканчиваются на складе?',
-  'Покажи новые заказы',
-]
-
 export function AiAssistant() {
+  const t = msg().assistant
   const { data: ai } = useApiQuery(() => getAiSettings(), [], ['aiSettings'])
   const isLoading = ai === undefined
-  const connected = ai?.connected ?? false
+  const connected = isAssistantReady(ai)
 
   const [isOpen, setIsOpen] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -41,10 +45,9 @@ export function AiAssistant() {
     try {
       const stored = sessionStorage.getItem(STORAGE_CHAT_KEY)
       if (stored) {
-        const parsed = JSON.parse(stored)
-        if (parsed && Array.isArray(parsed.items) && Array.isArray(parsed.messages)) {
-          return parsed
-        }
+        const parsed: unknown = JSON.parse(stored)
+        // Разговор в старом формате (до выбора провайдера) продолжить нельзя — начинаем новый.
+        if (isAssistantConversation(parsed)) return parsed
       }
     } catch {
       // ignore
@@ -188,7 +191,7 @@ export function AiAssistant() {
         type="button"
         className={styles.fab}
         style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
-        aria-label="ИИ-ассистент (загрузка)"
+        aria-label={t.loadingAria}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -212,7 +215,7 @@ export function AiAssistant() {
           type="button"
           className={styles.fab}
           style={{ transform: `translate(${position.x}px, ${position.y}px)` }}
-          aria-label="Открыть ИИ-ассистент"
+          aria-label={t.openAria}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -227,17 +230,17 @@ export function AiAssistant() {
         <div
           className={styles.panel}
           role="dialog"
-          aria-label="ИИ-ассистент"
+          aria-label={t.title}
           ref={panelRef}
         >
           <header className={styles.header}>
             <span className={cn('material-symbols-outlined', styles.headerIcon)} aria-hidden="true">auto_awesome</span>
-            <h2 className={styles.headerTitle}>ИИ-ассистент</h2>
+            <h2 className={styles.headerTitle}>{t.title}</h2>
             <div className={styles.headerActions}>
               <button
                 type="button"
                 className={styles.iconButton}
-                aria-label="Новый разговор"
+                aria-label={t.newChat}
                 onClick={handleNewConversation}
                 disabled={busy}
               >
@@ -246,7 +249,7 @@ export function AiAssistant() {
               <button
                 type="button"
                 className={styles.iconButton}
-                aria-label="Закрыть"
+                aria-label={t.close}
                 onClick={() => setIsOpen(false)}
               >
                 <span className="material-symbols-outlined" aria-hidden="true">close</span>
@@ -257,14 +260,14 @@ export function AiAssistant() {
           <div className={styles.messages}>
             {!connected ? (
               <div className={styles.notConnected}>
-                <p>ИИ не подключён. Вставьте API-ключ Anthropic в настройках.</p>
-                <Link to="/admin/settings" onClick={() => setIsOpen(false)}>Открыть настройки</Link>
+                <p>{t.notConnected}</p>
+                <Link to="/admin/settings" onClick={() => setIsOpen(false)}>{t.openSettings}</Link>
               </div>
             ) : allItems.length === 0 && !busy && !pendingText ? (
               <div className={styles.empty}>
-                <p>Дайте поручение, например:</p>
+                <p>{t.examplesTitle}</p>
                 <div className={styles.examples}>
-                  {EXAMPLE_PROMPTS.map((prompt, i) => (
+                  {t.examples.map((prompt, i) => (
                     <button
                       key={i}
                       type="button"
@@ -305,7 +308,7 @@ export function AiAssistant() {
                     <div className={cn(styles.bubble, styles.assistant)}>
                       <div className={styles.thinking}>
                         <Spinner size="sm" />
-                        <span>Думаю…</span>
+                        <span>{t.thinking}</span>
                       </div>
                     </div>
                   </div>
@@ -319,19 +322,19 @@ export function AiAssistant() {
             <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
               <textarea
                 className={styles.input}
-                placeholder="Что сделать?"
+                placeholder={t.placeholder}
                 rows={2}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={busy}
-                aria-label="Введите поручение"
+                aria-label={t.inputAria}
               />
               <button
                 type="submit"
                 className={styles.sendBtn}
                 disabled={busy || !inputValue.trim()}
-                aria-label="Отправить"
+                aria-label={t.send}
               >
                 <span className="material-symbols-outlined" aria-hidden="true">send</span>
               </button>

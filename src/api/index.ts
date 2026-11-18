@@ -58,12 +58,20 @@ export {
   canEvaluateTradeIn,
 } from './tradeIns'
 export {
-  AI_MODEL_OPTIONS,
+  AI_PROVIDERS,
+  AI_SECRET_PROVIDERS,
+  AI_PROVIDER_NAMES,
+  AI_KEY_PLACEHOLDERS,
+  OPENAI_VOICES,
+  ELEVENLABS_MODELS,
   EMPTY_CONVERSATION,
+  isAssistantConversation,
+  isAssistantReady,
   getAiSettings,
   updateAiSettings,
-  connectAi,
-  disconnectAi,
+  connectAiKey,
+  disconnectAiKey,
+  listElevenLabsVoices,
   askAssistant,
   type AssistantConversation,
 } from './ai'

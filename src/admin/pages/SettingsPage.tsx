@@ -6,13 +6,10 @@ import {
   disconnectBot,
   sendTestNotification,
   getErrorMessage,
-  getAiSettings,
-  updateAiSettings,
-  connectAi,
-  disconnectAi,
-  AI_MODEL_OPTIONS,
 } from '../../api'
-import type { AiModel, AiSettings, BotSettings } from '../../types'
+import type { BotSettings } from '../../types'
+import { msg } from '../../i18n'
+import { AiSettingsSection } from '../components/AiSettingsSection'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { PageHeader, Section, InfoRow } from '../components/AdminBlocks'
 import { Button } from '../../components/ui/Button'
@@ -22,14 +19,15 @@ import { Checkbox } from '../../components/ui/Checkbox'
 import { Badge } from '../../components/ui/Badge'
 import { Spinner } from '../../components/ui/Spinner'
 import { Modal } from '../../components/ui/Modal'
-import { Select } from '../../components/ui/Select'
 import styles from './SettingsPage.module.css'
 
 function BotBehaviorForm({ initial }: { initial: BotSettings }) {
+  const t = msg().adminSettings
   const [groupId, setGroupId] = useState(initial.groupId)
   const [notify, setNotify] = useState(initial.notify)
   const [aiEnabled, setAiEnabled] = useState(initial.aiEnabled)
   const [greeting, setGreeting] = useState(initial.greeting)
+  const [greetingKy, setGreetingKy] = useState(initial.greetingKy)
   const [aiInstructions, setAiInstructions] = useState(initial.aiInstructions)
   const [allowBargaining, setAllowBargaining] = useState(initial.allowBargaining)
   const [allowOrders, setAllowOrders] = useState(initial.allowOrders)
@@ -52,6 +50,7 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
         notify,
         aiEnabled,
         greeting,
+        greetingKy,
         aiInstructions,
         allowBargaining,
         allowOrders,
@@ -70,7 +69,7 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
     setTestResult(null)
     try {
       await sendTestNotification()
-      setTestResult({ ok: true, text: 'Тестовое сообщение отправлено' })
+      setTestResult({ ok: true, text: t.testSent })
     } catch (err) {
       setTestResult({ ok: false, text: getErrorMessage(err) })
     } finally {
@@ -80,39 +79,39 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
 
   return (
     <div className={styles.behaviorForm}>
-      <Section title="Уведомления менеджерам">
+      <Section title={t.notifications}>
         <div className={styles.behaviorBody}>
           <Input
-            label="ID группы менеджеров"
+            label={t.groupId}
             value={groupId}
             onChange={(e) => setGroupId(e.target.value)}
-            hint="Добавьте бота в группу и узнайте ID через @getmyid_bot. Обычно начинается с -100"
+            hint={t.groupIdHint}
           />
 
           <div className={styles.checkboxGroup}>
             <Checkbox
-              label="Новая заявка на товар"
+              label={t.notifyNewOrder}
               checked={notify.newOrder}
               onChange={(e) => setNotify((p) => ({ ...p, newOrder: e.target.checked }))}
             />
           </div>
           <div className={styles.checkboxGroup}>
             <Checkbox
-              label="Смена статуса заказа"
+              label={t.notifyOrderStatus}
               checked={notify.orderStatus}
               onChange={(e) => setNotify((p) => ({ ...p, orderStatus: e.target.checked }))}
             />
           </div>
           <div className={styles.checkboxGroup}>
             <Checkbox
-              label="Новая заявка на trade-in"
+              label={t.notifyNewTradeIn}
               checked={notify.newTradeIn}
               onChange={(e) => setNotify((p) => ({ ...p, newTradeIn: e.target.checked }))}
             />
           </div>
           <div className={styles.checkboxGroup}>
             <Checkbox
-              label="Товар заканчивается"
+              label={t.notifyLowStock}
               checked={notify.lowStock}
               onChange={(e) => setNotify((p) => ({ ...p, lowStock: e.target.checked }))}
             />
@@ -120,7 +119,7 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
 
           <div className={styles.testRow}>
             <Button variant="secondary" icon="send" onClick={handleTest} loading={testLoading}>
-              Отправить тестовое сообщение
+              {t.sendTest}
             </Button>
             {testResult && (
               <span className={testResult.ok ? styles.successText : styles.testError} role={testResult.ok ? undefined : 'alert'}>
@@ -131,58 +130,66 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
         </div>
       </Section>
 
-      <Section title="Ответы с помощью ИИ">
+      <Section title={t.aiReplies}>
         <div className={styles.behaviorBody}>
           <div className={styles.checkboxGroup}>
             <Checkbox
-              label="Бот отвечает клиентам с помощью ИИ"
+              label={t.aiEnabled}
               checked={aiEnabled}
               onChange={(e) => setAiEnabled(e.target.checked)}
             />
             <p className={styles.checkboxHint}>
-              Нужен подключённый ИИ (блок «Искусственный интеллект» выше). Бот берёт цены и наличие из
-              каталога сайта. Если выключить, бот будет только пересылать сообщения менеджерам.
+              {t.aiEnabledHint}
             </p>
           </div>
 
-          <Textarea label="Приветствие" rows={3} value={greeting} onChange={(e) => setGreeting(e.target.value)} />
+          <Textarea label={t.greeting} rows={3} value={greeting} onChange={(e) => setGreeting(e.target.value)} />
 
           <Textarea
-            label="Инструкция для ИИ"
+            label={t.greetingKy}
+            rows={3}
+            lang="ky"
+            hint={t.greetingKyHint}
+            value={greetingKy}
+            onChange={(e) => setGreetingKy(e.target.value)}
+          />
+
+          <Textarea
+            label={t.aiInstructions}
             rows={6}
-            hint="Как общаться с клиентами: тон, что можно обещать, о чём не говорить"
+            hint={t.aiInstructionsHint}
             value={aiInstructions}
             onChange={(e) => setAiInstructions(e.target.value)}
           />
 
           <div className={styles.checkboxGroup}>
             <Checkbox
-              label="Разрешить торг"
+              label={t.allowBargaining}
               checked={allowBargaining}
               onChange={(e) => setAllowBargaining(e.target.checked)}
             />
             <p className={styles.checkboxHint}>
-              Бот не опустит цену ниже минимальной цены, указанной в карточке товара.
+              {t.allowBargainingHint}
             </p>
           </div>
 
           <div className={styles.checkboxGroup}>
             <Checkbox
-              label="Бот может оформлять заявки на товар"
+              label={t.allowOrders}
               checked={allowOrders}
               onChange={(e) => setAllowOrders(e.target.checked)}
             />
-            <p className={styles.checkboxHint}>Остаток на складе проверяется так же, как на сайте.</p>
+            <p className={styles.checkboxHint}>{t.allowOrdersHint}</p>
           </div>
 
           <div className={styles.checkboxGroup}>
             <Checkbox
-              label="Передавать сложные вопросы менеджеру"
+              label={t.handoff}
               checked={handoffToManager}
               onChange={(e) => setHandoffToManager(e.target.checked)}
             />
             <p className={styles.checkboxHint}>
-              Такие чаты появятся в разделе «Чаты» с пометкой «Нужен менеджер».
+              {t.handoffHint}
             </p>
           </div>
 
@@ -193,9 +200,9 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
               </span>
             )}
             <Button onClick={handleSave} loading={saving}>
-              Сохранить настройки
+              {t.saveSettings}
             </Button>
-            {saved && <span className={styles.successText}>Сохранено</span>}
+            {saved && <span className={styles.successText}>{t.saved}</span>}
           </div>
         </div>
       </Section>
@@ -204,6 +211,7 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
 }
 
 export function SettingsPage() {
+  const t = msg().adminSettings
   const { data, reload } = useApiQuery(() => getBotSettings(), [], ['botSettings'])
 
   const [connectToken, setConnectToken] = useState('')
@@ -266,26 +274,26 @@ export function SettingsPage() {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Настройки" subtitle="ИИ, Telegram-бот и уведомления" />
+      <PageHeader title={t.title} subtitle={t.subtitle} />
 
-      <AiSection />
+      <AiSettingsSection />
 
-      <Section title="Telegram-бот">
+      <Section title={t.bot}>
         {!data.connected ? (
           <div className={styles.connectBlock}>
             <ol className={styles.stepsList}>
-              <li>Откройте @BotFather в Telegram → /mybots → выберите бота → API Token</li>
-              <li>Скопируйте токен и вставьте ниже</li>
-              <li>Нажмите «Подключить бота» — сообщения, которые пишут боту, начнут приходить в раздел «Чаты»</li>
+              <li>{t.botStep1}</li>
+              <li>{t.botStep2}</li>
+              <li>{t.botStep3}</li>
             </ol>
 
             <div className={styles.connectForm}>
               <Input
-                label="Токен бота"
+                label={t.token}
                 type="password"
                 autoComplete="off"
                 placeholder="123456789:AAH…"
-                hint="Токен хранится зашифрованным на сервере, сайт его больше не показывает"
+                hint={t.tokenHint}
                 value={connectToken}
                 onChange={(e) => setConnectToken(e.target.value)}
               />
@@ -303,7 +311,7 @@ export function SettingsPage() {
                   loading={connectLoading}
                   disabled={!connectToken.trim()}
                 >
-                  Подключить бота
+                  {t.connectBot}
                 </Button>
               </div>
             </div>
@@ -312,7 +320,7 @@ export function SettingsPage() {
           <div className={styles.connectedBlock}>
             <div className={styles.connectedHeader}>
               <Badge tone="success" dot>
-                Подключён
+                {t.connected}
               </Badge>
               <a
                 href={`https://t.me/${data.botUsername}`}
@@ -324,11 +332,11 @@ export function SettingsPage() {
               </a>
             </div>
 
-            <InfoRow label="Токен">••••{data.tokenHint}</InfoRow>
+            <InfoRow label={t.tokenShort}>••••{data.tokenHint}</InfoRow>
 
             <div className={styles.checkboxGroup}>
               <Checkbox
-                label="Бот включён"
+                label={t.botEnabled}
                 checked={data.isEnabled}
                 disabled={enabledLoading}
                 onChange={(e) => handleToggleEnabled(e.target.checked)}
@@ -337,7 +345,7 @@ export function SettingsPage() {
 
             <div className={styles.connectedActions}>
               <Button variant="secondary" onClick={() => setShowDisconnectModal(true)}>
-                Отключить бота
+                {t.disconnectBot}
               </Button>
               {connectError && (
                 <span className={styles.connectError} role="alert">
@@ -354,205 +362,23 @@ export function SettingsPage() {
       <Modal
         open={showDisconnectModal}
         onClose={() => setShowDisconnectModal(false)}
-        title="Отключить бота?"
+        title={t.disconnectBotTitle}
         footer={
           <>
             <Button variant="secondary" onClick={() => setShowDisconnectModal(false)}>
-              Отмена
+              {t.cancel}
             </Button>
             <Button variant="danger" onClick={handleDisconnect} loading={disconnectLoading}>
-              Отключить
+              {t.disconnect}
             </Button>
           </>
         }
       >
         <p className={styles.modalText}>
-          Бот перестанет отвечать клиентам и присылать уведомления. Настройки сохранятся.
+          {t.disconnectBotText}
         </p>
       </Modal>
 
     </div>
-  )
-}
-
-function AiModelsForm({ initial }: { initial: AiSettings }) {
-  const [assistantModel, setAssistantModel] = useState<AiModel>(initial.assistantModel)
-  const [botModel, setBotModel] = useState<AiModel>(initial.botModel)
-  const [instructions, setInstructions] = useState(initial.assistantInstructions)
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
-  const [saved, setSaved] = useState(false)
-
-  async function handleSave() {
-    setSaving(true)
-    setError('')
-    setSaved(false)
-    try {
-      await updateAiSettings({ assistantModel, botModel, assistantInstructions: instructions })
-      setSaved(true)
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className={styles.behaviorBody}>
-      <Select
-        label="Модель ИИ-ассистента в админке"
-        options={AI_MODEL_OPTIONS}
-        value={assistantModel}
-        onChange={(e) => setAssistantModel(e.target.value as AiModel)}
-        hint="Кружок со звёздочкой в углу админки: добавляет категории и товары, меняет остатки, смотрит заказы и статистику"
-      />
-      <Select
-        label="Модель Telegram-бота"
-        options={AI_MODEL_OPTIONS}
-        value={botModel}
-        onChange={(e) => setBotModel(e.target.value as AiModel)}
-        hint="Как бот общается с клиентами — в блоке «Ответы с помощью ИИ» ниже"
-      />
-      <Textarea
-        label="Указания ассистенту"
-        rows={4}
-        value={instructions}
-        onChange={(e) => setInstructions(e.target.value)}
-        hint="Необязательно. Например: «Описания товаров пиши в 2–3 предложения, без восклицательных знаков»"
-      />
-      <div className={styles.formFooter}>
-        {error && (
-          <span className={styles.errorText} role="alert">
-            {error}
-          </span>
-        )}
-        <Button onClick={handleSave} loading={saving}>
-          Сохранить
-        </Button>
-        {saved && <span className={styles.successText}>Сохранено</span>}
-      </div>
-    </div>
-  )
-}
-
-function AiSection() {
-  const { data, reload } = useApiQuery(() => getAiSettings(), [], ['aiSettings'])
-  const [key, setKey] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [showDisconnect, setShowDisconnect] = useState(false)
-
-  if (data === undefined) {
-    return (
-      <Section title="Искусственный интеллект">
-        <div className={styles.loader}>
-          <Spinner />
-        </div>
-      </Section>
-    )
-  }
-
-  async function handleConnect() {
-    setLoading(true)
-    setError('')
-    try {
-      await connectAi(key)
-      setKey('')
-      await reload()
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleDisconnect() {
-    setShowDisconnect(false)
-    setLoading(true)
-    setError('')
-    try {
-      await disconnectAi()
-      await reload()
-    } catch (err) {
-      setError(getErrorMessage(err))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <Section title="Искусственный интеллект">
-      {!data.connected ? (
-        <div className={styles.connectBlock}>
-          <ol className={styles.stepsList}>
-            <li>Откройте console.anthropic.com → API Keys → Create Key</li>
-            <li>Пополните баланс в разделе Billing — без него ИИ отвечать не будет</li>
-            <li>Скопируйте ключ (начинается с sk-ant-) и вставьте ниже</li>
-          </ol>
-          <div className={styles.connectForm}>
-            <Input
-              label="API-ключ Anthropic (Claude)"
-              type="password"
-              autoComplete="off"
-              placeholder="sk-ant-…"
-              hint="Ключ хранится зашифрованным на сервере, сайт его больше не показывает"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-            />
-            {error && (
-              <p className={styles.connectError} role="alert">
-                {error}
-              </p>
-            )}
-            <div>
-              <Button icon="key" onClick={handleConnect} loading={loading} disabled={!key.trim()}>
-                Подключить ИИ
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className={styles.connectedBlock}>
-          <div className={styles.connectedHeader}>
-            <Badge tone="success" dot>
-              Подключён
-            </Badge>
-          </div>
-          <InfoRow label="Ключ">••••{data.keyHint}</InfoRow>
-          <AiModelsForm initial={data} />
-          <div className={styles.connectedActions}>
-            <Button variant="secondary" onClick={() => setShowDisconnect(true)} loading={loading}>
-              Отключить ИИ
-            </Button>
-            {error && (
-              <span className={styles.connectError} role="alert">
-                {error}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
-
-      <Modal
-        open={showDisconnect}
-        onClose={() => setShowDisconnect(false)}
-        title="Отключить ИИ?"
-        footer={
-          <>
-            <Button variant="secondary" onClick={() => setShowDisconnect(false)}>
-              Отмена
-            </Button>
-            <Button variant="danger" onClick={handleDisconnect}>
-              Отключить
-            </Button>
-          </>
-        }
-      >
-        <p className={styles.modalText}>
-          Ключ удалится с сервера. Ассистент перестанет работать, а бот будет передавать все сообщения
-          менеджерам. Настройки сохранятся.
-        </p>
-      </Modal>
-    </Section>
   )
 }

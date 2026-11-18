@@ -1,3 +1,41 @@
-export const assistant = {}
+export const assistant = {
+  // Окно ассистента
+  examples: [
+    'Добавь категорию Планшеты с характеристиками экран, память, процессор',
+    'Какие товары заканчиваются на складе?',
+    'Покажи новые заказы',
+  ],
+  loadingAria: 'ИИ-ассистент (загрузка)',
+  openAria: 'Открыть ИИ-ассистент',
+  title: 'ИИ-ассистент',
+  newChat: 'Новый разговор',
+  close: 'Закрыть',
+  notConnected: 'ИИ не подключён. Вставьте API-ключ Claude, ChatGPT или Gemini в настройках.',
+  openSettings: 'Открыть настройки',
+  examplesTitle: 'Дайте поручение, например:',
+  thinking: 'Думаю…',
+  placeholder: 'Что сделать?',
+  inputAria: 'Введите поручение',
+  send: 'Отправить',
+  // Ход работы
+  emptyTask: 'Напишите поручение',
+  refused: 'ИИ отказался выполнять это поручение.',
+  error: (message: string) => `Ошибка: ${message}`,
+  tooManySteps: 'Остановился: слишком много шагов. Напишите, продолжить ли.',
+  serverDown: 'Сервер ИИ не ответил. Проверьте интернет и повторите.',
+  missingField: (field: string) => `Не указано поле ${field}`,
+  unknownTool: (name: string) => `Неизвестный инструмент ${name}`,
+  viewedCategories: (count: number) => `Просмотрены категории (${count})`,
+  createdCategory: (name: string) => `Создана категория «${name}»`,
+  updatedCategory: (name: string) => `Изменена категория «${name}»`,
+  foundProducts: (count: number) => `Найдено товаров: ${count}`,
+  createdProduct: (name: string) => `Добавлен товар «${name}»`,
+  updatedProduct: (name: string) => `Изменён товар «${name}»`,
+  stockChanged: (name: string, delta: string, stock: number) => `Остаток «${name}»: ${delta}, теперь ${stock} шт.`,
+  viewedOrders: (count: number) => `Просмотрены заказы (${count})`,
+  orderStatus: (number: number) => `Заказ №${number}: статус изменён`,
+  viewedTradeIns: (count: number) => `Просмотрены заявки trade-in (${count})`,
+  viewedStats: (days: number) => `Просмотрена статистика за ${days} дней`,
+}
 
 export type AssistantMessages = typeof assistant

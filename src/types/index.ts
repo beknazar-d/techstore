@@ -304,6 +304,8 @@ export interface BotSettings {
   aiEnabled: boolean
   /** Приветствие для новых клиентов. */
   greeting: string
+  /** Приветствие для клиентов с Telegram на кыргызском (пусто — обычное). */
+  greetingKy: string
   /** Инструкция для ИИ: тон, что можно обещать, о чём молчать. */
   aiInstructions: string
   /** Бот может торговаться, но не ниже `Product.minPrice`. */
@@ -440,24 +442,57 @@ export interface ShopStats {
 
 // ---------- Искусственный интеллект ----------
 
-/** Модели Claude, которые можно выбрать в «Настройках». */
-export type AiModel = 'claude-opus-5-5' | 'claude-sonnet-5-5' | 'claude-haiku-5-5'
+/** Провайдер модели ИИ: Claude, ChatGPT или Gemini. */
+export type AiProvider = 'anthropic' | 'openai' | 'google'
+/** Сервисы, ключ которых админ вставляет в «Настройках» (хранится в Vault). */
+export type AiSecretProvider = AiProvider | 'elevenlabs'
+/** Чем бот озвучивает ответы и распознаёт голосовые. */
+export type VoiceProvider = 'elevenlabs' | 'openai'
 
 export interface AiSettings {
-  /** Ключ Anthropic сохранён на сервере (Vault). */
-  connected: boolean
-  /** Последние 4 символа ключа — только для показа. */
-  keyHint: string
-  /** Модель ИИ-ассистента админки. */
-  assistantModel: AiModel
-  /** Модель, которой отвечает Telegram-бот. */
-  botModel: AiModel
+  /** Провайдер и модель ИИ-ассистента админки. */
+  assistantProvider: AiProvider
+  assistantModel: string
+  /** Провайдер и модель, которыми отвечает Telegram-бот. */
+  botProvider: AiProvider
+  botModel: string
   /** Дополнительные указания ассистенту. */
   assistantInstructions: string
+  /** Последние 4 символа ключа каждого подключённого сервиса — только для показа. */
+  keyHints: Partial<Record<AiSecretProvider, string>>
+  /** Модели, которые провайдер отдал по ключу (первая — рекомендуемая). */
+  models: Partial<Record<AiProvider, string[]>>
+  /** На голосовое сообщение клиента бот отвечает ещё и голосом. */
+  voiceReplies: boolean
+  voiceProvider: VoiceProvider
+  /** ID голоса (аватара) в ElevenLabs. */
+  elevenlabsVoiceId: string
+  elevenlabsModel: string
+  /** Голос ChatGPT: alloy, nova, … */
+  openaiVoice: string
   updatedAt: string
 }
 
-export type AiSettingsInput = Partial<Pick<AiSettings, 'assistantModel' | 'botModel' | 'assistantInstructions'>>
+export type AiSettingsInput = Partial<
+  Pick<
+    AiSettings,
+    | 'assistantProvider'
+    | 'assistantModel'
+    | 'botProvider'
+    | 'botModel'
+    | 'assistantInstructions'
+    | 'voiceReplies'
+    | 'voiceProvider'
+    | 'elevenlabsVoiceId'
+    | 'elevenlabsModel'
+    | 'openaiVoice'
+  >
+>
+
+export interface ElevenLabsVoice {
+  id: string
+  name: string
+}
 
 /** Одно действие, которое ассистент выполнил в админке. */
 export interface AssistantAction {
