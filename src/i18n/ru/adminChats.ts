@@ -1,3 +1,27 @@
-export const adminChats = {}
+export const adminChats = {
+  all: 'Все',
+  kicker: 'Переписка с клиентами',
+  title: 'Чаты',
+  count: (count: number) => `${count} чатов`,
+  unread: (count: number) => `${count} непрочитанных`,
+  notConnected: 'Бот ещё не подключён. Ниже — демо-переписка.',
+  connect: 'Подключить бота',
+  filterAria: 'Фильтр чатов',
+  emptyTitle: 'Чатов пока нет',
+  emptyText: 'Здесь появятся разговоры клиентов с ботом в Telegram',
+  notFound: 'Чат не найден',
+  notFoundText: 'Такого чата не существует',
+  allChats: 'Все чаты',
+  handoff: (reason: string) => `Бот передал разговор: ${reason}`,
+  order: 'Заказ из этого чата',
+  takeOver: 'Ответить самому',
+  backToBot: 'Вернуть боту',
+  close: 'Закрыть чат',
+  reopen: 'Открыть снова',
+  botActive: 'Сейчас отвечает бот. Если ответите сами, бот в этом чате замолчит.',
+  replyPlaceholder: 'Ответ клиенту в Telegram…',
+  replyAria: 'Ответ клиенту',
+  send: 'Отправить',
+}
 
 export type AdminChatsMessages = typeof adminChats

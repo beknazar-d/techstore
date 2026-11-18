@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { formatDateTime } from '../../utils/date'
+import { msg } from '../../i18n'
 import styles from './AdminBlocks.module.css'
 
 interface PageHeaderProps {
@@ -11,7 +12,7 @@ interface PageHeaderProps {
   actions?: ReactNode
 }
 
-export function PageHeader({ title, subtitle, backTo, backLabel = 'Назад', actions }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, backTo, backLabel = msg().adminLayout.back, actions }: PageHeaderProps) {
   return (
     <header className={styles.pageHeader}>
       {backTo && (
@@ -76,7 +77,7 @@ interface EventTimelineProps {
 }
 
 export function EventTimeline({ events }: EventTimelineProps) {
-  if (events.length === 0) return <p className={styles.timelineEmpty}>Событий пока нет</p>
+  if (events.length === 0) return <p className={styles.timelineEmpty}>{msg().adminLayout.noEvents}</p>
   return (
     <ol className={styles.timeline}>
       {events.map((event) => (

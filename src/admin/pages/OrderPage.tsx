@@ -14,10 +14,12 @@ import type { OrderStatus } from '../../types'
 import { mapHref } from '../../utils/links'
 import { formatPhone } from '../../utils/phone'
 import { useApiQuery } from '../../hooks/useApiQuery'
+import { msg } from '../../i18n'
 import styles from './OrderPage.module.css'
 import { useState } from 'react'
 
 export function OrderPage() {
+  const t = msg().adminOrders
   const { id } = useParams()
   const { data: order, reload } = useApiQuery(() => getOrder(id ?? ''), [id], ['orders'])
   const { data: events = [] } = useApiQuery(() => listOrderEvents(id ?? ''), [id], ['orders'])
@@ -38,7 +40,7 @@ export function OrderPage() {
   if (!order) {
     return (
       <div className={styles.page}>
-        <p>Заказ не найден</p>
+        <p>{t.notFound}</p>
       </div>
     )
   }
@@ -117,7 +119,7 @@ export function OrderPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        title={`Заказ ${formatOrderNumber(order.number)}`}
+        title={t.orderTitle(formatOrderNumber(order.number))}
         backTo="/admin/orders"
         actions={[
           <OrderStatusBadge key="status-badge" status={order.status} />,
@@ -130,21 +132,21 @@ export function OrderPage() {
         </div>
       )}
 
-      <Section title="Информация о заказе">
+      <Section title={t.info}>
         <div className={styles.infoGrid}>
-          <InfoRow label="Источник">
+          <InfoRow label={t.source}>
             {ORDER_SOURCE_LABELS[order.source]}
           </InfoRow>
-          <InfoRow label="Дата создания">
+          <InfoRow label={t.createdAt}>
             {formatDateTime(order.createdAt)}
           </InfoRow>
-          <InfoRow label="Способ получения">
+          <InfoRow label={t.method}>
             {DELIVERY_TYPE_LABELS[order.deliveryType]}
           </InfoRow>
           {order.deliveryType === 'delivery' && (
-            <InfoRow label="Адрес доставки">
+            <InfoRow label={t.address}>
               <div className={styles.addressRow}>
-                <span>{order.address || 'Не указан'}</span>
+                <span>{order.address || t.noAddress}</span>
                 {hasLocation && (
                   <a
                     href={mapHref(order.location!)}
@@ -153,36 +155,36 @@ export function OrderPage() {
                     className={styles.mapLink}
                   >
                     <span className="material-symbols-outlined">map</span>
-                    Открыть на карте
+                    {t.openMap}
                   </a>
                 )}
               </div>
             </InfoRow>
           )}
           {order.desiredDate && (
-            <InfoRow label="Желаемая дата">
+            <InfoRow label={t.desiredDate}>
               {formatDate(order.desiredDate)}
             </InfoRow>
           )}
           {order.comment && (
-            <InfoRow label="Комментарий клиента">
+            <InfoRow label={t.customerComment}>
               {order.comment}
             </InfoRow>
           )}
           {order.desiredTime && (
-            <InfoRow label="Желаемое время">
+            <InfoRow label={t.desiredTime}>
               {order.desiredTime}
             </InfoRow>
           )}
         </div>
       </Section>
 
-      <Section title="Клиент">
+      <Section title={t.customer}>
         <div className={styles.infoGrid}>
-          <InfoRow label="Имя">
+          <InfoRow label={t.name}>
             {order.customerName}
           </InfoRow>
-          <InfoRow label="Телефон">
+          <InfoRow label={t.phone}>
             <a href={`tel:${order.customerPhone}`} className={styles.phoneLink}>
               <span className="material-symbols-outlined">phone</span>
               {formatPhone(order.customerPhone)}
@@ -191,60 +193,60 @@ export function OrderPage() {
         </div>
       </Section>
 
-      <Section title="Товар">
+      <Section title={t.product}>
         <div className={styles.infoGrid}>
-          <InfoRow label="Название">
+          <InfoRow label={t.productName}>
             {order.productName}
           </InfoRow>
-          <InfoRow label="Количество">
-            {order.quantity} шт.
+          <InfoRow label={msg().adminOrders.quantity}>
+            {t.pieces(order.quantity)}
           </InfoRow>
-          <InfoRow label="Цена">
+          <InfoRow label={t.price}>
             {formatPrice(order.price)}
           </InfoRow>
-          <InfoRow label="Сумма">
+          <InfoRow label={t.sum}>
             {formatPrice(order.quantity * order.price)}
           </InfoRow>
           {order.productId && (
-            <InfoRow label="Товар в админке">
+            <InfoRow label={t.productInAdmin}>
               <Link to={`/admin/products/${order.productId}`} className={styles.linkButton}>
-                Перейти
+                {t.go}
               </Link>
             </InfoRow>
           )}
         </div>
       </Section>
 
-      <Section title="Изменение статуса" actions={statusActions.length > 0 ? statusActions : undefined}>
+      <Section title={t.statusChange} actions={statusActions.length > 0 ? statusActions : undefined}>
         {statusActions.length === 0 && (
-          <p className={styles.closedText}>Заказ закрыт</p>
+          <p className={styles.closedText}>{t.closed}</p>
         )}
       </Section>
 
-      <Section title="Заметка администратора">
+      <Section title={t.adminNote}>
         <AdminNote note={order.adminNote} onSave={handleNoteChange} loading={noteLoading} />
       </Section>
 
-      <Section title="История">
+      <Section title={t.history}>
         <EventTimeline events={events} />
       </Section>
 
       <Modal
         open={showCancelModal}
         onClose={() => setShowCancelModal(false)}
-        title="Подтверждение отмены заказа"
+        title={t.cancelTitle}
         footer={
           <div className={styles.modalFooter}>
             <Button variant="ghost" onClick={() => setShowCancelModal(false)} disabled={statusLoading.cancelled}>
-              Отмена
+              {t.cancelKeep}
             </Button>
             <Button variant="danger" onClick={confirmCancel} loading={statusLoading.cancelled}>
-              Отменить заказ
+              {t.cancelOrder}
             </Button>
           </div>
         }
       >
-        <p>Товар вернётся на склад. Продолжить?</p>
+        <p>{t.cancelText}</p>
       </Modal>
     </div>
   )
@@ -257,6 +259,7 @@ interface AdminNoteProps {
 }
 
 function AdminNote({ note, onSave, loading }: AdminNoteProps) {
+  const t = msg().adminOrders
   const [localNote, setLocalNote] = useState(note)
   const [error, setError] = useState('')
 
@@ -269,10 +272,10 @@ function AdminNote({ note, onSave, loading }: AdminNoteProps) {
   return (
     <div className={styles.adminNote}>
       <Textarea
-        label="Заметка администратора (только для вас)"
+        label={t.noteLabel}
         value={localNote}
         onChange={(e) => setLocalNote(e.target.value)}
-        placeholder="Добавьте заметку..."
+        placeholder={t.notePlaceholder}
         rows={3}
         error={error}
       />
@@ -283,7 +286,7 @@ function AdminNote({ note, onSave, loading }: AdminNoteProps) {
         loading={loading}
         className={styles.saveNoteButton}
       >
-        Сохранить заметку
+        {t.saveNote}
       </Button>
     </div>
   )

@@ -7,9 +7,11 @@ import { Button } from '../../components/ui/Button'
 import { Spinner } from '../../components/ui/Spinner'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { CategoryEditor } from '../components/CategoryEditor'
+import { msg } from '../../i18n'
 import styles from './CategoriesPage.module.css'
 
 export function CategoriesPage() {
+  const t = msg().adminCategories
   const { data, reload } = useApiQuery(() => listCategories({ onlyActive: false }), [], ['categories'])
   const [editingCategory, setEditingCategory] = useState<Category | null | 'new'>(null)
   const categories = useMemo(() => data ?? [], [data])
@@ -47,16 +49,16 @@ export function CategoriesPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.kicker}>Категории</p>
-          <h1 className={styles.title}>Шаблоны характеристик</h1>
+          <p className={styles.kicker}>{t.kicker}</p>
+          <h1 className={styles.title}>{t.title}</h1>
         </div>
         <div className={styles.headerActions}>
           <div className={styles.summary}>
-            <span>{summary.active} активных</span>
-            <strong>{summary.total} всего</strong>
+            <span>{t.activeCount(summary.active)}</span>
+            <strong>{t.totalCount(summary.total)}</strong>
           </div>
           <Button variant="primary" icon="add" onClick={() => handleOpenEditor('new')}>
-            Добавить категорию
+            {t.add}
           </Button>
         </div>
       </header>
@@ -69,12 +71,12 @@ export function CategoriesPage() {
                 <p className={styles.slug}>/{category.slug}</p>
                 <h2 className={styles.name}>{category.name}</h2>
               </div>
-              <Badge tone={category.isActive ? 'success' : 'neutral'}>{category.isActive ? 'Активна' : 'Скрыта'}</Badge>
+              <Badge tone={category.isActive ? 'success' : 'neutral'}>{category.isActive ? t.active : t.hidden}</Badge>
             </div>
 
             <div className={styles.meta}>
-              <span>Сорт: {category.sortOrder}</span>
-              <span>{category.specFields.length} полей</span>
+              <span>{t.sort(category.sortOrder)}</span>
+              <span>{t.fieldsCount(category.specFields.length)}</span>
             </div>
 
             {category.specFields.length > 0 ? (
@@ -87,12 +89,12 @@ export function CategoriesPage() {
                 ))}
               </ul>
             ) : (
-              <p className={styles.empty}>Поля характеристик пока не добавлены</p>
+              <p className={styles.empty}>{t.noFields}</p>
             )}
 
             <div className={styles.cardActions}>
               <Button variant="ghost" size="sm" icon="edit" onClick={() => handleOpenEditor(category)}>
-                Изменить
+                {t.edit}
               </Button>
             </div>
           </article>

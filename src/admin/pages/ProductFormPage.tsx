@@ -16,10 +16,13 @@ import { ProductSpecsFields } from '../components/ProductSpecsFields'
 import { ImagePicker } from '../../components/ui/ImagePicker'
 import { CONDITION_LABELS, DEVICE_GRADE_LABELS, DEVICE_GRADES } from '../../config/labels'
 import { formatPrice } from '../../utils/format'
+import { shop } from '../../config/shop'
+import { msg } from '../../i18n'
 import styles from './ProductFormPage.module.css'
 import type { ProductInput, Product, ProductSpecs, UsedInfo, ProductCondition, Category, DeviceGrade } from '../../types'
 
 export function ProductFormPage() {
+  const t = msg().adminProducts
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
   const isNew = !id
@@ -43,7 +46,7 @@ export function ProductFormPage() {
     if (categoriesError || productError) {
       return (
         <div className={styles.page}>
-          <EmptyState icon="error" title="Ошибка загрузки" text={categoriesError ?? productError ?? ''} tone="error" />
+          <EmptyState icon="error" title={t.loadError} text={categoriesError ?? productError ?? ''} tone="error" />
         </div>
       )
     }
@@ -61,7 +64,7 @@ export function ProductFormPage() {
       <div className={styles.page}>
         <EmptyState
           icon="error"
-          title="Ошибка загрузки категорий"
+          title={t.categoriesLoadError}
           text={categoriesError}
           tone="error"
         />
@@ -74,7 +77,7 @@ export function ProductFormPage() {
       <div className={styles.page}>
         <EmptyState
           icon="error"
-          title="Ошибка загрузки товара"
+          title={t.productLoadError}
           text={productError}
           tone="error"
         />
@@ -87,9 +90,9 @@ export function ProductFormPage() {
       <div className={styles.page}>
         <EmptyState
           icon="inventory_2"
-          title="Товар не найден"
-          text="Возможно, он был удалён."
-          action={<LinkButton to="/admin/products">Назад к списку</LinkButton>}
+          title={t.notFound}
+          text={t.notFoundText}
+          action={<LinkButton to="/admin/products">{t.backToList}</LinkButton>}
           tone="error"
         />
       </div>
@@ -117,6 +120,8 @@ interface ProductFormProps {
 }
 
 function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductFormProps) {
+  const t = msg().adminProducts
+  const e = msg().errorsMore
   const [categoryId, setCategoryId] = useState<string>(initialProduct?.categoryId ?? '')
   const [name, setName] = useState(initialProduct?.name ?? '')
   const [brand, setBrand] = useState(initialProduct?.brand ?? '')
@@ -144,39 +149,39 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
   }
 
   function validate(): string | null {
-    if (!categoryId) return 'Выберите категорию'
-    if (!name.trim()) return 'Укажите название товара'
-    if (!brand.trim()) return 'Укажите бренд'
+    if (!categoryId) return e.category
+    if (!name.trim()) return e.productName
+    if (!brand.trim()) return t.errBrand
     const priceNum = typeof price === 'number' ? price : Number(price)
-    if (!Number.isInteger(priceNum) || priceNum <= 0) return 'Цена — целое число больше нуля'
+    if (!Number.isInteger(priceNum) || priceNum <= 0) return e.price
     if (minPrice !== null && minPrice !== '') {
       const minPriceNum = typeof minPrice === 'number' ? minPrice : Number(minPrice)
       if (!Number.isInteger(minPriceNum) || minPriceNum <= 0 || minPriceNum > priceNum) {
-        return 'Минимальная цена должна быть больше нуля и не выше обычной цены'
+        return e.minPrice
       }
     }
     if (costPrice !== null && costPrice !== '') {
       const costPriceNum = typeof costPrice === 'number' ? costPrice : Number(costPrice)
       if (!Number.isInteger(costPriceNum) || costPriceNum < 0) {
-        return 'Себестоимость — целое число, не меньше нуля'
+        return e.costPrice
       }
     }
     const stockNum = typeof stock === 'number' ? stock : Number(stock)
-    if (!Number.isInteger(stockNum) || stockNum < 0) return 'Остаток — целое число, не меньше нуля'
+    if (!Number.isInteger(stockNum) || stockNum < 0) return e.stock
     if (condition === 'used') {
-      if (!usedInfo) return 'Для Б/У товара укажите состояние'
-      if (!usedInfo.grade) return 'Выберите состояние Б/У товара'
+      if (!usedInfo) return e.usedGrade
+      if (!usedInfo.grade) return t.errUsedGrade
       if (
         usedInfo.batteryHealth !== undefined &&
         (!Number.isInteger(usedInfo.batteryHealth) || usedInfo.batteryHealth < 1 || usedInfo.batteryHealth > 100)
       ) {
-        return 'Ёмкость аккумулятора — целое число от 1 до 100'
+        return e.battery
       }
       if (
         usedInfo.warrantyMonths !== undefined &&
         (!Number.isInteger(usedInfo.warrantyMonths) || usedInfo.warrantyMonths < 0)
       ) {
-        return 'Гарантия — целое число месяцев'
+        return e.warranty
       }
     }
     return null
@@ -251,11 +256,11 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
     >
       <PageHeader
         backTo="/admin/products"
-        title={isNew ? 'Новый товар' : 'Редактирование товара'}
+        title={isNew ? t.newTitle : t.editTitle}
         actions={
           !isNew && (
             <Button variant="danger" icon="delete" onClick={() => setDeleteConfirm(true)}>
-              Удалить
+              {t.delete}
             </Button>
           )
         }
@@ -264,27 +269,27 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
       <section className={styles.section}>
         <div className={styles.fields}>
           <Select
-            label="Категория"
-            placeholder="Выберите категорию"
+            label={t.category}
+            placeholder={t.chooseCategory}
             options={categoryOptions}
             value={categoryId}
             onChange={handleCategoryChange}
             required
           />
 
-          <Input label="Название" value={name} onChange={(e) => setName(e.target.value)} required />
+          <Input label={t.name} value={name} onChange={(e) => setName(e.target.value)} required />
 
-          <Input label="Бренд" value={brand} onChange={(e) => setBrand(e.target.value)} required />
+          <Input label={t.brand} value={brand} onChange={(e) => setBrand(e.target.value)} required />
 
           <Textarea
-            label="Описание"
+            label={t.description}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={4}
           />
 
           <Input
-            label="Цена, ₽"
+            label={t.price}
             type="number"
             inputMode="numeric"
             value={price}
@@ -298,7 +303,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
           />
 
           <Input
-            label="Мин. цена для торга, ₽"
+            label={t.minPrice}
             type="number"
             inputMode="numeric"
             value={minPrice ?? ''}
@@ -308,11 +313,11 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
             }}
             min="1"
             step="1"
-            hint="Видит только админ, для Telegram-бота"
+            hint={t.minPriceHint}
           />
 
           <Input
-            label="Себестоимость, ₽"
+            label={t.costPrice}
             type="number"
             inputMode="numeric"
             value={costPrice ?? ''}
@@ -322,25 +327,25 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
             }}
             min="0"
             step="1"
-            hint="Закупочная цена за штуку. Нужна для расчёта прибыли, клиенты её не видят"
+            hint={t.costPriceHint}
           />
 
           {price !== '' && costPrice !== null && costPrice !== '' && (
             <div className={styles.marginInfo}>
               {costPrice > price ? (
                 <span className={styles.marginError}>
-                  Себестоимость выше цены продажи
+                  {t.costAbovePrice}
                 </span>
               ) : (
                 <span>
-                  Наценка: {formatPrice(price - costPrice)} ({Math.round((price - costPrice) / price * 100)}%)
+                  {t.margin(formatPrice(price - costPrice), Math.round((price - costPrice) / price * 100))}
                 </span>
               )}
             </div>
           )}
 
           <Input
-            label="Остаток на складе"
+            label={t.stock}
             type="number"
             inputMode="numeric"
             value={stock}
@@ -354,13 +359,13 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
           />
 
           <Checkbox
-            label="Показывать на сайте"
+            label={t.showOnSite}
             checked={isActive}
             onChange={(e) => setIsActive(e.target.checked)}
           />
 
           <Select
-            label="Состояние"
+            label={t.condition}
             options={Object.entries(CONDITION_LABELS).map(([value, label]) => ({ value, label }))}
             value={condition}
             onChange={(e) => {
@@ -373,11 +378,11 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
 
         {condition === 'used' && (
           <div className={styles.usedInfo}>
-            <h3 className={styles.usedInfoTitle}>Сведения о Б/У устройстве</h3>
+            <h3 className={styles.usedInfoTitle}>{t.usedTitle}</h3>
             <div className={styles.fields}>
               <Select
-                label="Состояние"
-                placeholder="Выберите состояние"
+                label={t.condition}
+                placeholder={t.chooseGrade}
                 options={DEVICE_GRADES.map((g) => ({ value: g, label: DEVICE_GRADE_LABELS[g] }))}
                 value={usedInfo?.grade ?? ''}
                 onChange={(e) =>
@@ -389,7 +394,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
                 required
               />
               <Input
-                label="Аккумулятор, %"
+                label={t.battery}
                 type="number"
                 inputMode="numeric"
                 value={usedInfo?.batteryHealth ?? ''}
@@ -405,7 +410,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
                 step="1"
               />
               <Input
-                label="Гарантия, мес."
+                label={t.warranty}
                 type="number"
                 inputMode="numeric"
                 value={usedInfo?.warrantyMonths ?? ''}
@@ -420,7 +425,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
                 step="1"
               />
               <Input
-                label="Дефекты"
+                label={t.defects}
                 value={usedInfo?.defects ?? ''}
                 onChange={(e) =>
                   setUsedInfo({
@@ -430,7 +435,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
                 }
               />
               <Input
-                label="Комплект"
+                label={t.kit}
                 value={usedInfo?.kit ?? ''}
                 onChange={(e) =>
                   setUsedInfo({
@@ -454,12 +459,12 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
 
         <div className={styles.images}>
           <ImagePicker
-            label="Фото товара"
+            label={t.photos}
             value={images}
             onChange={setImages}
-            max={8}
+            max={shop.maxProductImages}
             markFirst
-            hint="Первое фото — главное. Макс. 8 фото."
+            hint={t.photosHint(shop.maxProductImages)}
           />
         </div>
 
@@ -471,22 +476,22 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
 
         <div className={styles.footer}>
           <LinkButton to="/admin/products" variant="secondary">
-            Отмена
+            {t.cancel}
           </LinkButton>
           <Button type="submit" loading={saving}>
-            Сохранить
+            {t.save}
           </Button>
         </div>
       </section>
 
-      <Modal open={deleteConfirm} onClose={() => setDeleteConfirm(false)} title="Удалить товар" size="sm">
-        <p>Товар будет удалён безвозвратно. В заказах и заявках trade-in останутся название и цена.</p>
+      <Modal open={deleteConfirm} onClose={() => setDeleteConfirm(false)} title={t.deleteTitle} size="sm">
+        <p>{t.deleteText}</p>
         <div className={`${styles.footer} ${styles.modalFooter}`}>
           <Button variant="secondary" onClick={() => setDeleteConfirm(false)}>
-            Отмена
+            {t.cancel}
           </Button>
           <Button variant="danger" onClick={() => void handleDelete()} loading={saving}>
-            Удалить
+            {t.delete}
           </Button>
         </div>
       </Modal>

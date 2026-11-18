@@ -1,3 +1,27 @@
 import type { AdminChatsMessages } from '../ru/adminChats'
 
-export const adminChats: AdminChatsMessages = {}
+export const adminChats: AdminChatsMessages = {
+  all: 'Баары',
+  kicker: 'Кардарлар менен кат алышуу',
+  title: 'Чаттар',
+  count: (count: number) => `${count} чат`,
+  unread: (count: number) => `${count} окула элек`,
+  notConnected: 'Бот азырынча туташа элек. Төмөндө — демо кат алышуу.',
+  connect: 'Ботту туташтыруу',
+  filterAria: 'Чаттардын чыпкасы',
+  emptyTitle: 'Азырынча чаттар жок',
+  emptyText: 'Бул жерде кардарлардын Telegram боту менен сүйлөшүүлөрү пайда болот',
+  notFound: 'Чат табылган жок',
+  notFoundText: 'Мындай чат жок',
+  allChats: 'Бардык чаттар',
+  handoff: (reason: string) => `Бот сүйлөшүүнү өткөрүп берди: ${reason}`,
+  order: 'Ушул чаттагы заказ',
+  takeOver: 'Өзүм жооп берем',
+  backToBot: 'Ботко кайтаруу',
+  close: 'Чатты жабуу',
+  reopen: 'Кайра ачуу',
+  botActive: 'Азыр бот жооп берип жатат. Өзүңүз жооп берсеңиз, бот бул чатта унчукпай калат.',
+  replyPlaceholder: 'Кардарга Telegram аркылуу жооп…',
+  replyAria: 'Кардарга жооп',
+  send: 'Жөнөтүү',
+}

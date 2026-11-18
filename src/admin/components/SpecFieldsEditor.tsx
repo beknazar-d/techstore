@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
 import { Textarea } from '../../components/ui/Textarea'
+import { msg } from '../../i18n'
 import styles from './SpecFieldsEditor.module.css'
 
 interface SpecFieldsEditorProps {
@@ -12,12 +13,15 @@ interface SpecFieldsEditorProps {
   disabled?: boolean
 }
 
-const TYPE_OPTIONS = (Object.keys(SPEC_FIELD_TYPE_LABELS) as SpecFieldType[]).map((type) => ({
-  value: type,
-  label: SPEC_FIELD_TYPE_LABELS[type],
-}))
+function getTypeOptions() {
+  return (Object.keys(SPEC_FIELD_TYPE_LABELS) as SpecFieldType[]).map((type) => ({
+    value: type,
+    label: SPEC_FIELD_TYPE_LABELS[type],
+  }))
+}
 
 export function SpecFieldsEditor({ value, onChange, disabled = false }: SpecFieldsEditorProps) {
+  const t = msg().adminCategories
   function replaceAt(index: number, field: SpecField) {
     onChange(value.map((item, i) => (i === index ? field : { ...item })))
   }
@@ -68,7 +72,7 @@ export function SpecFieldsEditor({ value, onChange, disabled = false }: SpecFiel
   return (
     <div className={styles.editor}>
       {value.length === 0 ? (
-        <p className={styles.empty}>Характеристик пока нет. Добавьте первую.</p>
+        <p className={styles.empty}>{t.noSpecs}</p>
       ) : (
         <ul className={styles.list}>
           {value.map((field, index) => {
@@ -77,23 +81,23 @@ export function SpecFieldsEditor({ value, onChange, disabled = false }: SpecFiel
               <li key={index} className={styles.row}>
                 <div className={styles.fields}>
                   <Input
-                    label="Название"
-                    placeholder="Например, Экран"
+                    label={t.specName}
+                    placeholder={t.specNamePlaceholder}
                     value={field.label}
                     disabled={disabled}
                     onChange={(e) => changeLabel(index, e.target.value)}
                   />
                   <Select
-                    label="Тип"
+                    label={t.specType}
                     value={field.type}
-                    options={TYPE_OPTIONS}
+                    options={getTypeOptions()}
                     disabled={disabled}
                     onChange={(e) => changeType(index, e.target.value as SpecFieldType)}
                   />
                   {showUnit ? (
                     <Input
-                      label="Ед. изм."
-                      placeholder="дюйм, Вт"
+                      label={t.unit}
+                      placeholder={t.unitPlaceholder}
                       value={field.unit ?? ''}
                       disabled={disabled}
                       onChange={(e) => changeUnit(index, e.target.value)}
@@ -106,7 +110,7 @@ export function SpecFieldsEditor({ value, onChange, disabled = false }: SpecFiel
                       variant="secondary"
                       size="sm"
                       icon="arrow_upward"
-                      aria-label="Поднять характеристику выше"
+                      aria-label={t.moveUp}
                       disabled={disabled || index === 0}
                       onClick={() => move(index, -1)}
                     />
@@ -114,7 +118,7 @@ export function SpecFieldsEditor({ value, onChange, disabled = false }: SpecFiel
                       variant="secondary"
                       size="sm"
                       icon="arrow_downward"
-                      aria-label="Опустить характеристику ниже"
+                      aria-label={t.moveDown}
                       disabled={disabled || index === value.length - 1}
                       onClick={() => move(index, 1)}
                     />
@@ -122,7 +126,7 @@ export function SpecFieldsEditor({ value, onChange, disabled = false }: SpecFiel
                       variant="danger"
                       size="sm"
                       icon="delete"
-                      aria-label="Удалить характеристику"
+                      aria-label={t.remove}
                       disabled={disabled}
                       onClick={() => remove(index)}
                     />
@@ -130,16 +134,16 @@ export function SpecFieldsEditor({ value, onChange, disabled = false }: SpecFiel
                 </div>
                 {field.type === 'select' && (
                   <Textarea
-                    label="Варианты выбора"
+                    label={t.options}
                     rows={3}
-                    hint="Каждый вариант с новой строки"
+                    hint={t.optionsHint}
                     value={(field.options ?? []).join('\n')}
                     disabled={disabled}
                     onChange={(e) => changeOptions(index, e.target.value)}
                   />
                 )}
                 <p className={styles.keyInfo}>
-                  {field.key ? `Ключ: ${field.key}` : 'Ключ появится после сохранения'}
+                  {field.key ? t.key(field.key) : t.keyLater}
                 </p>
               </li>
             )
@@ -147,7 +151,7 @@ export function SpecFieldsEditor({ value, onChange, disabled = false }: SpecFiel
         </ul>
       )}
       <Button variant="secondary" icon="add" disabled={disabled} onClick={add}>
-        Добавить характеристику
+        {t.addSpec}
       </Button>
     </div>
   )

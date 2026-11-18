@@ -7,9 +7,12 @@ import { PageLoader } from '../../components/ui/Spinner'
 import { ThemeToggle } from '../../components/ui/ThemeToggle'
 import { shop } from '../../config/shop'
 import { useAdminSession } from '../../hooks/useAdminSession'
+import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher'
+import { useT } from '../../i18n'
 import styles from './LoginPage.module.css'
 
 export function LoginPage() {
+  const t = useT().adminLayout
   const { session, loading } = useAdminSession()
   const location = useLocation()
   const navigate = useNavigate()
@@ -30,7 +33,7 @@ export function LoginPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
     if (!email.trim() || !password) {
-      setError('Введите email и пароль')
+      setError(t.loginEmpty)
       return
     }
     setSubmitting(true)
@@ -46,11 +49,14 @@ export function LoginPage() {
 
   return (
     <div className={styles.screen}>
-      <ThemeToggle className={styles.themeToggle} />
+      <div className={styles.corner}>
+        <LanguageSwitcher />
+        <ThemeToggle />
+      </div>
       <div className={styles.card}>
         <div>
           <div className={styles.shopName}>{shop.name}</div>
-          <div className={styles.caption}>Вход для сотрудников</div>
+          <div className={styles.caption}>{t.loginCaption}</div>
         </div>
         <form className={styles.form} noValidate onSubmit={handleSubmit}>
           <Input
@@ -65,7 +71,7 @@ export function LoginPage() {
             }}
           />
           <Input
-            label="Пароль"
+            label={t.password}
             type="password"
             autoComplete="current-password"
             required
@@ -81,11 +87,11 @@ export function LoginPage() {
             </div>
           )}
           <Button type="submit" fullWidth loading={submitting}>
-            Войти
+            {t.login}
           </Button>
         </form>
         <Link to="/" className={styles.back}>
-          ← На сайт
+          {t.backToSite}
         </Link>
       </div>
     </div>

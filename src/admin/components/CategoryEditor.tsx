@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Checkbox } from '../../components/ui/Checkbox'
 import { Modal } from '../../components/ui/Modal'
+import { msg } from '../../i18n'
 import styles from './CategoryEditor.module.css'
 
 interface CategoryEditorProps {
@@ -17,6 +18,7 @@ interface CategoryEditorProps {
 const initialFields: SpecField[] = []
 
 export function CategoryEditor({ category, onClose, onSuccess }: CategoryEditorProps) {
+  const t = msg().adminCategories
   const isNew = category === null
 
   // Инициализация state напрямую из props — компонент пересоздаётся при смене key
@@ -32,7 +34,7 @@ export function CategoryEditor({ category, onClose, onSuccess }: CategoryEditorP
 
   async function handleSave() {
     if (!name.trim()) {
-      setError('Укажите название категории')
+      setError(msg().errorsMore.categoryName)
       return
     }
 
@@ -87,15 +89,15 @@ export function CategoryEditor({ category, onClose, onSuccess }: CategoryEditorP
     <Modal
       open={true}
       onClose={onClose}
-      title={isNew ? 'Новая категория' : `Редактирование: ${category?.name}`}
+      title={isNew ? t.newTitle : t.editTitle(category?.name ?? '')}
       size="lg"
       closeOnOverlay={!saving && !deleting}
     >
       <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
         <div className={styles.fieldRow}>
           <Input
-            label="Название *"
-            placeholder="Например, Смартфоны"
+            label={t.name}
+            placeholder={t.namePlaceholder}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -103,7 +105,7 @@ export function CategoryEditor({ category, onClose, onSuccess }: CategoryEditorP
           />
           <Input
             label="Slug"
-            placeholder="если пусто — создаётся из названия"
+            placeholder={t.slugPlaceholder}
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             disabled={saving || deleting}
@@ -113,7 +115,7 @@ export function CategoryEditor({ category, onClose, onSuccess }: CategoryEditorP
         <div className={styles.fieldRow}>
           <Input
             type="number"
-            label="Порядок сортировки"
+            label={t.sortOrder}
             placeholder="0"
             value={sortOrder}
             onChange={(e) => setSortOrder(parseInt(e.target.value) || 0)}
@@ -122,7 +124,7 @@ export function CategoryEditor({ category, onClose, onSuccess }: CategoryEditorP
           />
           <div className={styles.checkboxWrapper}>
             <Checkbox
-              label="Показывать на сайте"
+              label={t.showOnSite}
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
               disabled={saving || deleting}
@@ -136,28 +138,28 @@ export function CategoryEditor({ category, onClose, onSuccess }: CategoryEditorP
 
         <div className={styles.actions}>
           <Button variant="ghost" onClick={onClose} disabled={saving || deleting}>
-            Отмена
+            {t.cancel}
           </Button>
           {category && !confirmDelete && (
             <Button variant="danger" onClick={handleDelete} disabled={saving}>
-              Удалить категорию
+              {t.delete}
             </Button>
           )}
           {category && confirmDelete && (
             <>
               <p className={styles.confirmText}>
-                Удалить «{category.name}»? Это действие нельзя отменить.
+                {t.deleteConfirm(category.name)}
               </p>
               <Button variant="danger" onClick={handleDelete} loading={deleting}>
-                Да, удалить
+                {t.deleteYes}
               </Button>
               <Button variant="ghost" onClick={() => setConfirmDelete(false)} disabled={deleting}>
-                Нет, оставить
+                {t.deleteNo}
               </Button>
             </>
           )}
           <Button variant="primary" onClick={handleSave} loading={saving} fullWidth>
-            {isNew ? 'Создать' : 'Сохранить'}
+            {isNew ? t.create : t.save}
           </Button>
         </div>
       </form>

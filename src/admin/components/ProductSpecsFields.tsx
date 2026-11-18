@@ -1,6 +1,7 @@
 import type { ProductSpecs, SpecField, SpecValue } from '../../types'
 import { Input } from '../../components/ui/Input'
 import { Select } from '../../components/ui/Select'
+import { msg } from '../../i18n'
 import styles from './ProductSpecsFields.module.css'
 
 interface ProductSpecsFieldsProps {
@@ -10,10 +11,12 @@ interface ProductSpecsFieldsProps {
   disabled?: boolean
 }
 
-const BOOLEAN_OPTIONS = [
-  { value: 'yes', label: 'Да' },
-  { value: 'no', label: 'Нет' },
-]
+function getBooleanOptions() {
+  return [
+    { value: 'yes', label: msg().common.yes },
+    { value: 'no', label: msg().common.no },
+  ]
+}
 
 export function ProductSpecsFields({ fields, value, onChange, disabled = false }: ProductSpecsFieldsProps) {
   function setValue(key: string, next: SpecValue | undefined) {
@@ -26,7 +29,7 @@ export function ProductSpecsFields({ fields, value, onChange, disabled = false }
   if (fields.length === 0) {
     return (
       <p className={styles.empty}>
-        У этой категории нет характеристик. Их можно добавить в разделе „Категории“.
+        {msg().adminProducts.noSpecs}
       </p>
     )
   }
@@ -68,7 +71,7 @@ export function ProductSpecsFields({ fields, value, onChange, disabled = false }
             <Select
               key={field.key}
               label={label}
-              placeholder="Не указано"
+              placeholder={msg().adminProducts.notSet}
               options={all.map((o) => ({ value: o, label: o }))}
               value={selected}
               disabled={disabled}
@@ -82,8 +85,8 @@ export function ProductSpecsFields({ fields, value, onChange, disabled = false }
             <Select
               key={field.key}
               label={label}
-              placeholder="Не указано"
-              options={BOOLEAN_OPTIONS}
+              placeholder={msg().adminProducts.notSet}
+              options={getBooleanOptions()}
               value={current === true ? 'yes' : current === false ? 'no' : ''}
               disabled={disabled}
               onChange={(e) => {

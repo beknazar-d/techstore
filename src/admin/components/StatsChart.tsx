@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { formatPrice } from '../../utils/format'
 import type { StatsDay } from '../../types'
+import { intlLocale, msg } from '../../i18n'
 import styles from './StatsChart.module.css'
 
 interface StatsChartProps {
@@ -15,8 +16,9 @@ interface Point {
 const PAD = { left: 56, right: 16, top: 12, bottom: 28 }
 const X_LABELS = 6
 
-const shortDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
-const longDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', weekday: 'short' })
+const shortDate = (date: Date) => new Intl.DateTimeFormat(intlLocale(), { day: 'numeric', month: 'short' }).format(date)
+const longDate = (date: Date) =>
+  new Intl.DateTimeFormat(intlLocale(), { day: 'numeric', month: 'long', weekday: 'short' }).format(date)
 
 /** 'YYYY-MM-DD' → локальная дата (без сдвига по часовому поясу). */
 function parseDay(value: string): Date {
@@ -33,8 +35,8 @@ function niceStep(max: number, count: number): number {
 }
 
 function formatCompactRub(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} млн`
-  if (value >= 1000) return `${Math.round(value / 1000)} тыс.`
+  if (value >= 1_000_000) return `${(value / 1_000_000).toLocaleString(intlLocale(), { maximumFractionDigits: 1 })} ${msg().adminStats.million}`
+  if (value >= 1000) return `${Math.round(value / 1000)} ${msg().adminStats.thousand}`
   return String(value)
 }
 
@@ -84,6 +86,7 @@ function monotonePath(points: Point[]): string {
 }
 
 export function StatsChart({ days }: StatsChartProps) {
+  const t = msg().adminStats
   const wrapRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 0, height: 260 })
   const [active, setActive] = useState<number | null>(null)
@@ -142,17 +145,17 @@ export function StatsChart({ days }: StatsChartProps) {
       <div className={styles.legend}>
         <span className={styles.legendItem}>
           <span className={`${styles.legendDot} ${styles.revenue}`} />
-          Выручка
+          {t.revenue}
         </span>
         <span className={styles.legendItem}>
           <span className={`${styles.legendDot} ${styles.profit}`} />
-          Прибыль
+          {t.profit}
         </span>
       </div>
 
       <div ref={wrapRef} className={styles.plot}>
         {isEmpty ? (
-          <div className={styles.emptyState}>За период нет выполненных заказов</div>
+          <div className={styles.emptyState}>{t.emptyTitle}</div>
         ) : (
           size.width > 0 && (
             <svg
@@ -163,7 +166,7 @@ export function StatsChart({ days }: StatsChartProps) {
               onPointerDown={handlePointer}
               onPointerLeave={() => setActive(null)}
               role="img"
-              aria-label="График выручки и прибыли по дням"
+              aria-label={t.chartAria}
             >
               {yTicks.map((v) => (
                 <g key={v}>
@@ -182,7 +185,7 @@ export function StatsChart({ days }: StatsChartProps) {
                   textAnchor={k === 0 ? 'start' : k === labelIndexes.length - 1 ? 'end' : 'middle'}
                   className={styles.axisLabel}
                 >
-                  {shortDate.format(parseDay(days[i].date))}
+                  {shortDate(parseDay(days[i].date))}
                 </text>
               ))}
 
@@ -209,37 +212,37 @@ export function StatsChart({ days }: StatsChartProps) {
             className={`${styles.tooltip} ${tooltipOnLeft ? styles.tooltipLeft : ''}`}
             style={{ left: tooltipOnLeft ? activeX - 12 : activeX + 12 }}
           >
-            <div className={styles.tooltipDate}>{longDate.format(parseDay(activeDay.date))}</div>
+            <div className={styles.tooltipDate}>{longDate(parseDay(activeDay.date))}</div>
             <div className={styles.tooltipRow}>
               <span className={`${styles.legendDot} ${styles.revenue}`} />
-              <span>Выручка</span>
+              <span>{t.revenue}</span>
               <strong>{formatPrice(activeDay.revenue)}</strong>
             </div>
             <div className={styles.tooltipRow}>
               <span className={`${styles.legendDot} ${styles.profit}`} />
-              <span>Прибыль</span>
+              <span>{t.profit}</span>
               <strong>{formatPrice(activeDay.profit)}</strong>
             </div>
-            <div className={styles.tooltipMeta}>Заявок: {activeDay.orders}</div>
+            <div className={styles.tooltipMeta}>{t.ordersCount(activeDay.orders)}</div>
           </div>
         )}
       </div>
 
       <details className={styles.tableDetails}>
-        <summary>Показать таблицей</summary>
+        <summary>{t.showTable}</summary>
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Дата</th>
-              <th>Выручка</th>
-              <th>Прибыль</th>
-              <th>Заявок</th>
+              <th>{t.date}</th>
+              <th>{t.revenue}</th>
+              <th>{t.profit}</th>
+              <th>{t.orders}</th>
             </tr>
           </thead>
           <tbody>
             {days.map((day) => (
               <tr key={day.date}>
-                <td>{shortDate.format(parseDay(day.date))}</td>
+                <td>{shortDate(parseDay(day.date))}</td>
                 <td>{formatPrice(day.revenue)}</td>
                 <td>{formatPrice(day.profit)}</td>
                 <td>{day.orders}</td>

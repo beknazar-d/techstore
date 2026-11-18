@@ -12,9 +12,11 @@ import { formatDateTime } from '../../utils/date'
 import { formatPhone } from '../../utils/phone'
 import { cn } from '../../utils/cn'
 import { useApiQuery } from '../../hooks/useApiQuery'
+import { msg } from '../../i18n'
 import styles from './ChatPage.module.css'
 
 export function ChatPage() {
+  const t = msg().adminChats
   const { id } = useParams()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [message, setMessage] = useState('')
@@ -81,9 +83,9 @@ export function ChatPage() {
       <div className={styles.page}>
         <EmptyState
           icon="forum"
-          title="Чат не найден"
-          text="Такого чата не существует"
-          action={<Link to="/admin/chats">Все чаты</Link>}
+          title={t.notFound}
+          text={t.notFoundText}
+          action={<Link to="/admin/chats">{t.allChats}</Link>}
         />
       </div>
     )
@@ -101,7 +103,7 @@ export function ChatPage() {
     <div className={styles.page}>
       <PageHeader
         backTo="/admin/chats"
-        backLabel="Все чаты"
+        backLabel={t.allChats}
         title={chat.customerName}
         subtitle={
           <>
@@ -130,13 +132,13 @@ export function ChatPage() {
       {chat.mode === 'manager' && chat.handoffReason && (
         <div className={styles.handoffNotice}>
           <span className="material-symbols-outlined">support_agent</span>
-          <span>Бот передал разговор: {chat.handoffReason}</span>
+          <span>{t.handoff(chat.handoffReason)}</span>
         </div>
       )}
 
       {chat.orderId && (
         <Link to={`/admin/orders/${chat.orderId}`} className={styles.orderLink}>
-          Заказ из этого чата
+          {t.order}
         </Link>
       )}
 
@@ -148,7 +150,7 @@ export function ChatPage() {
             icon="pan_tool"
             onClick={() => handleModeChange('manager')}
           >
-            Ответить самому
+            {t.takeOver}
           </Button>
         )}
         {chat.mode === 'manager' && (
@@ -158,7 +160,7 @@ export function ChatPage() {
             icon="smart_toy"
             onClick={() => handleModeChange('bot')}
           >
-            Вернуть боту
+            {t.backToBot}
           </Button>
         )}
         {chat.mode !== 'closed' && (
@@ -168,7 +170,7 @@ export function ChatPage() {
             icon="check_circle"
             onClick={() => handleModeChange('closed')}
           >
-            Закрыть чат
+            {t.close}
           </Button>
         )}
         {chat.mode === 'closed' && (
@@ -177,7 +179,7 @@ export function ChatPage() {
             size="sm"
             onClick={() => handleModeChange('manager')}
           >
-            Открыть снова
+            {t.reopen}
           </Button>
         )}
       </div>
@@ -207,7 +209,7 @@ export function ChatPage() {
 
       {chat.mode === 'bot' && (
         <div className={styles.formHint}>
-          Сейчас отвечает бот. Если ответите сами, бот в этом чате замолчит.
+          {t.botActive}
         </div>
       )}
 
@@ -218,8 +220,8 @@ export function ChatPage() {
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             rows={2}
-            placeholder="Ответ клиенту в Telegram…"
-            aria-label="Ответ клиенту"
+            placeholder={t.replyPlaceholder}
+            aria-label={t.replyAria}
           />
           <Button
             variant="primary"
@@ -229,7 +231,7 @@ export function ChatPage() {
             onClick={handleSendMessage}
             disabled={!message.trim()}
           >
-            Отправить
+            {t.send}
           </Button>
         </div>
         {error && (

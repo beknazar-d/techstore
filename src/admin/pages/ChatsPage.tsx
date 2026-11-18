@@ -7,14 +7,18 @@ import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { formatDateTime } from '../../utils/date'
+import { msg } from '../../i18n'
 import styles from './ChatsPage.module.css'
 
-const MODE_FILTERS: Array<{ value: 'all' | 'bot' | 'manager' | 'closed'; label: string }> = [
-  { value: 'all', label: 'Все' },
-  ...CHAT_MODES.map((mode) => ({ value: mode, label: CHAT_MODE_LABELS[mode] })),
-]
+function getModeFilters(): Array<{ value: 'all' | 'bot' | 'manager' | 'closed'; label: string }> {
+  return [
+    { value: 'all', label: msg().adminChats.all },
+    ...CHAT_MODES.map((mode) => ({ value: mode, label: CHAT_MODE_LABELS[mode] })),
+  ]
+}
 
 export function ChatsPage() {
+  const t = msg().adminChats
   const [modeFilter, setModeFilter] = useState<'all' | 'bot' | 'manager' | 'closed'>('all')
   const { data: botSettings } = useApiQuery(getBotSettings, [], ['botSettings'])
   const { data: chats = [], loading } = useApiQuery(
@@ -43,13 +47,13 @@ export function ChatsPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.kicker}>Переписка с клиентами</p>
-          <h1 className={styles.title}>Чаты</h1>
+          <p className={styles.kicker}>{t.kicker}</p>
+          <h1 className={styles.title}>{t.title}</h1>
         </div>
         <div className={styles.summary}>
-          <span>{summary.total} чатов</span>
+          <span>{t.count(summary.total)}</span>
           {summary.unread > 0 && (
-            <strong>{summary.unread} непрочитанных</strong>
+            <strong>{t.unread(summary.unread)}</strong>
           )}
         </div>
       </header>
@@ -57,13 +61,13 @@ export function ChatsPage() {
       {botSettings && !botSettings.connected && (
         <div className={styles.botNotice}>
           <span className="material-symbols-outlined">smart_toy</span>
-          <span>Бот ещё не подключён. Ниже — демо-переписка.</span>
-          <Link to="/admin/settings">Подключить бота</Link>
+          <span>{t.notConnected}</span>
+          <Link to="/admin/settings">{t.connect}</Link>
         </div>
       )}
 
-      <div className={styles.filters} aria-label="Фильтр чатов">
-        {MODE_FILTERS.map((item) => (
+      <div className={styles.filters} aria-label={t.filterAria}>
+        {getModeFilters().map((item) => (
           <button
             key={item.value}
             type="button"
@@ -80,8 +84,8 @@ export function ChatsPage() {
         {chats.length === 0 ? (
           <EmptyState
             icon="forum"
-            title="Чатов пока нет"
-            text="Здесь появятся разговоры клиентов с ботом в Telegram"
+            title={t.emptyTitle}
+            text={t.emptyText}
           />
         ) : (
           chats.map((chat) => (

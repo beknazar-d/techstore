@@ -6,17 +6,16 @@ import { PageHeader, Section } from '../components/AdminBlocks'
 import { StatsChart } from '../components/StatsChart'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { useApiQuery } from '../../hooks/useApiQuery'
+import { shop } from '../../config/shop'
+import { msg } from '../../i18n'
 import styles from './StatsPage.module.css'
 
-const PERIODS = [
-  { value: 7, label: '7 дней' },
-  { value: 30, label: '30 дней' },
-  { value: 90, label: '90 дней' },
-] as const
+const PERIODS = [{ value: 7 }, { value: 30 }, { value: 90 }] as const
 
 type PeriodValue = typeof PERIODS[number]['value']
 
 export function StatsPage() {
+  const t = msg().adminStats
   const [period, setPeriod] = useState<PeriodValue>(30)
   const { data: stats, loading } = useApiQuery(
     () => getShopStats(period),
@@ -38,8 +37,8 @@ export function StatsPage() {
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Статистика"
-        subtitle="Деньги — по выполненным заказам, дата — по дню заявки"
+        title={t.title}
+        subtitle={t.subtitle}
       />
 
       {/* Переключатели периода */}
@@ -52,7 +51,7 @@ export function StatsPage() {
             data-active={period === item.value}
             onClick={() => setPeriod(item.value)}
           >
-            {item.label}
+            {t.days(item.value)}
           </button>
         ))}
       </div>
@@ -60,44 +59,44 @@ export function StatsPage() {
       {/* KPI-плитки */}
       <div className={styles.kpiGrid}>
         <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>Выручка</div>
+          <div className={styles.kpiLabel}>{t.revenue}</div>
           <div className={styles.kpiValue}>{formatPrice(stats.revenue)}</div>
           <div className={styles.kpiSub}>
-            выполнено заказов: {stats.ordersCompleted}
+            {t.completed(stats.ordersCompleted)}
           </div>
         </div>
 
         <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>Прибыль</div>
+          <div className={styles.kpiLabel}>{t.profit}</div>
           <div className={styles.kpiValue}>{formatPrice(stats.profit)}</div>
           <div className={styles.kpiSub}>
             {stats.marginPercent !== null
-              ? `наценка ${stats.marginPercent}%`
-              : 'нет себестоимости'
+              ? t.margin(stats.marginPercent)
+              : t.noCost
             }
           </div>
         </div>
 
         <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>Средний чек</div>
+          <div className={styles.kpiLabel}>{t.averageCheck}</div>
           <div className={styles.kpiValue}>
             {stats.averageCheck ? formatPrice(stats.averageCheck) : '—'}
           </div>
         </div>
 
         <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>Заявок</div>
+          <div className={styles.kpiLabel}>{t.orders}</div>
           <div className={styles.kpiValue}>{stats.ordersTotal}</div>
           <div className={styles.kpiSub}>
-            отменено {stats.ordersCancelled} ({stats.cancelRatePercent}%)
+            {t.cancelled(stats.ordersCancelled, stats.cancelRatePercent ?? 0)}
           </div>
         </div>
 
         <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>В работе</div>
+          <div className={styles.kpiLabel}>{t.inProgress}</div>
           <div className={styles.kpiValue}>{stats.ordersInProgress}</div>
           <div className={styles.kpiSub}>
-            на {formatPrice(stats.inProgressValue)}
+            {t.inProgressValue(formatPrice(stats.inProgressValue))}
           </div>
         </div>
 
@@ -105,29 +104,29 @@ export function StatsPage() {
           <div className={styles.kpiLabel}>Trade-in</div>
           <div className={styles.kpiValue}>{stats.tradeInsTotal}</div>
           <div className={styles.kpiSub}>
-            согласились: {stats.tradeInsAccepted}
+            {t.tradeInAccepted(stats.tradeInsAccepted)}
           </div>
         </div>
 
         <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>Сайт / Telegram</div>
+          <div className={styles.kpiLabel}>{t.sources}</div>
           <div className={styles.kpiValue}>
             {stats.ordersBySource.site} / {stats.ordersBySource.telegram}
           </div>
-          <div className={styles.kpiSub}>заявок по источникам</div>
+          <div className={styles.kpiSub}>{t.sourcesSub}</div>
         </div>
 
         <div className={styles.kpiCard}>
-          <div className={styles.kpiLabel}>На складе</div>
+          <div className={styles.kpiLabel}>{t.inStock}</div>
           <div className={styles.kpiValue}>{formatPrice(stats.inventory.costValue)}</div>
           <div className={styles.kpiSub}>
-            по себестоимости, {stats.inventory.units} шт.
+            {t.inStockSub(stats.inventory.units)}
           </div>
         </div>
       </div>
 
       {/* График */}
-      <Section title="Выручка и прибыль по дням">
+      <Section title={t.chartTitle}>
         <StatsChart days={stats.daily} />
         {stats.revenueWithoutCost > 0 && (
           <div className={styles.warning}>
@@ -135,25 +134,24 @@ export function StatsPage() {
               info
             </span>
             <span>
-              {formatPrice(stats.revenueWithoutCost)} выручки без себестоимости — не вошли в прибыль.
-              Укажите себестоимость в карточках товаров.
+              {t.revenueWithoutCost(formatPrice(stats.revenueWithoutCost))} {t.fillCostHint}
             </span>
             <Link to="/admin/products" className={styles.warningLink}>
-              Заполнить
+              {t.fill}
             </Link>
           </div>
         )}
       </Section>
 
       {/* Лучшие товары */}
-      <Section title="Лучшие товары">
+      <Section title={t.topProducts}>
         {stats.topProducts.length > 0 ? (
           <div className={styles.topProducts}>
             <div className={styles.tableHeader}>
-              <div>Товар</div>
-              <div className={styles.productQuantity}>Продано, шт.</div>
-              <div className={styles.productRevenue}>Выручка</div>
-              <div className={styles.productProfit}>Прибыль</div>
+              <div>{t.product}</div>
+              <div className={styles.productQuantity}>{t.sold}</div>
+              <div className={styles.productRevenue}>{t.revenue}</div>
+              <div className={styles.productProfit}>{t.profit}</div>
             </div>
             {stats.topProducts.map((product) => (
               <div key={product.productId || product.name} className={styles.productRow}>
@@ -169,44 +167,44 @@ export function StatsPage() {
         ) : (
           <EmptyState
             icon="analytics"
-            title="За период нет выполненных заказов"
-            text="Данные появятся после оформления заказов"
+            title={t.emptyTitle}
+            text={t.emptyText}
           />
         )}
       </Section>
 
       {/* Склад */}
-      <Section title="Склад сейчас">
+      <Section title={t.inventory}>
         <div className={styles.inventoryGrid}>
           <div className={styles.inventoryRow}>
-            <span>Всего штук</span>
+            <span>{t.totalUnits}</span>
             <strong>{stats.inventory.units}</strong>
           </div>
           <div className={styles.inventoryRow}>
-            <span>По себестоимости</span>
+            <span>{t.byCost}</span>
             <strong>{formatPrice(stats.inventory.costValue)}</strong>
           </div>
           <div className={styles.inventoryRow}>
-            <span>По цене продажи</span>
+            <span>{t.byPrice}</span>
             <strong>{formatPrice(stats.inventory.retailValue)}</strong>
           </div>
           <div className={styles.inventoryRow}>
-            <span>Возможная прибыль</span>
+            <span>{t.potentialProfit}</span>
             <strong>{formatPrice(stats.inventory.retailValue - stats.inventory.costValue)}</strong>
           </div>
           <div className={styles.inventoryRow}>
-            <span>Заканчивается (≤ 3 шт.)</span>
+            <span>{t.lowStock(shop.lowStockThreshold)}</span>
             <strong>{stats.inventory.lowStock}</strong>
           </div>
           <div className={styles.inventoryRow}>
-            <span>Нет в наличии</span>
+            <span>{t.outOfStock}</span>
             <strong>{stats.inventory.outOfStock}</strong>
           </div>
           {stats.inventory.missingCost > 0 && (
             <div className={styles.inventoryRow}>
-              <span>Без себестоимости</span>
+              <span>{t.withoutCost}</span>
               <Link to="/admin/products" className={styles.inventoryLink}>
-                Заполнить ({stats.inventory.missingCost})
+                {t.fillCount(stats.inventory.missingCost)}
               </Link>
             </div>
           )}

@@ -7,12 +7,14 @@ import { useAdminSession } from '../hooks/useAdminSession'
 import { useApiQuery } from '../hooks/useApiQuery'
 import { cn } from '../utils/cn'
 import { AiAssistant } from './components/AiAssistant'
+import { useT } from '../i18n'
+import type { AdminLayoutMessages } from '../i18n/ru/adminLayout'
 import styles from './AdminLayout.module.css'
 
 type CounterKey = 'orders' | 'tradeIns' | 'chats'
 
 interface NavItem {
-  label: string
+  label: keyof AdminLayoutMessages['nav']
   to: string
   icon: string
   counter?: CounterKey
@@ -21,18 +23,19 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Заказы', to: '/admin/orders', icon: 'receipt_long', counter: 'orders' },
-  { label: 'Trade-in', to: '/admin/trade-in', icon: 'swap_horiz', counter: 'tradeIns' },
-  { label: 'Чаты', to: '/admin/chats', icon: 'forum', counter: 'chats' },
-  { label: 'Товары', to: '/admin/products', icon: 'inventory_2' },
-  { label: 'Категории', to: '/admin/categories', icon: 'category', desktopOnly: true },
-  { label: 'Статистика', to: '/admin/stats', icon: 'monitoring' },
-  { label: 'Настройки', to: '/admin/settings', icon: 'settings', desktopOnly: true },
+  { label: 'orders', to: '/admin/orders', icon: 'receipt_long', counter: 'orders' },
+  { label: 'tradeIns', to: '/admin/trade-in', icon: 'swap_horiz', counter: 'tradeIns' },
+  { label: 'chats', to: '/admin/chats', icon: 'forum', counter: 'chats' },
+  { label: 'products', to: '/admin/products', icon: 'inventory_2' },
+  { label: 'categories', to: '/admin/categories', icon: 'category', desktopOnly: true },
+  { label: 'stats', to: '/admin/stats', icon: 'monitoring' },
+  { label: 'settings', to: '/admin/settings', icon: 'settings', desktopOnly: true },
 ]
 
 const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) => !item.desktopOnly)
 
 export function AdminLayout() {
+  const t = useT().adminLayout
   const { session } = useAdminSession()
   const newOrders = useApiQuery(() => listOrders({ status: 'new' }), [], ['orders'])
   const newTradeIns = useApiQuery(() => listTradeIns({ status: 'new' }), [], ['tradeIns'])
@@ -53,21 +56,21 @@ export function AdminLayout() {
       <header className={styles.topBar}>
         <div>
           <div className={styles.shopName}>{shop.name}</div>
-          <div className={styles.caption}>Админка</div>
+          <div className={styles.caption}>{t.caption}</div>
         </div>
         <div className={styles.actions}>
           <LanguageSwitcher />
           <ThemeToggle />
           <NavLink
             to="/admin/settings"
-            aria-label="Настройки"
+            aria-label={t.nav.settings}
             className={({ isActive }) => cn(styles.iconButton, isActive && styles.iconButtonActive)}
           >
             <span className="material-symbols-outlined" aria-hidden="true">
               settings
             </span>
           </NavLink>
-          <button type="button" className={styles.iconButton} aria-label="Выйти" onClick={handleLogout}>
+          <button type="button" className={styles.iconButton} aria-label={t.logout} onClick={handleLogout}>
             <span className="material-symbols-outlined" aria-hidden="true">
               logout
             </span>
@@ -79,14 +82,14 @@ export function AdminLayout() {
         <div className={styles.brand}>
           <div>
             <div className={styles.shopName}>{shop.name}</div>
-            <div className={styles.caption}>Админка</div>
+            <div className={styles.caption}>{t.caption}</div>
           </div>
           <div className={styles.brandActions}>
             <LanguageSwitcher />
             <ThemeToggle />
           </div>
         </div>
-        <nav aria-label="Разделы админки" className={styles.sideNav}>
+        <nav aria-label={t.navAria} className={styles.sideNav}>
           {NAV_ITEMS.map((item) => {
             const count = item.counter ? counters[item.counter] : 0
             return (
@@ -98,7 +101,7 @@ export function AdminLayout() {
                 <span className={cn('material-symbols-outlined', styles.sideIcon)} aria-hidden="true">
                   {item.icon}
                 </span>
-                <span>{item.label}</span>
+                <span>{t.nav[item.label]}</span>
                 {count > 0 && <span className={cn(styles.counter, styles.sideCounter)}>{count}</span>}
               </NavLink>
             )
@@ -110,13 +113,13 @@ export function AdminLayout() {
             <span className={cn('material-symbols-outlined', styles.sideIcon)} aria-hidden="true">
               storefront
             </span>
-            <span>На сайт</span>
+            <span>{t.toSite}</span>
           </Link>
           <button type="button" className={cn(styles.sideItem, styles.sideButton)} onClick={handleLogout}>
             <span className={cn('material-symbols-outlined', styles.sideIcon)} aria-hidden="true">
               logout
             </span>
-            <span>Выйти</span>
+            <span>{t.logout}</span>
           </button>
         </div>
       </aside>
@@ -125,7 +128,7 @@ export function AdminLayout() {
         <Outlet />
       </main>
 
-      <nav aria-label="Разделы админки" className={styles.bottomNav}>
+      <nav aria-label={t.navAria} className={styles.bottomNav}>
         {BOTTOM_NAV_ITEMS.map((item) => {
           const count = item.counter ? counters[item.counter] : 0
           return (
@@ -140,7 +143,7 @@ export function AdminLayout() {
                 </span>
                 {count > 0 && <span className={cn(styles.counter, styles.bottomCounter)}>{count}</span>}
               </span>
-              <span>{item.label}</span>
+              <span>{t.nav[item.label]}</span>
             </NavLink>
           )
         })}

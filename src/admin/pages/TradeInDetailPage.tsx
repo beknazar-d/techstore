@@ -28,9 +28,11 @@ import { useApiQuery } from '../../hooks/useApiQuery'
 import { formatPrice, formatTradeInNumber } from '../../utils/format'
 import { formatPhone } from '../../utils/phone'
 import { formatDate } from '../../utils/date'
+import { msg } from '../../i18n'
 import styles from './TradeInDetailPage.module.css'
 
 export function TradeInDetailPage() {
+  const t = msg().adminTradeIns
   const { id } = useParams()
   const { data: tradeIn, reload } = useApiQuery(
     () => getTradeIn(id ?? ''),
@@ -57,7 +59,7 @@ export function TradeInDetailPage() {
   if (!tradeIn) {
     return (
       <div className={styles.page}>
-        <PageHeader title="Заявка не найдена" backTo="/admin/trade-in" />
+        <PageHeader title={t.notFound} backTo="/admin/trade-in" />
       </div>
     )
   }
@@ -105,41 +107,41 @@ export function TradeInDetailPage() {
           </div>
         }
         backTo="/admin/trade-in"
-        backLabel="К заявкам"
+        backLabel={t.backToList}
       />
 
       {error && <div className={styles.errorBanner}>{error}</div>}
 
-      <Section title="Клиент">
-        <InfoRow label="Имя">{currentTradeIn.customerName}</InfoRow>
-        <InfoRow label="Телефон">
+      <Section title={t.customer}>
+        <InfoRow label={t.name}>{currentTradeIn.customerName}</InfoRow>
+        <InfoRow label={t.phone}>
           <a href={`tel:${currentTradeIn.customerPhone}`} className={styles.phoneLink}>
             <span className="material-symbols-outlined" aria-hidden="true">call</span>
-            Позвонить ({formatPhone(currentTradeIn.customerPhone)})
+            {t.call(formatPhone(currentTradeIn.customerPhone))}
           </a>
         </InfoRow>
-        <InfoRow label="Дата создания">{formatDate(currentTradeIn.createdAt)}</InfoRow>
-        <InfoRow label="Комментарий">{currentTradeIn.comment || '—'}</InfoRow>
+        <InfoRow label={t.createdAt}>{formatDate(currentTradeIn.createdAt)}</InfoRow>
+        <InfoRow label={t.comment}>{currentTradeIn.comment || '—'}</InfoRow>
       </Section>
 
-      <Section title="Устройство клиента">
-        <InfoRow label="Категория">
+      <Section title={t.device}>
+        <InfoRow label={t.category}>
           {TRADE_IN_DEVICE_CATEGORY_LABELS[currentTradeIn.device.category]}
         </InfoRow>
-        <InfoRow label="Бренд">{currentTradeIn.device.brand}</InfoRow>
-        <InfoRow label="Модель">{currentTradeIn.device.model}</InfoRow>
-        <InfoRow label="Память">{currentTradeIn.device.memory || '—'}</InfoRow>
-        <InfoRow label="Состояние">
+        <InfoRow label={t.brand}>{currentTradeIn.device.brand}</InfoRow>
+        <InfoRow label={t.model}>{currentTradeIn.device.model}</InfoRow>
+        <InfoRow label={t.memory}>{currentTradeIn.device.memory || '—'}</InfoRow>
+        <InfoRow label={t.grade}>
           {DEVICE_GRADE_LABELS[currentTradeIn.device.grade]}
         </InfoRow>
-        <InfoRow label="Аккумулятор">
+        <InfoRow label={t.battery}>
           {currentTradeIn.device.batteryHealth !== undefined ? `${currentTradeIn.device.batteryHealth}%` : '—'}
         </InfoRow>
-        <InfoRow label="Дефекты">{currentTradeIn.device.defects || '—'}</InfoRow>
-        <InfoRow label="Комплект">{currentTradeIn.device.kit || '—'}</InfoRow>
+        <InfoRow label={t.defects}>{currentTradeIn.device.defects || '—'}</InfoRow>
+        <InfoRow label={t.kit}>{currentTradeIn.device.kit || '—'}</InfoRow>
       </Section>
 
-      <Section title="Фото устройства">
+      <Section title={t.photos}>
         {currentTradeIn.photos.length > 0 ? (
           <div className={styles.photoGrid}>
             {currentTradeIn.photos.map((photo, index) => (
@@ -148,20 +150,20 @@ export function TradeInDetailPage() {
                 type="button"
                 className={styles.photoThumb}
                 onClick={() => setSelectedPhoto(photo)}
-                aria-label={`Открыть фото ${index + 1}`}
+                aria-label={t.openPhoto(index + 1)}
               >
-                <ProductImage src={photo} alt={`Фото устройства ${index + 1}`} className={styles.thumbImage} />
+                <ProductImage src={photo} alt={t.photoAlt(index + 1)} className={styles.thumbImage} />
               </button>
             ))}
           </div>
         ) : (
-          <p className={styles.noPhotos}>Фото не приложены</p>
+          <p className={styles.noPhotos}>{t.noPhotos}</p>
         )}
       </Section>
 
       {(currentTradeIn.desiredProductId || currentTradeIn.desiredProductName) && (
-        <Section title="Желаемый товар">
-          <InfoRow label="Товар">
+        <Section title={t.desired}>
+          <InfoRow label={t.product}>
             {currentTradeIn.desiredProductId ? (
               <Link to={`/admin/products/${currentTradeIn.desiredProductId}`} className={styles.productLink}>
                 {currentTradeIn.desiredProductName}
@@ -171,25 +173,25 @@ export function TradeInDetailPage() {
             )}
           </InfoRow>
           {currentTradeIn.desiredProductPrice !== null && (
-            <InfoRow label="Цена товара">{formatPrice(currentTradeIn.desiredProductPrice)}</InfoRow>
+            <InfoRow label={t.productPrice}>{formatPrice(currentTradeIn.desiredProductPrice)}</InfoRow>
           )}
           {currentTradeIn.adminEstimate !== null && (
-            <InfoRow label="Оценка выкупа">{formatPrice(currentTradeIn.adminEstimate)}</InfoRow>
+            <InfoRow label={t.buyoutEstimate}>{formatPrice(currentTradeIn.adminEstimate)}</InfoRow>
           )}
           {extraPayment > 0 && (
-            <InfoRow label="Доплата клиента">
+            <InfoRow label={t.extraPayment}>
               <span className={styles.extraPayment}>{formatPrice(extraPayment)}</span>
             </InfoRow>
           )}
         </Section>
       )}
 
-      <Section title="Оценка и статус">
+      <Section title={t.estimateStatus}>
         {canEvaluate && (
           <EvaluateForm key={currentTradeIn.id} tradeIn={currentTradeIn} onEvaluate={handleEvaluate} />
         )}
         {!canEvaluate && (
-          <InfoRow label="Оценка выкупа">
+          <InfoRow label={t.buyoutEstimate}>
             {currentTradeIn.adminEstimate !== null ? formatPrice(currentTradeIn.adminEstimate) : '—'}
           </InfoRow>
         )}
@@ -197,7 +199,7 @@ export function TradeInDetailPage() {
         <AdminNoteForm key={currentTradeIn.id} tradeIn={currentTradeIn} onSave={handleAdminNoteSave} />
 
         <div className={styles.statusSection}>
-          <h3 className={styles.statusTitle}>Смена статуса</h3>
+          <h3 className={styles.statusTitle}>{t.statusChange}</h3>
           {allowedStatuses.length > 0 ? (
             <div className={styles.statusActions}>
               {allowedStatuses.map((status) => (
@@ -212,12 +214,12 @@ export function TradeInDetailPage() {
               ))}
             </div>
           ) : (
-            <p className={styles.closedNotice}>Заявка закрыта</p>
+            <p className={styles.closedNotice}>{t.closed}</p>
           )}
         </div>
       </Section>
 
-      <Section title="История">
+      <Section title={t.history}>
         <EventTimeline
           events={events.map((e) => ({
             id: e.id,
@@ -227,10 +229,10 @@ export function TradeInDetailPage() {
         />
       </Section>
 
-      <Modal open={selectedPhoto !== null} onClose={() => setSelectedPhoto(null)} size="lg" title="Фото устройства">
+      <Modal open={selectedPhoto !== null} onClose={() => setSelectedPhoto(null)} size="lg" title={t.photos}>
         {selectedPhoto && (
           <div className={styles.fullscreenPhoto}>
-            <ProductImage src={selectedPhoto} alt="Увеличенное фото" className={styles.fullImage} />
+            <ProductImage src={selectedPhoto} alt={t.photoLarge} className={styles.fullImage} />
           </div>
         )}
       </Modal>
@@ -245,6 +247,7 @@ function EvaluateForm({
   tradeIn: TradeInRequest
   onEvaluate: (estimate: number) => Promise<void>
 }) {
+  const t = msg().adminTradeIns
   const [estimate, setEstimate] = useState<string>(
     tradeIn.adminEstimate !== null ? String(tradeIn.adminEstimate) : ''
   )
@@ -256,7 +259,7 @@ function EvaluateForm({
     setError(null)
     const value = Number(estimate)
     if (!Number.isInteger(value) || value <= 0) {
-      setError('Оценка — целое число больше нуля')
+      setError(t.estimateError)
       return
     }
     setSaving(true)
@@ -273,21 +276,21 @@ function EvaluateForm({
     <form onSubmit={handleSubmit} className={styles.evaluateForm}>
       <div className={styles.formRow}>
         <Input
-          label="Оценка выкупа, ₽"
+          label={t.estimateLabel}
           name="estimate"
           type="number"
           min="1"
           step="1"
           value={estimate}
           onChange={(e) => setEstimate(e.target.value)}
-          placeholder="Например, 15000"
+          placeholder={t.estimatePlaceholder}
           required
           disabled={saving}
           error={error ?? undefined}
         />
       </div>
       <Button type="submit" disabled={saving} className={styles.submitButton}>
-        {saving ? 'Сохранение…' : 'Сохранить оценку'}
+        {saving ? t.saving : t.saveEstimate}
       </Button>
     </form>
   )
@@ -300,6 +303,7 @@ function AdminNoteForm({
   tradeIn: TradeInRequest
   onSave: (note: string) => Promise<void>
 }) {
+  const t = msg().adminTradeIns
   const [note, setNote] = useState<string>(tradeIn.adminNote ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -320,17 +324,17 @@ function AdminNoteForm({
   return (
     <form onSubmit={handleSubmit} className={styles.adminNoteForm}>
       <Textarea
-        label="Заметка администратора"
+        label={t.adminNote}
         name="adminNote"
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="Заметка видна только администраторам"
+        placeholder={t.notePlaceholder}
         rows={3}
         disabled={saving}
         error={error ?? undefined}
       />
       <Button type="submit" disabled={saving} className={styles.submitButton}>
-        {saving ? 'Сохранение…' : 'Сохранить заметку'}
+        {saving ? t.saving : t.saveNote}
       </Button>
     </form>
   )

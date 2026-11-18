@@ -8,14 +8,18 @@ import { formatPhone } from '../../utils/phone'
 import { OrderStatusBadge } from '../../components/ui/StatusBadge'
 import { Spinner } from '../../components/ui/Spinner'
 import { useApiQuery } from '../../hooks/useApiQuery'
+import { msg } from '../../i18n'
 import styles from './OrdersPage.module.css'
 
-const STATUS_FILTERS: Array<{ value: OrderStatus | 'all'; label: string }> = [
-  { value: 'all', label: 'Все' },
-  ...ORDER_STATUSES.map((status) => ({ value: status, label: ORDER_STATUS_LABELS[status] })),
-]
+function getStatusFilters(): Array<{ value: OrderStatus | 'all'; label: string }> {
+  return [
+    { value: 'all', label: msg().adminOrders.all },
+    ...ORDER_STATUSES.map((status) => ({ value: status, label: ORDER_STATUS_LABELS[status] })),
+  ]
+}
 
 export function OrdersPage() {
+  const t = msg().adminOrders
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all')
   const { data: orders = [], loading } = useApiQuery(
     () => listOrders(statusFilter === 'all' ? {} : { status: statusFilter }),
@@ -41,17 +45,17 @@ export function OrdersPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.kicker}>Заказы</p>
-          <h1 className={styles.title}>Список заказов</h1>
+          <p className={styles.kicker}>{t.kicker}</p>
+          <h1 className={styles.title}>{t.title}</h1>
         </div>
         <div className={styles.summary}>
-          <span>{summary.total} шт.</span>
+          <span>{t.pieces(summary.total)}</span>
           <strong>{formatPrice(summary.revenue)}</strong>
         </div>
       </header>
 
-      <div className={styles.filters} aria-label="Фильтр заказов">
-        {STATUS_FILTERS.map((item) => (
+      <div className={styles.filters} aria-label={t.filterAria}>
+        {getStatusFilters().map((item) => (
           <button
             key={item.value}
             type="button"
@@ -82,23 +86,23 @@ export function OrdersPage() {
 
             <div className={styles.metaGrid}>
               <div>
-                <span className={styles.label}>Количество</span>
-                <strong>{order.quantity} шт.</strong>
+                <span className={styles.label}>{t.quantity}</span>
+                <strong>{t.pieces(order.quantity)}</strong>
               </div>
               <div>
-                <span className={styles.label}>Сумма</span>
+                <span className={styles.label}>{t.sum}</span>
                 <strong>{formatPrice(order.quantity * order.price)}</strong>
               </div>
             </div>
 
             <div className={styles.metaRow}>
-              <span>{order.deliveryType === 'pickup' ? 'Самовывоз' : 'Доставка'}</span>
-              <span>{order.desiredDate || 'Дата не указана'}</span>
+              <span>{order.deliveryType === 'pickup' ? t.pickup : t.delivery}</span>
+              <span>{order.desiredDate || t.noDate}</span>
             </div>
 
             {order.address && <p className={styles.address}>{order.address}</p>}
 
-            <Link to={`/admin/orders/${order.id}`} className={styles.link}>Открыть заказ</Link>
+            <Link to={`/admin/orders/${order.id}`} className={styles.link}>{t.open}</Link>
           </article>
         ))}
       </div>

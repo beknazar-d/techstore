@@ -5,9 +5,11 @@ import { Badge } from '../../components/ui/Badge'
 import { Spinner } from '../../components/ui/Spinner'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { formatPrice } from '../../utils/format'
+import { msg } from '../../i18n'
 import styles from './ProductsPage.module.css'
 
 export function ProductsPage() {
+  const t = msg().adminProducts
   const [search, setSearch] = useState('')
   const { data: products = [], loading: productsLoading } = useApiQuery(() => listProducts({ onlyActive: false, search }), [search], ['products'])
   const { data: categories = [] } = useApiQuery(() => listCategories({ onlyActive: false }), [], ['categories'])
@@ -32,13 +34,13 @@ export function ProductsPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.kicker}>Товары</p>
-          <h1 className={styles.title}>Управление каталогом</h1>
+          <p className={styles.kicker}>{t.kicker}</p>
+          <h1 className={styles.title}>{t.title}</h1>
         </div>
         <div className={styles.headerActions}>
           {/* На телефоне «Категорий» нет в нижней панели — попадают сюда отсюда. */}
-          <Link to="/admin/categories" className={styles.secondaryAction}>Категории</Link>
-          <Link to="/admin/products/new" className={styles.primaryAction}>+ Новый товар</Link>
+          <Link to="/admin/categories" className={styles.secondaryAction}>{t.categories}</Link>
+          <Link to="/admin/products/new" className={styles.primaryAction}>{t.newProduct}</Link>
         </div>
       </header>
 
@@ -47,8 +49,8 @@ export function ProductsPage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           className={styles.search}
-          placeholder="Поиск по названию или бренду"
-          aria-label="Поиск товаров"
+          placeholder={t.searchPlaceholder}
+          aria-label={t.searchAria}
         />
       </div>
 
@@ -59,23 +61,23 @@ export function ProductsPage() {
             <article key={product.id} className={styles.card}>
               <div className={styles.top}>
                 <div>
-                  <p className={styles.brand}>{product.brand || 'Без бренда'}</p>
+                  <p className={styles.brand}>{product.brand || t.noBrand}</p>
                   <h2 className={styles.name}>{product.name}</h2>
                 </div>
-                <Badge tone={product.isActive ? 'success' : 'neutral'}>{product.isActive ? 'Активен' : 'Скрыт'}</Badge>
+                <Badge tone={product.isActive ? 'success' : 'neutral'}>{product.isActive ? t.active : t.hidden}</Badge>
               </div>
 
               <div className={styles.meta}>
-                <span>{category?.name ?? 'Категория удалена'}</span>
-                <span>Остаток: {product.stock} шт.</span>
+                <span>{category?.name ?? t.categoryDeleted}</span>
+                <span>{t.stockLeft(product.stock)}</span>
               </div>
 
               <div className={styles.meta}>
-                <span>{product.condition === 'new' ? 'Новый' : 'Б/У'}</span>
+                <span>{product.condition === 'new' ? t.conditionNew : t.conditionUsed}</span>
                 <strong>{formatPrice(product.price)}</strong>
               </div>
 
-              <Link to={`/admin/products/${product.id}`} className={styles.link}>Редактировать</Link>
+              <Link to={`/admin/products/${product.id}`} className={styles.link}>{t.edit}</Link>
             </article>
           )
         })}

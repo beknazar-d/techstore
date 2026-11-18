@@ -8,14 +8,18 @@ import { formatPhone } from '../../utils/phone'
 import { Badge } from '../../components/ui/Badge'
 import { Spinner } from '../../components/ui/Spinner'
 import { useApiQuery } from '../../hooks/useApiQuery'
+import { msg } from '../../i18n'
 import styles from './TradeInsPage.module.css'
 
-const STATUS_FILTERS: Array<{ value: TradeInStatus | 'all'; label: string }> = [
-  { value: 'all', label: 'Все' },
-  ...TRADE_IN_STATUSES.map((status) => ({ value: status, label: TRADE_IN_STATUS_LABELS[status] })),
-]
+function getStatusFilters(): Array<{ value: TradeInStatus | 'all'; label: string }> {
+  return [
+    { value: 'all', label: msg().adminTradeIns.all },
+    ...TRADE_IN_STATUSES.map((status) => ({ value: status, label: TRADE_IN_STATUS_LABELS[status] })),
+  ]
+}
 
 export function TradeInsPage() {
+  const t = msg().adminTradeIns
   const [statusFilter, setStatusFilter] = useState<TradeInStatus | 'all'>('all')
   const { data: tradeIns = [], loading } = useApiQuery(
     () => listTradeIns(statusFilter === 'all' ? {} : { status: statusFilter }),
@@ -44,16 +48,16 @@ export function TradeInsPage() {
       <header className={styles.header}>
         <div>
           <p className={styles.kicker}>Trade-in</p>
-          <h1 className={styles.title}>Заявки на обмен</h1>
+          <h1 className={styles.title}>{t.title}</h1>
         </div>
         <div className={styles.summary}>
-          <span>{summary.total} заявок</span>
+          <span>{t.count(summary.total)}</span>
           <strong>{formatPrice(summary.estimate)}</strong>
         </div>
       </header>
 
-      <div className={styles.filters} aria-label="Фильтр заявок trade-in">
-        {STATUS_FILTERS.map((item) => (
+      <div className={styles.filters} aria-label={t.filterAria}>
+        {getStatusFilters().map((item) => (
           <button
             key={item.value}
             type="button"
@@ -86,20 +90,20 @@ export function TradeInsPage() {
 
             <div className={styles.metaGrid}>
               <div>
-                <span className={styles.label}>Состояние</span>
+                <span className={styles.label}>{t.grade}</span>
                 <strong>{item.device.grade}</strong>
               </div>
               <div>
-                <span className={styles.label}>Оценка</span>
+                <span className={styles.label}>{t.estimate}</span>
                 <strong>{item.adminEstimate ? formatPrice(item.adminEstimate) : '—'}</strong>
               </div>
             </div>
 
             {item.desiredProductName && (
-              <p className={styles.desired}>Хочет обменять: {item.desiredProductName}</p>
+              <p className={styles.desired}>{t.wantsFor(item.desiredProductName)}</p>
             )}
 
-            <Link to={`/admin/trade-in/${item.id}`} className={styles.link}>Открыть заявку</Link>
+            <Link to={`/admin/trade-in/${item.id}`} className={styles.link}>{t.open}</Link>
           </article>
         ))}
       </div>
