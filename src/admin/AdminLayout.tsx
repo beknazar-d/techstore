@@ -28,6 +28,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'chats', to: '/admin/chats', icon: 'forum', counter: 'chats' },
   { label: 'products', to: '/admin/products', icon: 'inventory_2' },
   { label: 'categories', to: '/admin/categories', icon: 'category', desktopOnly: true },
+  { label: 'banners', to: '/admin/banners', icon: 'campaign', desktopOnly: true },
   { label: 'stats', to: '/admin/stats', icon: 'monitoring' },
   { label: 'settings', to: '/admin/settings', icon: 'settings', desktopOnly: true },
 ]

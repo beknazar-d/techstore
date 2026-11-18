@@ -8,9 +8,9 @@ import { Modal } from '../components/ui/Modal'
 import { ProductImage } from '../components/ui/ProductImage'
 import { Spinner } from '../components/ui/Spinner'
 import { StockBadge } from '../components/ui/StockBadge'
+import { Price } from '../components/ui/Price'
 import { useApiQuery } from '../hooks/useApiQuery'
 import type { Order } from '../types'
-import { formatPrice } from '../utils/format'
 import { DEVICE_GRADE_LABELS } from '../config/labels'
 import { useT } from '../i18n'
 import styles from './ProductPage.module.css'
@@ -119,7 +119,7 @@ export function ProductPage() {
           <p className={styles.description}>{product.description}</p>
 
           <div className={styles.priceRow}>
-            <p className={styles.price}>{formatPrice(product.price)}</p>
+            <Price product={product} size="lg" />
             <p className={styles.stockText}>{product.stock > 0 ? t.product.inStock : t.product.outOfStock}</p>
           </div>
 

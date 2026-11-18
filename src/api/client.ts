@@ -68,7 +68,7 @@ export function unwrap<T>(result: { data: T | null; error: DbError | null }, fal
 // ---------- Подписки на изменения ----------
 
 /** «Таблицы», об изменении которых узнают подписчики (как в useApiQuery). */
-export type DbTable = 'categories' | 'products' | 'orders' | 'tradeIns' | 'chats' | 'botSettings' | 'aiSettings'
+export type DbTable = 'categories' | 'products' | 'orders' | 'tradeIns' | 'chats' | 'botSettings' | 'aiSettings' | 'banners'
 
 type Listener = (tables: DbTable[]) => void
 
@@ -131,7 +131,7 @@ supabase.auth.onAuthStateChange((event) => {
     closeChannel()
     openChannel()
   }
-  emit(['categories', 'products', 'orders', 'tradeIns', 'chats', 'botSettings'])
+  emit(['categories', 'products', 'orders', 'tradeIns', 'chats', 'botSettings', 'banners'])
 })
 
 /** Подбирает свободный slug среди существующих в таблице: `galaxy-s24`, `galaxy-s24-2`, ... */

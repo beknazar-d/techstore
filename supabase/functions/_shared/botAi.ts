@@ -140,7 +140,7 @@ async function history(chatId: string): Promise<ChatMessage[]> {
 }
 
 async function searchProducts(input: { query?: string; condition?: string }, bargaining: boolean) {
-  const columns = `id, name, slug, brand, description, condition, used_info, price, ${
+  const columns = `id, name, slug, brand, description, condition, used_info, price, old_price, ${
     bargaining ? 'min_price, ' : ''
   }stock, specs, category:categories!inner(name, is_active)`
   let query = adminDb()
@@ -166,6 +166,8 @@ async function searchProducts(input: { query?: string; condition?: string }, bar
     condition: row.condition === 'used' ? 'Б/У' : 'новый',
     usedInfo: row.used_info ?? undefined,
     price: row.price,
+    // Цена до скидки: можно сказать клиенту «сейчас со скидкой».
+    oldPrice: row.old_price ?? undefined,
     minPrice: bargaining ? (row.min_price ?? undefined) : undefined,
     stock: row.stock,
     inStock: Number(row.stock) > 0,

@@ -4,6 +4,7 @@
 
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from './AdminLayout'
+import { BannersPage } from './pages/BannersPage'
 import { CategoriesPage } from './pages/CategoriesPage'
 import { ChatPage } from './pages/ChatPage'
 import { ChatsPage } from './pages/ChatsPage'
@@ -34,6 +35,7 @@ export default function AdminApp() {
           <Route path="products/new" element={<ProductFormPage />} />
           <Route path="products/:id" element={<ProductFormPage />} />
           <Route path="categories" element={<CategoriesPage />} />
+          <Route path="banners" element={<BannersPage />} />
           <Route path="chats" element={<ChatsPage />} />
           <Route path="chats/:id" element={<ChatPage />} />
           <Route path="stats" element={<StatsPage />} />

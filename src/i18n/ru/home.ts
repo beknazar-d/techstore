@@ -17,6 +17,11 @@ export const home = {
   allProducts: 'Все товары',
   usedPhones: 'Б/У смартфоны',
   allOffers: 'Все предложения',
+  sales: 'Скидки',
+  promoAria: 'Акции',
+  promoSlide: (index: number, total: number) => `Акция ${index} из ${total}`,
+  promoPrev: 'Предыдущая акция',
+  promoNext: 'Следующая акция',
 }
 
 export type HomeMessages = typeof home

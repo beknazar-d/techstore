@@ -40,6 +40,7 @@ export function ProductsPage() {
         <div className={styles.headerActions}>
           {/* На телефоне «Категорий» нет в нижней панели — попадают сюда отсюда. */}
           <Link to="/admin/categories" className={styles.secondaryAction}>{t.categories}</Link>
+          <Link to="/admin/banners" className={styles.secondaryAction}>{t.banners}</Link>
           <Link to="/admin/products/new" className={styles.primaryAction}>{t.newProduct}</Link>
         </div>
       </header>

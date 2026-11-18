@@ -8,7 +8,7 @@ import { msg } from '../i18n'
 
 /** Колонки, доступные всем. min_price и cost_price анониму не выданы (права на колонки). */
 const PUBLIC_COLUMNS =
-  'id, category_id, name, slug, brand, description, condition, used_info, price, stock, is_active, images, specs, created_at, updated_at'
+  'id, category_id, name, slug, brand, description, condition, used_info, price, old_price, stock, is_active, images, specs, created_at, updated_at'
 /** Для админки. */
 const ADMIN_COLUMNS = `${PUBLIC_COLUMNS}, min_price, cost_price`
 
@@ -22,6 +22,7 @@ interface ProductRow {
   condition: Product['condition']
   used_info: UsedInfo | null
   price: number
+  old_price: number | null
   min_price?: number | null
   cost_price?: number | null
   stock: number
@@ -43,6 +44,7 @@ function fromRow(row: ProductRow): Product {
     condition: row.condition,
     usedInfo: row.used_info,
     price: row.price,
+    oldPrice: row.old_price ?? null,
     minPrice: row.min_price ?? null,
     costPrice: row.cost_price ?? null,
     stock: row.stock,
@@ -106,6 +108,11 @@ async function validate(product: ProductFields): Promise<Record<string, unknown>
   if (!isInt(product.price) || product.price <= 0) {
     throw new ApiError('validation', msg().errorsMore.price)
   }
+  if (product.oldPrice !== null) {
+    if (!isInt(product.oldPrice) || product.oldPrice <= product.price) {
+      throw new ApiError('validation', msg().errorsMore.oldPrice)
+    }
+  }
   if (product.minPrice !== null) {
     if (!isInt(product.minPrice) || product.minPrice <= 0 || product.minPrice > product.price) {
       throw new ApiError('validation', msg().errorsMore.minPrice)
@@ -128,6 +135,7 @@ async function validate(product: ProductFields): Promise<Record<string, unknown>
     condition: product.condition,
     used_info: product.condition === 'used' ? cleanUsedInfo(product.usedInfo) : null,
     price: product.price,
+    old_price: product.oldPrice,
     min_price: product.minPrice,
     cost_price: product.costPrice,
     stock: product.stock,
@@ -153,6 +161,7 @@ export async function listProducts(filters: ProductFilters = {}): Promise<Produc
   if (filters.categoryId) query = query.eq('category_id', filters.categoryId)
   if (filters.categorySlug) query = query.eq('category.slug', filters.categorySlug)
   if (filters.condition) query = query.eq('condition', filters.condition)
+  if (filters.onSale) query = query.not('old_price', 'is', null)
   if (filters.onlyActive) query = query.eq('is_active', true).eq('category.is_active', true)
   const search = filters.search?.trim().replace(/[%_,()]/g, ' ')
   if (search) query = query.or(`name.ilike.%${search}%,brand.ilike.%${search}%`)
@@ -193,6 +202,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
     condition: input.condition ?? 'new',
     usedInfo: input.usedInfo ?? null,
     price: input.price,
+    oldPrice: input.oldPrice ?? null,
     minPrice: input.minPrice ?? null,
     costPrice: input.costPrice ?? null,
     stock: input.stock,

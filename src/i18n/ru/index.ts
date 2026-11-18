@@ -18,6 +18,7 @@ import { adminChats } from './adminChats'
 import { adminStats } from './adminStats'
 import { adminSettings } from './adminSettings'
 import { assistant } from './assistant'
+import { adminBanners } from './adminBanners'
 
 export const ru = {
   common,
@@ -40,6 +41,7 @@ export const ru = {
   adminStats,
   adminSettings,
   assistant,
+  adminBanners,
 }
 
 export type Messages = typeof ru

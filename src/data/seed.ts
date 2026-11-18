@@ -118,6 +118,7 @@ interface SeedProduct {
   brand: string
   description: string
   price: number
+  oldPrice?: number
   minPrice?: number
   stock: number
   specs: ProductSpecs
@@ -134,6 +135,7 @@ const products: SeedProduct[] = [
     description:
       'Компактный флагман с ярким AMOLED-экраном 120 Гц, быстрым процессором и семью годами обновлений. Хорошо лежит в руке и отлично снимает днём и ночью.',
     price: 64990,
+    oldPrice: 74990,
     minPrice: 61990,
     stock: 8,
     specs: {
@@ -569,6 +571,7 @@ const products: SeedProduct[] = [
     description:
       'Беспроводной пылесос с лазерной подсветкой пыли и счётчиком частиц на экране. До часа уборки на одном заряде.',
     price: 64990,
+    oldPrice: 74990,
     minPrice: 61990,
     stock: 3,
     specs: {
@@ -654,6 +657,7 @@ export function createSeed(): Db {
       condition: item.used ? 'used' : 'new',
       usedInfo: item.used ?? null,
       price: item.price,
+      oldPrice: item.oldPrice ?? null,
       minPrice: item.minPrice ?? null,
       // Демо-себестоимость: новые ~82% цены, Б/У ~70%, округлено до сотен.
       costPrice: Math.round((item.price * (item.used ? 0.7 : 0.82)) / 100) * 100,

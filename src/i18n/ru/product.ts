@@ -21,6 +21,8 @@ export const product = {
   warranty: (months: number) => `Гарантия: ${months} мес.`,
   specs: 'Характеристики',
   orderTitle: 'Оформить заказ',
+  discount: (percent: number) => `−${percent}%`,
+  oldPrice: (price: string) => `Цена без скидки: ${price}`,
 }
 
 export type ProductMessages = typeof product

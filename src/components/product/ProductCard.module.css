@@ -86,9 +86,6 @@
 .price {
   margin-top: auto;
   padding-top: var(--space-1);
-  font-size: 18px;
-  line-height: 22px;
-  font-weight: 700;
 }
 
 @media (min-width: 768px) {

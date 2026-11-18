@@ -1,0 +1,185 @@
+.promo {
+  position: relative;
+  margin-bottom: var(--space-6);
+}
+
+.track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: var(--radius-xl);
+}
+
+.track::-webkit-scrollbar {
+  display: none;
+}
+
+.slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 200px;
+  height: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--gradient-promo);
+  color: var(--color-promo-text);
+  isolation: isolate;
+}
+
+.clickable:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -4px;
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+}
+
+.withImage {
+  background: var(--color-promo-scrim);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 560px;
+  padding: var(--space-6) var(--space-5) var(--space-10);
+}
+
+.title {
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-promo-text-soft);
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  height: var(--control-height-sm);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-promo-text);
+  color: var(--color-promo-button-text);
+  font-size: 14px;
+  font-weight: 600;
+  transition: transform var(--transition);
+}
+
+.button :global(.material-symbols-outlined) {
+  font-size: 18px;
+}
+
+.clickable:hover .button {
+  transform: translateX(2px);
+}
+
+.dots {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-3);
+  display: flex;
+  gap: var(--space-1);
+  transform: translateX(-50%);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-promo-dot);
+  cursor: pointer;
+  transition: width var(--transition), background var(--transition);
+}
+
+.dotActive {
+  width: 24px;
+  background: var(--color-promo-text);
+}
+
+/* Стрелки — только на десктопе, на телефоне листают пальцем. */
+.arrow {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .card {
+    min-height: 280px;
+    align-items: center;
+  }
+
+  .content {
+    padding: var(--space-10) var(--space-16);
+  }
+
+  .title {
+    font-size: 36px;
+    line-height: 42px;
+  }
+
+  .subtitle {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .arrow {
+    position: absolute;
+    top: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--control-height-sm);
+    height: var(--control-height-sm);
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-promo-control);
+    color: var(--color-text);
+    cursor: pointer;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity var(--transition);
+  }
+
+  .promo:hover .arrow,
+  .arrow:focus-visible {
+    opacity: 1;
+  }
+
+  .prev {
+    left: var(--space-3);
+  }
+
+  .next {
+    right: var(--space-3);
+  }
+}

@@ -42,6 +42,18 @@
   --color-error-text: #991b1b;
   --color-neutral-soft: #f1f5f9;
 
+  /* Скидки и акции */
+  --color-sale: #db2777;
+  --color-sale-soft: #fdf2f8;
+  --color-on-sale: #ffffff;
+  --gradient-promo: linear-gradient(135deg, #4338ca 0%, #7c3aed 55%, #db2777 100%);
+  --color-promo-text: #ffffff;
+  --color-promo-button-text: #1e1b4b;
+  --color-promo-text-soft: rgba(255, 255, 255, 0.86);
+  --color-promo-scrim: linear-gradient(90deg, rgba(17, 12, 46, 0.78) 0%, rgba(17, 12, 46, 0.35) 60%, rgba(17, 12, 46, 0) 100%);
+  --color-promo-dot: rgba(255, 255, 255, 0.5);
+  --color-promo-control: rgba(255, 255, 255, 0.9);
+
   /* Графики (проверено валидатором контраста и различимости для дальтоников) */
   --color-chart-revenue: #2563eb;
   --color-chart-profit: #059669;
@@ -134,6 +146,17 @@
   --color-error-soft: rgba(248, 113, 113, 0.12);
   --color-error-text: #fecaca;
   --color-neutral-soft: rgba(148, 163, 184, 0.12);
+
+  --color-sale: #f472b6;
+  --color-sale-soft: rgba(244, 114, 182, 0.14);
+  --color-on-sale: #1a0b14;
+  --gradient-promo: linear-gradient(135deg, #312e81 0%, #5b21b6 55%, #9d174d 100%);
+  --color-promo-text: #ffffff;
+  --color-promo-button-text: #1e1b4b;
+  --color-promo-text-soft: rgba(255, 255, 255, 0.82);
+  --color-promo-scrim: linear-gradient(90deg, rgba(5, 4, 18, 0.82) 0%, rgba(5, 4, 18, 0.4) 60%, rgba(5, 4, 18, 0) 100%);
+  --color-promo-dot: rgba(255, 255, 255, 0.45);
+  --color-promo-control: rgba(22, 29, 42, 0.9);
 
   --color-chart-revenue: #3b82f6;
   --color-chart-profit: #0ea472;

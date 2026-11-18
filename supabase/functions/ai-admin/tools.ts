@@ -39,6 +39,10 @@ const productFields = {
   condition: { type: 'string', enum: ['new', 'used'] },
   usedInfo,
   price: { type: 'integer', description: 'Цена в рублях' },
+  oldPrice: {
+    type: ['integer', 'null'],
+    description: 'Цена до скидки, ₽ (зачёркнутая на сайте), больше price. null — убрать скидку',
+  },
   minPrice: { type: 'integer', description: 'Минимальная цена для торга бота, ₽ (необязательно)' },
   costPrice: { type: 'integer', description: 'Закупочная цена за штуку, ₽ (необязательно)' },
   stock: { type: 'integer', description: 'Остаток на складе, шт.' },

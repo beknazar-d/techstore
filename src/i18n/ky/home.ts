@@ -19,4 +19,9 @@ export const home: HomeMessages = {
   allProducts: 'Бардык товарлар',
   usedPhones: 'Колдонулган смартфондор',
   allOffers: 'Бардык сунуштар',
+  sales: 'Арзандатуулар',
+  promoAria: 'Акциялар',
+  promoSlide: (index: number, total: number) => `Акция ${index} / ${total}`,
+  promoPrev: 'Мурунку акция',
+  promoNext: 'Кийинки акция',
 }

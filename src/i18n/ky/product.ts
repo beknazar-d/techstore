@@ -23,4 +23,6 @@ export const product: ProductMessages = {
   warranty: (months: number) => `Кепилдик: ${months} ай`,
   specs: 'Мүнөздөмөлөрү',
   orderTitle: 'Заказ берүү',
+  discount: (percent: number) => `−${percent}%`,
+  oldPrice: (price: string) => `Арзандатуусуз баасы: ${price}`,
 }

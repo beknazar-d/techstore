@@ -8,6 +8,7 @@ export const adminLayout: AdminLayoutMessages = {
     products: 'Товарлар',
     categories: 'Категориялар',
     stats: 'Статистика',
+    banners: 'Акциялар',
     settings: 'Жөндөөлөр',
   },
   caption: 'Админка',

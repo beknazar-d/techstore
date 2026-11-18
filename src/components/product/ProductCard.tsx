@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
 import type { Product } from '../../types'
-import { formatPrice } from '../../utils/format'
 import { cn } from '../../utils/cn'
 import { ProductImage } from '../ui/ProductImage'
 import { StockBadge } from '../ui/StockBadge'
 import { ConditionBadge } from '../ui/ConditionBadge'
+import { Price } from '../ui/Price'
 import { useT } from '../../i18n'
 import styles from './ProductCard.module.css'
 
@@ -37,7 +37,7 @@ export function ProductCard({ product }: ProductCardProps) {
             {t.product.batteryShort(batteryHealth)}
           </p>
         )}
-        <p className={cn(styles.price, soldOut && styles.dimmed)}>{formatPrice(product.price)}</p>
+        <Price product={product} dimmed={soldOut} className={styles.price} />
       </div>
     </Link>
   )

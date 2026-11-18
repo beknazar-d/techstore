@@ -76,6 +76,8 @@ export interface Product {
   usedInfo: UsedInfo | null
   /** Цена, целое число в рублях. */
   price: number
+  /** Цена до скидки, ₽ (зачёркнутая). null — скидки нет. Всегда больше `price`. */
+  oldPrice: number | null
   /** Нижняя граница торга для Telegram-бота. Видит только админ. */
   minPrice: number | null
   /** Себестоимость (закупка) за штуку, ₽. Видит только админ. null — не указана. */
@@ -103,6 +105,7 @@ export interface ProductInput {
   /** Обязательно для `condition: 'used'`. */
   usedInfo?: UsedInfo | null
   price: number
+  oldPrice?: number | null
   minPrice?: number | null
   costPrice?: number | null
   stock: number
@@ -120,8 +123,36 @@ export interface ProductFilters {
   condition?: ProductCondition
   /** Только активные товары из активных категорий (для клиентской части). */
   onlyActive?: boolean
+  /** Только товары со скидкой. */
+  onSale?: boolean
   limit?: number
 }
+
+// ---------- Баннеры акций ----------
+
+export interface PromoBanner {
+  id: string
+  title: string
+  subtitle: string
+  /** Переводы на кыргызский. Пусто — показывается русский текст. */
+  titleKy: string
+  subtitleKy: string
+  buttonLabel: string
+  buttonLabelKy: string
+  /** Путь на сайте (`/catalog/smartfony`) или https-ссылка. Пусто — баннер без ссылки. */
+  link: string
+  /** Фон баннера (сейчас сжатый data URL, позже URL в R2). */
+  image: string | null
+  isActive: boolean
+  sortOrder: number
+  /** Период показа, ISO. null — без ограничения. */
+  startsAt: string | null
+  endsAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type PromoBannerInput = Omit<PromoBanner, 'id' | 'createdAt' | 'updatedAt'>
 
 // ---------- Заказы ----------
 

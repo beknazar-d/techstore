@@ -129,6 +129,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
   const [condition, setCondition] = useState<ProductCondition>(initialProduct?.condition ?? 'new')
   const [usedInfo, setUsedInfo] = useState<UsedInfo | null>(initialProduct?.usedInfo ?? null)
   const [price, setPrice] = useState<number | ''>(initialProduct?.price ?? '')
+  const [oldPrice, setOldPrice] = useState<number | '' | null>(initialProduct?.oldPrice ?? null)
   const [minPrice, setMinPrice] = useState<number | '' | null>(initialProduct?.minPrice ?? null)
   const [costPrice, setCostPrice] = useState<number | '' | null>(initialProduct?.costPrice ?? null)
   const [stock, setStock] = useState<number | ''>(initialProduct?.stock ?? '')
@@ -154,6 +155,9 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
     if (!brand.trim()) return t.errBrand
     const priceNum = typeof price === 'number' ? price : Number(price)
     if (!Number.isInteger(priceNum) || priceNum <= 0) return e.price
+    if (oldPrice !== null && oldPrice !== '') {
+      if (!Number.isInteger(oldPrice) || oldPrice <= priceNum) return e.oldPrice
+    }
     if (minPrice !== null && minPrice !== '') {
       const minPriceNum = typeof minPrice === 'number' ? minPrice : Number(minPrice)
       if (!Number.isInteger(minPriceNum) || minPriceNum <= 0 || minPriceNum > priceNum) {
@@ -208,6 +212,7 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
             ? { ...usedInfo, defects: usedInfo.defects?.trim() || undefined, kit: usedInfo.kit?.trim() || undefined }
             : null,
         price: typeof price === 'number' ? price : Number(price),
+        oldPrice: oldPrice !== null && oldPrice !== '' ? oldPrice : null,
         minPrice:
           minPrice !== null && minPrice !== '' ? (typeof minPrice === 'number' ? minPrice : Number(minPrice)) : null,
         costPrice:
@@ -301,6 +306,32 @@ function ProductForm({ isNew, categories, initialProduct, onSaved }: ProductForm
             min="1"
             step="1"
           />
+
+          <Input
+            label={t.oldPrice}
+            type="number"
+            inputMode="numeric"
+            value={oldPrice ?? ''}
+            onChange={(e) => {
+              const val = e.target.value
+              setOldPrice(val === '' ? null : Number(val))
+            }}
+            min="1"
+            step="1"
+            hint={t.oldPriceHint}
+          />
+
+          {price !== '' && oldPrice !== null && oldPrice !== '' && (
+            <div className={styles.marginInfo}>
+              {oldPrice <= price ? (
+                <span className={styles.marginError}>{t.oldPriceLow}</span>
+              ) : (
+                <span className={styles.discountInfo}>
+                  {t.discountInfo(Math.round(((oldPrice - price) / oldPrice) * 100), formatPrice(oldPrice - price))}
+                </span>
+              )}
+            </div>
+          )}
 
           <Input
             label={t.minPrice}

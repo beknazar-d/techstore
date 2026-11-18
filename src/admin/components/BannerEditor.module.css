@@ -1,0 +1,103 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* В предпросмотре отступ под каруселью не нужен. */
+.preview > section {
+  margin-bottom: 0;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.group legend {
+  padding: 0 var(--space-1);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.hint {
+  margin-top: calc(var(--space-2) * -1);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text-muted);
+}
+
+.group .hint {
+  margin-top: 0;
+}
+
+.row {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.error {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-error-soft);
+  color: var(--color-error-text);
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-lg);
+  background: var(--color-error-soft);
+}
+
+.confirm .hint {
+  margin-top: 0;
+  color: var(--color-error-text);
+}
+
+.confirmTitle {
+  font-weight: 600;
+  color: var(--color-error-text);
+}
+
+@media (min-width: 600px) {
+  .row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .deleteButton {
+    margin-left: auto;
+  }
+}

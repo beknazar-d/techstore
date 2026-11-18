@@ -6,6 +6,7 @@ export const adminLayout = {
     products: 'Товары',
     categories: 'Категории',
     stats: 'Статистика',
+    banners: 'Акции',
     settings: 'Настройки',
   },
   caption: 'Админка',

@@ -19,6 +19,7 @@ import { adminChats } from './adminChats'
 import { adminStats } from './adminStats'
 import { adminSettings } from './adminSettings'
 import { assistant } from './assistant'
+import { adminBanners } from './adminBanners'
 
 export const ky: Messages = {
   common,
@@ -41,4 +42,5 @@ export const ky: Messages = {
   adminStats,
   adminSettings,
   assistant,
+  adminBanners,
 }

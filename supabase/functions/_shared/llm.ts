@@ -278,7 +278,10 @@ function geminiSchema(schema: unknown): unknown {
   for (const [key, value] of Object.entries(schema as Json)) {
     if (key === 'additionalProperties') continue
     if (key === 'type' && Array.isArray(value)) {
-      out.type = 'string'
+      // ['integer', 'null'] → integer + nullable; смесь типов Gemini не понимает — строка.
+      const types = value.filter((v) => v !== 'null')
+      out.type = types.length === 1 ? types[0] : 'string'
+      if (types.length < value.length) out.nullable = true
       continue
     }
     if (key === 'enum' && Array.isArray(value) && value.some((v) => typeof v !== 'string')) {
