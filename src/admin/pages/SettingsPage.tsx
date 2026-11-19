@@ -12,6 +12,7 @@ import { msg } from '../../i18n'
 import { AiSettingsSection } from '../components/AiSettingsSection'
 import { ShopSettingsSection } from '../components/ShopSettingsSection'
 import { DeviceNotificationsSection } from '../components/DeviceNotificationsSection'
+import { AppDownloadSection } from '../components/AppDownloadSection'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { PageHeader, Section, InfoRow } from '../components/AdminBlocks'
 import { Button } from '../../components/ui/Button'
@@ -279,6 +280,8 @@ export function SettingsPage() {
       <PageHeader title={t.title} subtitle={t.subtitle} />
 
       <DeviceNotificationsSection />
+
+      <AppDownloadSection />
 
       <ShopSettingsSection />
 

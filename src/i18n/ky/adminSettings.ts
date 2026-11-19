@@ -159,4 +159,10 @@ export const adminSettings: AdminSettingsMessages = {
   deviceNotifyTestSent: 'Жөнөтүлдү — билдирме чыгышы керек',
   deviceNotifyTestTitle: 'Phone Market',
   deviceNotifyTestBody: 'Билдирмелер иштейт. Жаңы арыз ушундай келет.',
+  appTitle: 'Android үчүн тиркеме',
+  appHint: 'Ошол эле админка телефондогу тиркемеде: жаңы арыздар тууралуу билдирмелер, ошол эле email жана сырсөз менен кирүү.',
+  appDownload: 'APK жүктөп алуу (4,5 МБ)',
+  appStep1: 'Бул баракты телефондон ачып, файлды жүктөп алыңыз.',
+  appStep2: 'Жүктөлгөн файлды ачып, телефон сураса, бул булактан орнотууга уруксат бериңиз.',
+  appStep3: '«Phone Market Админка» тиркемесин ачып, билдирмелерге уруксат бериңиз.',
 }

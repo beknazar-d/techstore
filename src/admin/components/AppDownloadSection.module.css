@@ -1,0 +1,48 @@
+.body {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-text-secondary);
+}
+
+.download {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 48px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-primary);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--transition);
+}
+
+.download:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.download:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.steps {
+  margin: 0;
+  padding-left: var(--space-5);
+  list-style: decimal;
+  display: grid;
+  gap: var(--space-1);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--color-text-secondary);
+}
