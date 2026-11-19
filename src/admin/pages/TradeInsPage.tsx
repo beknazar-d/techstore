@@ -2,19 +2,22 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listTradeIns } from '../../api'
 import { TRADE_IN_STATUSES, TRADE_IN_STATUS_LABELS } from '../../config/labels'
+import { TRADE_IN_STATUS_TONES, toneClass } from '../../config/tones'
+import { cn } from '../../utils/cn'
+import { ToneFilters, type ToneFilterOption } from '../components/ToneFilters'
 import type { TradeInStatus } from '../../types'
 import { formatPrice, formatTradeInNumber } from '../../utils/format'
 import { formatPhone } from '../../utils/phone'
-import { Badge } from '../../components/ui/Badge'
+import { TradeInStatusBadge } from '../../components/ui/StatusBadge'
 import { Spinner } from '../../components/ui/Spinner'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { msg } from '../../i18n'
 import styles from './TradeInsPage.module.css'
 
-function getStatusFilters(): Array<{ value: TradeInStatus | 'all'; label: string }> {
+function getStatusFilters(): ToneFilterOption<TradeInStatus | 'all'>[] {
   return [
-    { value: 'all', label: msg().adminTradeIns.all },
-    ...TRADE_IN_STATUSES.map((status) => ({ value: status, label: TRADE_IN_STATUS_LABELS[status] })),
+    { value: 'all', label: msg().adminTradeIns.all, tone: 'indigo' },
+    ...TRADE_IN_STATUSES.map((status) => ({ value: status, label: TRADE_IN_STATUS_LABELS[status], tone: TRADE_IN_STATUS_TONES[status] })),
   ]
 }
 
@@ -56,31 +59,17 @@ export function TradeInsPage() {
         </div>
       </header>
 
-      <div className={styles.filters} aria-label={t.filterAria}>
-        {getStatusFilters().map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            className={styles.filterButton}
-            data-active={statusFilter === item.value}
-            onClick={() => setStatusFilter(item.value)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <ToneFilters options={getStatusFilters()} value={statusFilter} onChange={setStatusFilter} ariaLabel={t.filterAria} />
 
       <div className={styles.list}>
         {tradeIns.map((item) => (
-          <article key={item.id} className={styles.card}>
+          <article key={item.id} className={cn(styles.card, toneClass(TRADE_IN_STATUS_TONES[item.status]))}>
             <div className={styles.topRow}>
               <div>
                 <p className={styles.number}>{formatTradeInNumber(item.number)}</p>
                 <h2 className={styles.customer}>{item.customerName}</h2>
               </div>
-              <Badge tone={item.status === 'accepted' || item.status === 'completed' ? 'success' : item.status === 'rejected' ? 'neutral' : 'warning'}>
-                {TRADE_IN_STATUS_LABELS[item.status]}
-              </Badge>
+              <TradeInStatusBadge status={item.status} />
             </div>
 
             <div className={styles.metaRow}>

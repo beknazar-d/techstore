@@ -1,0 +1,64 @@
+/* Цветовые «тона» статусов. Класс задаёт локальные переменные, компонент берёт их:
+   background: var(--tone-soft); color: var(--tone-text); border-color: var(--tone-border). */
+.indigo {
+  --tone: var(--tone-indigo);
+  --tone-soft: var(--tone-indigo-soft);
+  --tone-text: var(--tone-indigo-text);
+  --tone-border: var(--tone-indigo-border);
+}
+
+.blue {
+  --tone: var(--tone-blue);
+  --tone-soft: var(--tone-blue-soft);
+  --tone-text: var(--tone-blue-text);
+  --tone-border: var(--tone-blue-border);
+}
+
+.amber {
+  --tone: var(--tone-amber);
+  --tone-soft: var(--tone-amber-soft);
+  --tone-text: var(--tone-amber-text);
+  --tone-border: var(--tone-amber-border);
+}
+
+.green {
+  --tone: var(--tone-green);
+  --tone-soft: var(--tone-green-soft);
+  --tone-text: var(--tone-green-text);
+  --tone-border: var(--tone-green-border);
+}
+
+.red {
+  --tone: var(--tone-red);
+  --tone-soft: var(--tone-red-soft);
+  --tone-text: var(--tone-red-text);
+  --tone-border: var(--tone-red-border);
+}
+
+.violet {
+  --tone: var(--tone-violet);
+  --tone-soft: var(--tone-violet-soft);
+  --tone-text: var(--tone-violet-text);
+  --tone-border: var(--tone-violet-border);
+}
+
+.teal {
+  --tone: var(--tone-teal);
+  --tone-soft: var(--tone-teal-soft);
+  --tone-text: var(--tone-teal-text);
+  --tone-border: var(--tone-teal-border);
+}
+
+.orange {
+  --tone: var(--tone-orange);
+  --tone-soft: var(--tone-orange-soft);
+  --tone-text: var(--tone-orange-text);
+  --tone-border: var(--tone-orange-border);
+}
+
+.gray {
+  --tone: var(--tone-gray);
+  --tone-soft: var(--tone-gray-soft);
+  --tone-text: var(--tone-gray-text);
+  --tone-border: var(--tone-gray-border);
+}

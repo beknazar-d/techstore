@@ -56,6 +56,45 @@
   --color-promo-dot: rgba(255, 255, 255, 0.5);
   --color-promo-control: rgba(255, 255, 255, 0.9);
 
+  /* Цвета статусов (заказы, trade-in, чаты): основной, фон, текст, рамка. См. components/ui/Tone.module.css */
+  --color-on-tone: #ffffff;
+  --tone-indigo: #4338ca;
+  --tone-indigo-soft: #eef0ff;
+  --tone-indigo-text: #3730a3;
+  --tone-indigo-border: #c7c9f7;
+  --tone-blue: #2563eb;
+  --tone-blue-soft: #eff6ff;
+  --tone-blue-text: #1d4ed8;
+  --tone-blue-border: #bfdbfe;
+  --tone-amber: #b45309;
+  --tone-amber-soft: #fff8eb;
+  --tone-amber-text: #92400e;
+  --tone-amber-border: #fcd9a1;
+  --tone-green: #047857;
+  --tone-green-soft: #ecfdf5;
+  --tone-green-text: #065f46;
+  --tone-green-border: #a7f3d0;
+  --tone-red: #dc2626;
+  --tone-red-soft: #fef2f2;
+  --tone-red-text: #991b1b;
+  --tone-red-border: #fecaca;
+  --tone-violet: #7c3aed;
+  --tone-violet-soft: #f5f3ff;
+  --tone-violet-text: #5b21b6;
+  --tone-violet-border: #ddd6fe;
+  --tone-teal: #0f766e;
+  --tone-teal-soft: #effdfa;
+  --tone-teal-text: #115e59;
+  --tone-teal-border: #99f6e4;
+  --tone-orange: #c2410c;
+  --tone-orange-soft: #fff4ed;
+  --tone-orange-text: #9a3412;
+  --tone-orange-border: #fed7aa;
+  --tone-gray: #64748b;
+  --tone-gray-soft: #f3f4f8;
+  --tone-gray-text: #475569;
+  --tone-gray-border: #d5d9e2;
+
   /* Мягкие градиенты для выделенных блоков */
   --gradient-soft: linear-gradient(160deg, #eef0ff 0%, #f6efff 55%, #fdf0f7 100%);
 
@@ -165,6 +204,44 @@
   --color-promo-scrim: linear-gradient(90deg, rgba(5, 4, 18, 0.82) 0%, rgba(5, 4, 18, 0.4) 60%, rgba(5, 4, 18, 0) 100%);
   --color-promo-dot: rgba(255, 255, 255, 0.45);
   --color-promo-control: rgba(24, 19, 47, 0.9);
+
+  --color-on-tone: #120e26;
+  --tone-indigo: #818cf8;
+  --tone-indigo-soft: rgba(129, 140, 248, 0.14);
+  --tone-indigo-text: #c7d2fe;
+  --tone-indigo-border: rgba(129, 140, 248, 0.4);
+  --tone-blue: #60a5fa;
+  --tone-blue-soft: rgba(96, 165, 250, 0.13);
+  --tone-blue-text: #bfdbfe;
+  --tone-blue-border: rgba(96, 165, 250, 0.4);
+  --tone-amber: #fbbf24;
+  --tone-amber-soft: rgba(251, 191, 36, 0.12);
+  --tone-amber-text: #fde68a;
+  --tone-amber-border: rgba(251, 191, 36, 0.38);
+  --tone-green: #34d399;
+  --tone-green-soft: rgba(52, 211, 153, 0.12);
+  --tone-green-text: #a7f3d0;
+  --tone-green-border: rgba(52, 211, 153, 0.38);
+  --tone-red: #f87171;
+  --tone-red-soft: rgba(248, 113, 113, 0.13);
+  --tone-red-text: #fecaca;
+  --tone-red-border: rgba(248, 113, 113, 0.4);
+  --tone-violet: #a78bfa;
+  --tone-violet-soft: rgba(167, 139, 250, 0.14);
+  --tone-violet-text: #ddd6fe;
+  --tone-violet-border: rgba(167, 139, 250, 0.4);
+  --tone-teal: #2dd4bf;
+  --tone-teal-soft: rgba(45, 212, 191, 0.12);
+  --tone-teal-text: #99f6e4;
+  --tone-teal-border: rgba(45, 212, 191, 0.38);
+  --tone-orange: #fb923c;
+  --tone-orange-soft: rgba(251, 146, 60, 0.13);
+  --tone-orange-text: #fed7aa;
+  --tone-orange-border: rgba(251, 146, 60, 0.4);
+  --tone-gray: #94a3b8;
+  --tone-gray-soft: rgba(148, 163, 184, 0.12);
+  --tone-gray-text: #cbd5e1;
+  --tone-gray-border: rgba(148, 163, 184, 0.35);
 
   --gradient-soft: linear-gradient(160deg, rgba(99, 102, 241, 0.16) 0%, rgba(124, 58, 237, 0.1) 55%, rgba(219, 39, 119, 0.08) 100%);
 

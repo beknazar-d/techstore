@@ -40,12 +40,12 @@ export function AdminLayout() {
   const { session } = useAdminSession()
   const newOrders = useApiQuery(() => listOrders({ status: 'new' }), [], ['orders'])
   const newTradeIns = useApiQuery(() => listTradeIns({ status: 'new' }), [], ['tradeIns'])
-  const managerChats = useApiQuery(() => listChats({ mode: 'manager' }), [], ['chats'])
+  const chats = useApiQuery(() => listChats(), [], ['chats'])
   const counters: Record<CounterKey, number> = {
     orders: newOrders.data?.length ?? 0,
     tradeIns: newTradeIns.data?.length ?? 0,
-    // Чаты, где клиент ждёт ответа человека.
-    chats: managerChats.data?.length ?? 0,
+    // Непрочитанные сообщения клиентов во всех чатах.
+    chats: chats.data?.reduce((sum, chat) => sum + chat.unreadCount, 0) ?? 0,
   }
 
   function handleLogout() {

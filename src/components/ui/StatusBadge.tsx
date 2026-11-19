@@ -1,43 +1,31 @@
 import type { OrderStatus, TradeInStatus } from '../../types'
 import { ORDER_STATUS_LABELS, TRADE_IN_STATUS_LABELS } from '../../config/labels'
-import { Badge } from './Badge'
+import { ORDER_STATUS_TONES, TRADE_IN_STATUS_TONES, toneClass, type Tone } from '../../config/tones'
+import { cn } from '../../utils/cn'
+import styles from './StatusBadge.module.css'
 
-type BadgeTone = 'success' | 'warning' | 'error' | 'info' | 'neutral'
-
-interface StatusConfig {
-  tone: BadgeTone
-  dot?: boolean
-}
-
-const ORDER_STATUS_CONFIG: Record<OrderStatus, StatusConfig> = {
-  new: { tone: 'info', dot: true },
-  confirmed: { tone: 'warning' },
-  completed: { tone: 'success' },
-  cancelled: { tone: 'neutral' },
-}
-
-const TRADE_IN_STATUS_CONFIG: Record<TradeInStatus, StatusConfig> = {
-  new: { tone: 'info', dot: true },
-  evaluated: { tone: 'warning' },
-  accepted: { tone: 'success' },
-  rejected: { tone: 'neutral' },
-  completed: { tone: 'success' },
+/** Бейдж в цвете статуса. Новые — с точкой, чтобы бросались в глаза. */
+export function ToneBadge({ tone, dot, children }: { tone: Tone; dot?: boolean; children: React.ReactNode }) {
+  return (
+    <span className={cn(styles.badge, toneClass(tone))}>
+      {dot && <span className={styles.dot} aria-hidden="true" />}
+      {children}
+    </span>
+  )
 }
 
 export function OrderStatusBadge({ status }: { status: OrderStatus }) {
-  const config = ORDER_STATUS_CONFIG[status]
   return (
-    <Badge tone={config.tone} dot={config.dot}>
+    <ToneBadge tone={ORDER_STATUS_TONES[status]} dot={status === 'new'}>
       {ORDER_STATUS_LABELS[status]}
-    </Badge>
+    </ToneBadge>
   )
 }
 
 export function TradeInStatusBadge({ status }: { status: TradeInStatus }) {
-  const config = TRADE_IN_STATUS_CONFIG[status]
   return (
-    <Badge tone={config.tone} dot={config.dot}>
+    <ToneBadge tone={TRADE_IN_STATUS_TONES[status]} dot={status === 'new'}>
       {TRADE_IN_STATUS_LABELS[status]}
-    </Badge>
+    </ToneBadge>
   )
 }

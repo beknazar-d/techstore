@@ -2,7 +2,10 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listChats, getBotSettings } from '../../api'
 import { CHAT_MODE_LABELS, CHAT_MODES } from '../../config/labels'
-import { Badge } from '../../components/ui/Badge'
+import { ToneBadge } from '../../components/ui/StatusBadge'
+import { CHAT_MODE_TONES } from '../../config/tones'
+import { ToneFilters, type ToneFilterOption } from '../components/ToneFilters'
+import type { BotChat, ChatMode } from '../../types'
 import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { useApiQuery } from '../../hooks/useApiQuery'
@@ -10,32 +13,42 @@ import { formatDateTime } from '../../utils/date'
 import { msg } from '../../i18n'
 import styles from './ChatsPage.module.css'
 
-function getModeFilters(): Array<{ value: 'all' | 'bot' | 'manager' | 'closed'; label: string }> {
+type ModeFilter = ChatMode | 'all'
+
+/** Фильтры с числом чатов в каждом режиме. */
+function getModeFilters(chats: BotChat[]): ToneFilterOption<ModeFilter>[] {
   return [
-    { value: 'all', label: msg().adminChats.all },
-    ...CHAT_MODES.map((mode) => ({ value: mode, label: CHAT_MODE_LABELS[mode] })),
+    { value: 'all', label: msg().adminChats.all, tone: 'indigo', count: chats.length },
+    ...CHAT_MODES.map((mode) => ({
+      value: mode,
+      label: CHAT_MODE_LABELS[mode],
+      tone: CHAT_MODE_TONES[mode],
+      count: chats.filter((chat) => chat.mode === mode).length,
+    })),
   ]
 }
 
 export function ChatsPage() {
   const t = msg().adminChats
-  const [modeFilter, setModeFilter] = useState<'all' | 'bot' | 'manager' | 'closed'>('all')
+  const [modeFilter, setModeFilter] = useState<ModeFilter>('all')
   const { data: botSettings } = useApiQuery(getBotSettings, [], ['botSettings'])
-  const { data: chats = [], loading } = useApiQuery(
-    () => listChats(modeFilter === 'all' ? {} : { mode: modeFilter }),
-    [modeFilter],
-    ['chats'],
+  // Все чаты одним запросом: фильтр — на месте, а на кнопках видно, сколько чатов в каждом режиме.
+  const { data: allChats, loading } = useApiQuery(() => listChats(), [], ['chats'])
+  const chatList = useMemo(() => allChats ?? [], [allChats])
+  const chats = useMemo(
+    () => (modeFilter === 'all' ? chatList : chatList.filter((chat) => chat.mode === modeFilter)),
+    [chatList, modeFilter],
   )
 
   const summary = useMemo(
     () => ({
-      total: chats.length,
-      unread: chats.reduce((sum, chat) => sum + chat.unreadCount, 0),
+      total: chatList.length,
+      unread: chatList.reduce((sum, chat) => sum + chat.unreadCount, 0),
     }),
-    [chats],
+    [chatList],
   )
 
-  if (loading) {
+  if (loading && allChats === undefined) {
     return (
       <div className={styles.page}>
         <div className={styles.loader}><Spinner /></div>
@@ -66,18 +79,8 @@ export function ChatsPage() {
         </div>
       )}
 
-      <div className={styles.filters} aria-label={t.filterAria}>
-        {getModeFilters().map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            className={styles.filterButton}
-            data-active={modeFilter === item.value}
-            onClick={() => setModeFilter(item.value)}
-          >
-            {item.label}
-          </button>
-        ))}
+      <div className={styles.filters}>
+        <ToneFilters options={getModeFilters(chatList)} value={modeFilter} onChange={setModeFilter} ariaLabel={t.filterAria} />
       </div>
 
       <div className={styles.list}>
@@ -124,9 +127,7 @@ export function ChatsPage() {
                 <p className={styles.messageText}>
                   {chat.lastMessageText}
                 </p>
-                <Badge tone={chat.mode === 'manager' ? 'warning' : chat.mode === 'bot' ? 'info' : 'neutral'}>
-                  {CHAT_MODE_LABELS[chat.mode]}
-                </Badge>
+                <ToneBadge tone={CHAT_MODE_TONES[chat.mode]}>{CHAT_MODE_LABELS[chat.mode]}</ToneBadge>
               </div>
             </Link>
           ))

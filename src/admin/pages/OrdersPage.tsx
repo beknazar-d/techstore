@@ -2,6 +2,9 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listOrders } from '../../api'
 import { ORDER_STATUSES, ORDER_STATUS_LABELS } from '../../config/labels'
+import { ORDER_STATUS_TONES, toneClass } from '../../config/tones'
+import { cn } from '../../utils/cn'
+import { ToneFilters, type ToneFilterOption } from '../components/ToneFilters'
 import type { OrderStatus } from '../../types'
 import { formatOrderNumber, formatPrice } from '../../utils/format'
 import { formatPhone } from '../../utils/phone'
@@ -11,10 +14,10 @@ import { useApiQuery } from '../../hooks/useApiQuery'
 import { msg } from '../../i18n'
 import styles from './OrdersPage.module.css'
 
-function getStatusFilters(): Array<{ value: OrderStatus | 'all'; label: string }> {
+function getStatusFilters(): ToneFilterOption<OrderStatus | 'all'>[] {
   return [
-    { value: 'all', label: msg().adminOrders.all },
-    ...ORDER_STATUSES.map((status) => ({ value: status, label: ORDER_STATUS_LABELS[status] })),
+    { value: 'all', label: msg().adminOrders.all, tone: 'indigo' },
+    ...ORDER_STATUSES.map((status) => ({ value: status, label: ORDER_STATUS_LABELS[status], tone: ORDER_STATUS_TONES[status] })),
   ]
 }
 
@@ -54,23 +57,11 @@ export function OrdersPage() {
         </div>
       </header>
 
-      <div className={styles.filters} aria-label={t.filterAria}>
-        {getStatusFilters().map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            className={styles.filterButton}
-            data-active={statusFilter === item.value}
-            onClick={() => setStatusFilter(item.value)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <ToneFilters options={getStatusFilters()} value={statusFilter} onChange={setStatusFilter} ariaLabel={t.filterAria} />
 
       <div className={styles.list}>
         {orders.map((order) => (
-          <article key={order.id} className={styles.card}>
+          <article key={order.id} className={cn(styles.card, toneClass(ORDER_STATUS_TONES[order.status]))}>
             <div className={styles.cardTop}>
               <div>
                 <p className={styles.number}>{formatOrderNumber(order.number)}</p>
