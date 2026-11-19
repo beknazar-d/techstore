@@ -1,0 +1,22 @@
+Demo product photos (temporary, to be replaced with the shop's own photos).
+All images: Wikimedia Commons, resized to 960px. Licenses: CC BY-SA 4.0 unless noted.
+
+iphone-15-pro-lineup.jpg      "Apple iPhone 15 Pro.jpg" — IPHONE 15 — https://commons.wikimedia.org/wiki/File:Apple_iPhone_15_Pro.jpg
+iphone-15.jpg                 "Apple iPhone 15.jpg" — IPHONE 15 — https://commons.wikimedia.org/wiki/File:Apple_iPhone_15.jpg
+iphone-15-back.jpg            "Back of iPhone 15.jpg" — ThePhotoGraphIc — https://commons.wikimedia.org/wiki/File:Back_of_iPhone_15.jpg
+iphone-16.jpg                 "Back view of iPhone 16 Ultramarine.jpg" — メイド理世 — https://commons.wikimedia.org/wiki/File:Back_view_of_iPhone_16_Ultramarine.jpg
+macbook-air-m2.jpg            "M2 Macbook Air Midnight model - 1.jpg" — KKPCW (Kyu3) — https://commons.wikimedia.org/wiki/File:M2_Macbook_Air_Midnight_model_-_1.jpg
+macbook-air-m2-back.jpg       "M2 Macbook Air Midnight model - 2.jpg" — KKPCW (Kyu3) — https://commons.wikimedia.org/wiki/File:M2_Macbook_Air_Midnight_model_-_2.jpg
+macbook-air-m2-starlight.jpg  "M2 Macbook Air Starlight model.jpg" — KKPCW (Kyu3) — https://commons.wikimedia.org/wiki/File:M2_Macbook_Air_Starlight_model.jpg
+macbook-pro-14-m3.jpg         "M3 Macbook Pro 14 inch Space Grey model (cropped).jpg" — Kyu3a — https://commons.wikimedia.org/wiki/File:M3_Macbook_Pro_14_inch_Space_Grey_model_(cropped).jpg
+garmin-forerunner-265.jpg     "Forerunner 265.jpg" — 3r1ccc — CC0 — https://commons.wikimedia.org/wiki/File:Forerunner_265.jpg
+garmin-venu-3.jpg             "Garmin Venu 3 (a).JPG" — C.Stadler/Bwag — https://commons.wikimedia.org/wiki/File:Garmin_Venu_3_(a).JPG
+garmin-forerunner-965.jpg     "Garmin Forerunner 965.jpeg" — SUNSmania41 — https://commons.wikimedia.org/wiki/File:Garmin_Forerunner_965.jpeg
+dyson-supersonic.jpg          "Dyson Supersonic Hair Dryer 1 2017-01-28.jpg" — FASTILY — https://commons.wikimedia.org/wiki/File:Dyson_Supersonic_Hair_Dryer_1_2017-01-28.jpg
+dyson-supersonic-side.jpg     "Dyson Supersonic Hair Dryer 2 2017-01-28.jpg" — FASTILY — https://commons.wikimedia.org/wiki/File:Dyson_Supersonic_Hair_Dryer_2_2017-01-28.jpg
+xiaomi-14.jpg                 "Xiaomi 14 (July 10, 2026).jpg" — 茅野ふたば — https://commons.wikimedia.org/wiki/File:Xiaomi_14_(July_10,_2026).jpg
+xiaomi-14-back.jpg            "Xiaomi 14 rear (July 10, 2026).jpg" — 茅野ふたば — https://commons.wikimedia.org/wiki/File:Xiaomi_14_rear_(July_10,_2026).jpg
+redmi-note-14-pro-plus.jpg    "Redmi Note 14 ProPlus.jpg" — Maksdroider — https://commons.wikimedia.org/wiki/File:Redmi_Note_14_ProPlus.jpg
+redmi-case.jpg                "Redmi 6A Golden cases.jpg" — Nickispeaki — https://commons.wikimedia.org/wiki/File:Redmi_6A_Golden_cases.jpg
+
+License texts: https://creativecommons.org/licenses/by-sa/4.0/ , https://creativecommons.org/publicdomain/zero/1.0/
