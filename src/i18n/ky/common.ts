@@ -12,4 +12,9 @@ export const common: CommonMessages = {
   yes: 'Ооба',
   no: 'Жок',
   pieces: 'даана',
+  crashTitle: 'Бир нерсе туура эмес болду',
+  crashText: 'Барак ачылган жок. Кайра жүктөңүз же артка кайтыңыз — маалымат жоголгон жок.',
+  crashReload: 'Кайра жүктөө',
+  crashBack: 'Артка',
+  crashDetails: 'Иштеп чыгуучу үчүн чоо-жайы',
 }

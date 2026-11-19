@@ -8,13 +8,21 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import '../index.css'
 import AdminApp from './AdminApp'
 import { LanguageRoot } from '../i18n/LanguageRoot'
+import { RouteErrorBoundary } from '../components/ErrorBoundary'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HashRouter>
       <LanguageRoot>
         <Routes>
-          <Route path="/admin/*" element={<AdminApp />} />
+          <Route
+            path="/admin/*"
+            element={
+              <RouteErrorBoundary homePath="/admin/orders">
+                <AdminApp />
+              </RouteErrorBoundary>
+            }
+          />
           <Route path="*" element={<Navigate to="/admin/orders" replace />} />
         </Routes>
       </LanguageRoot>

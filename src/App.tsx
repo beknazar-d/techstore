@@ -7,6 +7,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { ProductPage } from './pages/ProductPage'
 import { TradeInPage } from './pages/TradeInPage'
 import { msg } from './i18n'
+import { RouteErrorBoundary } from './components/ErrorBoundary'
 
 // Админка — отдельный чанк: клиенты её код не скачивают.
 const AdminApp = lazy(() => import('./admin/AdminApp'))
@@ -14,7 +15,13 @@ const AdminApp = lazy(() => import('./admin/AdminApp'))
 export default function App() {
   return (
     <Routes>
-      <Route element={<ClientLayout />}>
+      <Route
+        element={
+          <RouteErrorBoundary homePath="/">
+            <ClientLayout />
+          </RouteErrorBoundary>
+        }
+      >
         <Route index element={<HomePage />} />
         <Route path="catalog" element={<CatalogPage />} />
         <Route path="catalog/:categorySlug" element={<CatalogPage />} />
@@ -25,9 +32,11 @@ export default function App() {
       <Route
         path="admin/*"
         element={
-          <Suspense fallback={<p>{msg().common.loading}</p>}>
-            <AdminApp />
-          </Suspense>
+          <RouteErrorBoundary homePath="/admin/orders">
+            <Suspense fallback={<p>{msg().common.loading}</p>}>
+              <AdminApp />
+            </Suspense>
+          </RouteErrorBoundary>
         }
       />
     </Routes>

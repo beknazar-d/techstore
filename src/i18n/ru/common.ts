@@ -10,6 +10,11 @@ export const common = {
   yes: 'Да',
   no: 'Нет',
   pieces: 'шт.',
+  crashTitle: 'Что-то пошло не так',
+  crashText: 'Страница не открылась. Перезагрузите её или вернитесь назад — данные не потерялись.',
+  crashReload: 'Перезагрузить',
+  crashBack: 'Назад',
+  crashDetails: 'Подробности для разработчика',
 }
 
 export type CommonMessages = typeof common

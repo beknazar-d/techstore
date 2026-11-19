@@ -225,6 +225,9 @@ export function AiAssistant() {
         </button>
       )}
 
+      {/* На телефоне панель занимает почти весь экран: тап по затемнению сверху закрывает её. */}
+      {isOpen && <div className={styles.backdrop} aria-hidden="true" onClick={() => setIsOpen(false)} />}
+
       {/* Chat Panel */}
       {isOpen && (
         <div

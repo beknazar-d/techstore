@@ -32,6 +32,20 @@
   line-height: 1;
 }
 
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-modal) - 1);
+  background: var(--color-overlay);
+  animation: backdropFade 220ms ease-out;
+}
+
+@keyframes backdropFade {
+  from {
+    opacity: 0;
+  }
+}
+
 .panel {
   position: fixed;
   left: 0;
@@ -63,6 +77,10 @@
 }
 
 @media (min-width: 768px) {
+  .backdrop {
+    display: none;
+  }
+
   .panel {
     left: auto;
     right: 16px;

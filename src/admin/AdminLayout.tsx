@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useMatch } from 'react-router-dom'
 import { SiteLink } from './components/SiteLink'
 import { useAdminNotifications } from './notifications/useAdminNotifications'
 import { listChats, listOrders, listTradeIns, logout } from '../api'
@@ -41,6 +41,7 @@ export function AdminLayout() {
   const t = useT().adminLayout
   const shopInfo = useShopInfo()
   const { session } = useAdminSession()
+  const chatOpen = useMatch('/admin/chats/:id') !== null
   // Системные уведомления о новых заявках и сообщениях (сайт, Windows, Android).
   useAdminNotifications()
   const newOrders = useApiQuery(() => listOrders({ status: 'new' }), [], ['orders'])
@@ -154,7 +155,8 @@ export function AdminLayout() {
           )
         })}
       </nav>
-      <AiAssistant />
+      {/* В открытом чате у страницы своё поле ввода — кнопка ассистента закрывала бы «Отправить». */}
+      {!chatOpen && <AiAssistant />}
     </div>
   )
 }
