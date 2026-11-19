@@ -61,7 +61,8 @@ export function subscribeAdminEvents(handler: (event: AdminEvent) => void): () =
     if (closed) return
 
     channel = supabase
-      .channel('admin-notifications')
+      // Имя уникальное: старый канал с тем же именем может ещё закрываться (см. openChannel в client.ts).
+      .channel(`admin-notifications-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, ({ new: row }) => {
         const order = row as OrderRow
         handler({

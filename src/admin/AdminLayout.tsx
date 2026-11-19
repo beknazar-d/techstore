@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useMatch } from 'react-router-dom'
+import { useLayoutEffect } from 'react'
+import { NavLink, Outlet, useLocation, useMatch } from 'react-router-dom'
 import { SiteLink } from './components/SiteLink'
 import { useAdminNotifications } from './notifications/useAdminNotifications'
 import { listChats, listOrders, listTradeIns, logout } from '../api'
@@ -42,6 +43,12 @@ export function AdminLayout() {
   const shopInfo = useShopInfo()
   const { session } = useAdminSession()
   const chatOpen = useMatch('/admin/chats/:id') !== null
+  const { pathname } = useLocation()
+  // Новый раздел открываем с начала, а не на месте прокрутки прошлого.
+  // Layout-эффект — раньше эффектов страницы (чат сам прокручивает к последнему сообщению).
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
   // Системные уведомления о новых заявках и сообщениях (сайт, Windows, Android).
   useAdminNotifications()
   const newOrders = useApiQuery(() => listOrders({ status: 'new' }), [], ['orders'])
@@ -132,7 +139,8 @@ export function AdminLayout() {
       </aside>
 
       <main className={styles.main}>
-        <Outlet />
+        {/* key: другой заказ/чат/товар — новая страница, без черновиков и ошибок от прошлого. */}
+        <Outlet key={pathname} />
       </main>
 
       <nav aria-label={t.navAria} className={styles.bottomNav}>

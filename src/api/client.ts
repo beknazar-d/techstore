@@ -95,9 +95,14 @@ export function emit(tables: DbTable[]): void {
   }
 }
 
+let channelSeq = 0
+
 function openChannel(): void {
   if (channel) return
-  channel = supabase.channel('db-changes')
+  // Имя каждый раз новое: supabase.channel() с занятым именем отдаёт старый канал (он ещё закрывается),
+  // и .on() на нём падает «cannot add postgres_changes callbacks after subscribe()».
+  channelSeq += 1
+  channel = supabase.channel(`db-changes-${channelSeq}`)
   for (const [table, mapped] of Object.entries(REALTIME_TABLES)) {
     channel.on('postgres_changes', { event: '*', schema: 'public', table }, () => emit([mapped]))
   }
@@ -124,9 +129,16 @@ export function subscribe(listener: Listener): () => void {
   }
 }
 
+/** Кто вошёл: SIGNED_IN приходит и при каждом возврате в приложение/вкладку, а не только при входе. */
+let currentUserId: string | null = null
+
 // После входа/выхода у канала меняются права — переподключаемся и перечитываем всё.
-supabase.auth.onAuthStateChange((event) => {
+supabase.auth.onAuthStateChange((event, session) => {
+  const userId = session?.user.id ?? null
+  if (event === 'INITIAL_SESSION') currentUserId = userId
   if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT') return
+  if (userId === currentUserId) return
+  currentUserId = userId
   if (listeners.size > 0) {
     closeChannel()
     openChannel()

@@ -43,10 +43,11 @@
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  height: var(--header-height);
+  /* В Android-приложении страница рисуется под статус-баром — отступаем на его высоту. */
+  height: calc(var(--header-height) + env(safe-area-inset-top));
   background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
-  padding: 0 var(--space-4);
+  padding: env(safe-area-inset-top) var(--space-4) 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
