@@ -428,6 +428,23 @@ export interface StatsTopProduct {
  * Сводка за период. Заказы относятся к дню заявки (`createdAt`).
  * Деньги считаются только по выполненным заказам — их клиент оплатил.
  */
+/** Прочий расход магазина (аренда, реклама и т.п.). */
+export interface Expense {
+  id: string
+  /** Сумма, ₽. */
+  amount: number
+  comment: string
+  /** День расхода, `YYYY-MM-DD`. */
+  spentOn: string
+  createdAt: string
+}
+
+export interface ExpenseInput {
+  amount: number
+  comment: string
+  spentOn: string
+}
+
 export interface ShopStats {
   period: StatsPeriod
   /** Первый и последний день периода, `YYYY-MM-DD`. */

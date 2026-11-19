@@ -4,6 +4,7 @@ import { getShopStats } from '../../api/stats'
 import { formatPrice } from '../../utils/format'
 import { PageHeader, Section } from '../components/AdminBlocks'
 import { StatsChart } from '../components/StatsChart'
+import { ExpensesSection } from '../components/ExpensesSection'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { shop } from '../../config/shop'
@@ -142,6 +143,9 @@ export function StatsPage() {
           </div>
         )}
       </Section>
+
+      {/* Прочие расходы и прибыль после них */}
+      <ExpensesSection from={stats.from} to={stats.to} profit={stats.profit} />
 
       {/* Лучшие товары */}
       <Section title={t.topProducts}>

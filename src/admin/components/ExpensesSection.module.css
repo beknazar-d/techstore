@@ -1,0 +1,151 @@
+.hint {
+  margin: 0 0 var(--space-3);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-text-secondary);
+}
+
+.totals {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-warm);
+}
+
+.total strong {
+  font-size: 20px;
+  line-height: 26px;
+}
+
+.totalLabel {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.totalSub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.expense,
+.negative {
+  color: var(--tone-red);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.error {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-error-soft);
+  color: var(--color-error-text);
+  font-size: 14px;
+}
+
+.loader {
+  display: grid;
+  place-items: center;
+  min-height: 80px;
+}
+
+.empty {
+  margin: var(--space-4) 0 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.list {
+  display: grid;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.itemInfo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.itemComment {
+  font-size: 14px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.itemDate {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.itemAmount {
+  color: var(--tone-red);
+  white-space: nowrap;
+}
+
+.delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.delete:hover {
+  background: var(--color-error-soft);
+  color: var(--color-error);
+}
+
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  justify-content: flex-end;
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  .totals {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .form {
+    grid-template-columns: 160px minmax(0, 1fr) 170px auto;
+  }
+
+  .confirm {
+    width: auto;
+  }
+}
