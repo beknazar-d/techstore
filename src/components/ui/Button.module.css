@@ -10,7 +10,7 @@
   white-space: nowrap;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color var(--transition), border-color var(--transition), transform var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition);
 }
 
 .button:focus-visible {
@@ -48,6 +48,7 @@
 .primary {
   background-color: var(--color-primary);
   color: var(--color-on-primary);
+  box-shadow: var(--shadow-primary);
 }
 
 .primary:not(:disabled):hover {
@@ -131,7 +132,7 @@
   white-space: nowrap;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: background-color var(--transition), border-color var(--transition), transform var(--transition);
+  transition: background-color var(--transition), border-color var(--transition), box-shadow var(--transition), transform var(--transition);
 }
 
 .linkButton:focus-visible {
@@ -161,6 +162,7 @@
 .linkButton.primary {
   background-color: var(--color-primary);
   color: var(--color-on-primary);
+  box-shadow: var(--shadow-primary);
 }
 
 .linkButton.primary:hover {

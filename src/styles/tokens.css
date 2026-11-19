@@ -1,4 +1,5 @@
-/* Дизайн-токены. Источник: design/design/a7store_retail_system/DESIGN.md
+/* Дизайн-токены. Сетка и радиусы — design/design/a7store_retail_system/DESIGN.md,
+   цветовая гамма — со скриншота владельца (лаванда, индиго, розовый акцент).
    В компонентах используйте только эти переменные, без «сырых» цветов.
 
    Цвета тем заданы на селекторах [data-theme], а не только на :root: во время смены темы
@@ -8,27 +9,28 @@
 [data-theme='light'] {
   color-scheme: light;
 
-  /* Поверхности */
+  /* Поверхности. Фон страницы — светлая лаванда, карточки и поля на нём — белые. */
+  --color-page: #f4f2fc;
   --color-bg: #ffffff;
-  --color-surface-warm: #f8f9fa;
-  --color-surface-recessed: #f1f3f5;
+  --color-surface-warm: #f7f5fe;
+  --color-surface-recessed: #efecfa;
   --color-surface-elevated: #ffffff;
-  --color-surface-strong: #eef4ff;
-  --color-border: #e2e8f0;
-  --color-border-strong: #cbd5e1;
-  --color-ring: rgba(37, 99, 235, 0.18);
+  --color-surface-strong: #efedff;
+  --color-border: #e7e3f6;
+  --color-border-strong: #cec7ee;
+  --color-ring: rgba(79, 70, 229, 0.2);
 
-  /* Акцент — только для действий («Заказать», «Отправить») */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-soft: #eff6ff;
-  --color-primary-glow: rgba(37, 99, 235, 0.12);
+  /* Акцент — глубокий индиго, только для действий («Заказать», «Отправить») */
+  --color-primary: #4338ca;
+  --color-primary-hover: #3730a3;
+  --color-primary-soft: #eef0ff;
+  --color-primary-glow: rgba(67, 56, 202, 0.14);
   --color-on-primary: #ffffff;
 
   /* Текст */
-  --color-text: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94a3b8;
+  --color-text: #1b1640;
+  --color-text-secondary: #5a5578;
+  --color-text-muted: #9893b4;
 
   /* Статусы */
   --color-success: #10b981;
@@ -40,9 +42,9 @@
   --color-error: #ba1a1a;
   --color-error-soft: #fef2f2;
   --color-error-text: #991b1b;
-  --color-neutral-soft: #f1f5f9;
+  --color-neutral-soft: #f1effa;
 
-  /* Скидки и акции */
+  /* Скидки и акции (розовый акцент) */
   --color-sale: #db2777;
   --color-sale-soft: #fdf2f8;
   --color-on-sale: #ffffff;
@@ -54,18 +56,23 @@
   --color-promo-dot: rgba(255, 255, 255, 0.5);
   --color-promo-control: rgba(255, 255, 255, 0.9);
 
+  /* Мягкие градиенты для выделенных блоков */
+  --gradient-soft: linear-gradient(160deg, #eef0ff 0%, #f6efff 55%, #fdf0f7 100%);
+
   /* Графики (проверено валидатором контраста и различимости для дальтоников) */
-  --color-chart-revenue: #2563eb;
+  --color-chart-revenue: #4f46e5;
   --color-chart-profit: #059669;
-  --color-chart-grid: #e2e8f0;
+  --color-chart-grid: #e7e3f6;
 
   /* Затемнение под модалкой, полупрозрачная шапка */
-  --color-overlay: rgba(15, 23, 42, 0.5);
-  --color-bg-translucent: rgba(255, 255, 255, 0.92);
+  --color-overlay: rgba(27, 22, 64, 0.5);
+  --color-bg-translucent: rgba(255, 255, 255, 0.9);
 
-  /* Тени */
-  --shadow-card-hover: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
-  --shadow-modal: 0 12px 36px -4px rgba(15, 23, 42, 0.12);
+  /* Тени — мягкие, с фиолетовым оттенком */
+  --shadow-card: 0 1px 2px rgba(27, 22, 64, 0.04), 0 6px 20px -10px rgba(67, 56, 202, 0.14);
+  --shadow-card-hover: 0 12px 32px -10px rgba(67, 56, 202, 0.24);
+  --shadow-primary: 0 8px 20px -8px rgba(67, 56, 202, 0.55);
+  --shadow-modal: 0 24px 56px -12px rgba(27, 22, 64, 0.28);
 }
 
 :root {
@@ -117,24 +124,25 @@
 
 [data-theme='dark'] {
   color-scheme: dark;
-  --color-bg: #0f141d;
-  --color-surface-warm: #1c2534;
-  --color-surface-recessed: #222c3d;
-  --color-surface-elevated: #161d2a;
-  --color-surface-strong: rgba(59, 130, 246, 0.08);
-  --color-border: #2c3a50;
-  --color-border-strong: #3b82f6;
-  --color-ring: rgba(59, 130, 246, 0.25);
+  --color-page: #0d0a1c;
+  --color-bg: #141029;
+  --color-surface-warm: #1d1838;
+  --color-surface-recessed: #241e44;
+  --color-surface-elevated: #18132f;
+  --color-surface-strong: rgba(129, 140, 248, 0.1);
+  --color-border: #2c2650;
+  --color-border-strong: #6366f1;
+  --color-ring: rgba(129, 140, 248, 0.3);
 
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  --color-primary-soft: rgba(59, 130, 246, 0.12);
-  --color-primary-glow: rgba(59, 130, 246, 0.2);
-  --color-on-primary: #f8fafc;
+  --color-primary: #5b54e8;
+  --color-primary-hover: #4a42d6;
+  --color-primary-soft: rgba(129, 140, 248, 0.14);
+  --color-primary-glow: rgba(129, 140, 248, 0.22);
+  --color-on-primary: #ffffff;
 
-  --color-text: #f8fafc;
-  --color-text-secondary: #a8b5c8;
-  --color-text-muted: #7d8ba2;
+  --color-text: #f4f2ff;
+  --color-text-secondary: #b4aed3;
+  --color-text-muted: #8a84ad;
 
   --color-success: #10b981;
   --color-success-soft: rgba(16, 185, 129, 0.12);
@@ -145,7 +153,7 @@
   --color-error: #f87171;
   --color-error-soft: rgba(248, 113, 113, 0.12);
   --color-error-text: #fecaca;
-  --color-neutral-soft: rgba(148, 163, 184, 0.12);
+  --color-neutral-soft: rgba(180, 174, 211, 0.12);
 
   --color-sale: #f472b6;
   --color-sale-soft: rgba(244, 114, 182, 0.14);
@@ -156,17 +164,21 @@
   --color-promo-text-soft: rgba(255, 255, 255, 0.82);
   --color-promo-scrim: linear-gradient(90deg, rgba(5, 4, 18, 0.82) 0%, rgba(5, 4, 18, 0.4) 60%, rgba(5, 4, 18, 0) 100%);
   --color-promo-dot: rgba(255, 255, 255, 0.45);
-  --color-promo-control: rgba(22, 29, 42, 0.9);
+  --color-promo-control: rgba(24, 19, 47, 0.9);
 
-  --color-chart-revenue: #3b82f6;
+  --gradient-soft: linear-gradient(160deg, rgba(99, 102, 241, 0.16) 0%, rgba(124, 58, 237, 0.1) 55%, rgba(219, 39, 119, 0.08) 100%);
+
+  --color-chart-revenue: #6366f1;
   --color-chart-profit: #0ea472;
-  --color-chart-grid: #263247;
+  --color-chart-grid: #2c2650;
 
-  --color-overlay: rgba(10, 14, 21, 0.72);
-  --color-bg-translucent: rgba(15, 20, 29, 0.85);
+  --color-overlay: rgba(6, 4, 16, 0.75);
+  --color-bg-translucent: rgba(13, 10, 28, 0.85);
 
-  --shadow-card-hover: 0 8px 30px rgba(0, 0, 0, 0.45);
-  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.85);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 12px 32px -8px rgba(0, 0, 0, 0.55);
+  --shadow-primary: 0 8px 20px -8px rgba(91, 84, 232, 0.6);
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.8);
 }
 
 @media (min-width: 768px) {
