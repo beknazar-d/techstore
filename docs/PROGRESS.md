@@ -2,6 +2,12 @@
 
 Новые записи — сверху. Формат: дата, раздел, что сделано, ключевые файлы, решения, что дальше.
 
+## 2026-11-19 — Исправление: «n.then is not a function» в Android-приложении
+
+- Причина: мост Capacitor в APK отдаёт подписку `addListener` сразу (объект), а не Promise. При переходе в «Чаты» эффект уведомлений переподписывался (зависел от `navigate`), и отписка вызывала `.then` у объекта — экран падал.
+- Исправлено: `deviceNotifier.ts` принимает оба вида (`Promise.resolve(handle)`); `useAdminNotifications.ts` берёт `navigate` через ref и не переподписывается при каждом переходе.
+- Проверено: тест с поддельным мостом Capacitor ловит ошибку на старом коде и не ловит на новом. APK на сайте пересобран.
+
 ## 2026-11-19 — Приложения админки: Windows (Electron) и Android (Capacitor)
 
 - Отдельный вход только для админки: `app/index.html` + `src/admin/standalone.tsx` (HashRouter), сборка `npm run build:admin` (`vite.admin.config.ts` → `dist-admin/`, флаг `VITE_ADMIN_APP`). Ссылка «На сайт» — `SiteLink` (в приложении открывает сайт в браузере).

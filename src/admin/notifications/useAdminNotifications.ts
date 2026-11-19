@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { subscribeAdminEvents, type AdminEvent } from '../../api'
 import { msg } from '../../i18n'
@@ -48,11 +48,16 @@ function toNotification(event: AdminEvent): DeviceNotification {
  */
 export function useAdminNotifications(): void {
   const navigate = useNavigate()
+  // navigate меняется при переходах — берём свежий через ref, чтобы не переподписываться на каждой странице.
+  const navigateRef = useRef(navigate)
+  useEffect(() => {
+    navigateRef.current = navigate
+  }, [navigate])
   // Меняется при включении/выключении в «Настройках» и после выдачи разрешения — переподписываемся.
   const [prefVersion, setPrefVersion] = useState(0)
 
   useEffect(() => onNotifyPrefChange(() => setPrefVersion((v) => v + 1)), [])
-  useEffect(() => onNativeNotificationOpen((path) => navigate(path)), [navigate])
+  useEffect(() => onNativeNotificationOpen((path) => navigateRef.current(path)), [])
 
   useEffect(() => {
     if (!isNotifyEnabled()) return
@@ -61,7 +66,7 @@ export function useAdminNotifications(): void {
     void getNotifyPermission().then((permission) => {
       if (cancelled || permission !== 'granted') return
       unsubscribe = subscribeAdminEvents((event) => {
-        void showDeviceNotification(toNotification(event), (path) => navigate(path)).catch((error: unknown) =>
+        void showDeviceNotification(toNotification(event), (path) => navigateRef.current(path)).catch((error: unknown) =>
           console.error(error),
         )
       })
@@ -70,5 +75,5 @@ export function useAdminNotifications(): void {
       cancelled = true
       unsubscribe?.()
     }
-  }, [prefVersion, navigate])
+  }, [prefVersion])
 }

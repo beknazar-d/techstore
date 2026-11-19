@@ -15,6 +15,11 @@ export interface DeviceNotification {
   path: string
 }
 
+/** Через мост Capacitor addListener возвращает подписку сразу, через пакет @capacitor — Promise. Поддерживаем оба. */
+interface ListenerHandle {
+  remove(): unknown
+}
+
 interface LocalNotificationsPlugin {
   checkPermissions(): Promise<{ display: string }>
   requestPermissions(): Promise<{ display: string }>
@@ -25,7 +30,7 @@ interface LocalNotificationsPlugin {
   addListener(
     event: 'localNotificationActionPerformed',
     listener: (action: { notification: { extra?: { path?: string } } }) => void,
-  ): Promise<{ remove(): Promise<void> }>
+  ): ListenerHandle | Promise<ListenerHandle>
 }
 
 declare global {
@@ -139,6 +144,8 @@ export function onNativeNotificationOpen(onOpen: (path: string) => void): () => 
     if (path) onOpen(path)
   })
   return () => {
-    void handle.then((h) => h.remove())
+    void Promise.resolve(handle)
+      .then((h) => h.remove())
+      .catch((error: unknown) => console.error(error))
   }
 }
