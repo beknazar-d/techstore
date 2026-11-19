@@ -68,7 +68,7 @@ export function unwrap<T>(result: { data: T | null; error: DbError | null }, fal
 // ---------- Подписки на изменения ----------
 
 /** «Таблицы», об изменении которых узнают подписчики (как в useApiQuery). */
-export type DbTable = 'categories' | 'products' | 'orders' | 'tradeIns' | 'chats' | 'botSettings' | 'aiSettings' | 'banners' | 'expenses'
+export type DbTable = 'categories' | 'products' | 'orders' | 'tradeIns' | 'chats' | 'botSettings' | 'aiSettings' | 'banners' | 'expenses' | 'shopSettings'
 
 type Listener = (tables: DbTable[]) => void
 

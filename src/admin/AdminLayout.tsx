@@ -2,7 +2,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom'
 import { listChats, listOrders, listTradeIns, logout } from '../api'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher'
-import { shop } from '../config/shop'
+import { useShopInfo } from '../hooks/useShopInfo'
 import { useAdminSession } from '../hooks/useAdminSession'
 import { useApiQuery } from '../hooks/useApiQuery'
 import { cn } from '../utils/cn'
@@ -37,6 +37,7 @@ const BOTTOM_NAV_ITEMS = NAV_ITEMS.filter((item) => !item.desktopOnly)
 
 export function AdminLayout() {
   const t = useT().adminLayout
+  const shopInfo = useShopInfo()
   const { session } = useAdminSession()
   const newOrders = useApiQuery(() => listOrders({ status: 'new' }), [], ['orders'])
   const newTradeIns = useApiQuery(() => listTradeIns({ status: 'new' }), [], ['tradeIns'])
@@ -56,7 +57,7 @@ export function AdminLayout() {
     <div className={styles.layout}>
       <header className={styles.topBar}>
         <div>
-          <div className={styles.shopName}>{shop.name}</div>
+          <div className={styles.shopName}>{shopInfo.name}</div>
           <div className={styles.caption}>{t.caption}</div>
         </div>
         <div className={styles.actions}>
@@ -82,7 +83,7 @@ export function AdminLayout() {
       <aside className={styles.sidebar}>
         <div className={styles.brand}>
           <div>
-            <div className={styles.shopName}>{shop.name}</div>
+            <div className={styles.shopName}>{shopInfo.name}</div>
             <div className={styles.caption}>{t.caption}</div>
           </div>
           <div className={styles.brandActions}>

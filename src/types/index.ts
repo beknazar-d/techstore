@@ -428,6 +428,29 @@ export interface StatsTopProduct {
  * Сводка за период. Заказы относятся к дню заявки (`createdAt`).
  * Деньги считаются только по выполненным заказам — их клиент оплатил.
  */
+/** Название, адрес и контакты магазина (таблица shop_settings). */
+export interface ShopInfo {
+  name: string
+  city: string
+  cityKy: string
+  address: string
+  addressKy: string
+  workingHours: string
+  workingHoursKy: string
+  /** До трёх телефонов `+79991234567`, первый — основной. */
+  phones: string[]
+  /** Номер WhatsApp, только цифры. */
+  whatsapp: string
+  /** Telegram и Instagram — имя без «@». */
+  telegram: string
+  instagram: string
+  email: string
+  /** Ссылка на точку на карте. */
+  mapUrl: string
+}
+
+export type ShopInfoInput = ShopInfo
+
 /** Прочий расход магазина (аренда, реклама и т.п.). */
 export interface Expense {
   id: string

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { createOrder, getErrorMessage } from '../../api'
-import { shop } from '../../config/shop'
+import { useShopInfo } from '../../hooks/useShopInfo'
 import type { DeliveryType, GeoPoint, Order, Product } from '../../types'
 import { todayISO } from '../../utils/date'
 import { formatPrice } from '../../utils/format'
@@ -34,6 +34,7 @@ const IDS = {
 
 export function OrderForm({ product, onSuccess }: OrderFormProps) {
   const t = useT().order
+  const shopInfo = useShopInfo()
   const [customerName, setCustomerName] = useState('')
   const [customerPhone, setCustomerPhone] = useState('')
   const [quantity, setQuantity] = useState(1)
@@ -191,8 +192,8 @@ export function OrderForm({ product, onSuccess }: OrderFormProps) {
             />
             <span className={styles.optionText}>
               <span className={styles.optionTitle}>{t.pickup}</span>
-              <span className={styles.optionHint}>{shop.pickupAddress}</span>
-              <span className={styles.optionHint}>{shop.workingHours}</span>
+              {shopInfo.addressText && <span className={styles.optionHint}>{shopInfo.addressText}</span>}
+              {shopInfo.hoursText && <span className={styles.optionHint}>{shopInfo.hoursText}</span>}
             </span>
           </label>
           <label className={cn(styles.option, deliveryType === 'delivery' && styles.optionSelected)}>

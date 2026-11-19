@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
-import { shop } from '../../config/shop'
+import { useShopInfo } from '../../hooks/useShopInfo'
 import { formatPhone, telHref } from '../../utils/phone'
-import { telegramHref, whatsappHref } from '../../utils/links'
+import { instagramHref, telegramHref, whatsappHref } from '../../utils/links'
 import { useT } from '../../i18n'
 import styles from './Footer.module.css'
 
@@ -9,34 +9,58 @@ const currentYear = new Date().getFullYear()
 
 export function Footer() {
   const t = useT()
+  const info = useShopInfo()
   return (
     <footer className={styles.footer}>
       <div className={styles.inner}>
         <div className={styles.grid}>
           <div>
-            <p className={styles.brand}>{shop.name}</p>
+            <p className={styles.brand}>{info.name}</p>
             <p className={styles.text}>{t.layout.tagline}</p>
             <p className={styles.text}>{t.layout.payOnDelivery}</p>
           </div>
           <div>
             <h2 className={styles.title}>{t.layout.shopTitle}</h2>
-            <p className={styles.text}>{shop.city}</p>
-            <p className={styles.text}>{shop.pickupAddress}</p>
-            <p className={styles.text}>{t.layout.workingHours}</p>
+            {info.cityText && <p className={styles.text}>{info.cityText}</p>}
+            {info.addressText && <p className={styles.text}>{info.addressText}</p>}
+            {info.hoursText && <p className={styles.text}>{info.hoursText}</p>}
+            {info.mapUrl && (
+              <a href={info.mapUrl} target="_blank" rel="noopener noreferrer" className={styles.link}>
+                {t.layout.onMap}
+              </a>
+            )}
           </div>
           <div>
             <h2 className={styles.title}>{t.layout.contactsTitle}</h2>
-            <a href={telHref(shop.phone)} className={styles.phone}>
-              {formatPhone(shop.phone)}
-            </a>
-            <div className={styles.messengers}>
-              <a href={whatsappHref()} target="_blank" rel="noopener noreferrer" className={styles.messenger}>
-                WhatsApp
+            {info.phones.map((phone) => (
+              <a key={phone} href={telHref(phone)} className={styles.phone}>
+                {formatPhone(phone)}
               </a>
-              <a href={telegramHref()} target="_blank" rel="noopener noreferrer" className={styles.messenger}>
-                Telegram
+            ))}
+            {info.email && (
+              <a href={`mailto:${info.email}`} className={styles.link}>
+                {info.email}
               </a>
-            </div>
+            )}
+            {(info.whatsapp || info.telegram || info.instagram) && (
+              <div className={styles.messengers}>
+                {info.whatsapp && (
+                  <a href={whatsappHref(info.whatsapp)} target="_blank" rel="noopener noreferrer" className={styles.messenger}>
+                    WhatsApp
+                  </a>
+                )}
+                {info.telegram && (
+                  <a href={telegramHref(info.telegram)} target="_blank" rel="noopener noreferrer" className={styles.messenger}>
+                    Telegram
+                  </a>
+                )}
+                {info.instagram && (
+                  <a href={instagramHref(info.instagram)} target="_blank" rel="noopener noreferrer" className={styles.messenger}>
+                    Instagram
+                  </a>
+                )}
+              </div>
+            )}
           </div>
           <div>
             <h2 className={styles.title}>{t.layout.customersTitle}</h2>
@@ -48,7 +72,7 @@ export function Footer() {
           </div>
         </div>
         <div className={styles.bottom}>
-          <span>© {currentYear} {shop.name}</span>
+          <span>© {currentYear} {info.name}</span>
         </div>
       </div>
     </footer>

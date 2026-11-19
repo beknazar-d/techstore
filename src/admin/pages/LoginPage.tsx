@@ -5,7 +5,7 @@ import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { PageLoader } from '../../components/ui/Spinner'
 import { ThemeToggle } from '../../components/ui/ThemeToggle'
-import { shop } from '../../config/shop'
+import { useShopInfo } from '../../hooks/useShopInfo'
 import { useAdminSession } from '../../hooks/useAdminSession'
 import { LanguageSwitcher } from '../../components/ui/LanguageSwitcher'
 import { useT } from '../../i18n'
@@ -13,6 +13,7 @@ import styles from './LoginPage.module.css'
 
 export function LoginPage() {
   const t = useT().adminLayout
+  const shopInfo = useShopInfo()
   const { session, loading } = useAdminSession()
   const location = useLocation()
   const navigate = useNavigate()
@@ -55,7 +56,7 @@ export function LoginPage() {
       </div>
       <div className={styles.card}>
         <div>
-          <div className={styles.shopName}>{shop.name}</div>
+          <div className={styles.shopName}>{shopInfo.name}</div>
           <div className={styles.caption}>{t.loginCaption}</div>
         </div>
         <form className={styles.form} noValidate onSubmit={handleSubmit}>
