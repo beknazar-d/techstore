@@ -38,6 +38,8 @@ interface TgMessage {
 }
 
 const HANDOFF_NO_AI = 'Новое сообщение — ответьте клиенту'
+/** Менеджер писал в чат за это время — считаем, что он ведёт разговор, и бот не вмешивается. */
+const MANAGER_ACTIVE_MS = 2 * 60 * 60 * 1000
 
 /** Текст для переписки в админке, в том числе для фото, голосовых и т. п. */
 function describe(message: TgMessage): string {
@@ -142,6 +144,22 @@ Deno.serve(async (req) => {
       await db.rpc('bot_record_outgoing', { p_chat_id: chat.id, p_sender: 'bot', p_text: greeting })
     } catch (sendError) {
       console.error('greeting failed', sendError)
+    }
+  }
+
+  // Чат ушёл менеджеру только потому, что ИИ тогда не был подключён (например, сообщение пришло
+  // во время настройки). Теперь ИИ готов, а менеджер в чате давно не писал — бот забирает чат обратно.
+  if (!isStart && ai && chat.mode === 'manager' && chat.handoff_reason === HANDOFF_NO_AI) {
+    const since = new Date(Date.now() - MANAGER_ACTIVE_MS).toISOString()
+    const { count } = await db
+      .from('bot_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('chat_id', chat.id)
+      .eq('sender', 'manager')
+      .gte('created_at', since)
+    if (count === 0) {
+      await db.from('bot_chats').update({ mode: 'bot', handoff_reason: '' }).eq('id', chat.id)
+      chat.mode = 'bot'
     }
   }
 
