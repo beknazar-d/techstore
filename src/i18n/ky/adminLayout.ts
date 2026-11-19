@@ -22,4 +22,13 @@ export const adminLayout: AdminLayoutMessages = {
   backToSite: '← Сайтка',
   back: 'Артка',
   noEvents: 'Азырынча окуялар жок',
+  notifyChannel: 'Заявкалар жана билдирүүлөр',
+  notifyOrderTitle: (number: number) => `Жаңы заказ №${number}`,
+  notifyOrderBody: (product: string, quantity: number, total: string, name: string) =>
+    `${product} × ${quantity} — ${total}. ${name}`,
+  notifyTradeInTitle: (number: number) => `Trade-in арызы №${number}`,
+  notifyTradeInBody: (device: string, name: string) => `${device}. ${name}`,
+  notifyHandoffTitle: 'Кардар менеджерди күтүп жатат',
+  notifyHandoffBody: (name: string, reason: string) => [name || 'Telegram кардары', reason].filter(Boolean).join(': '),
+  notifyMessageTitle: (name: string) => `Билдирүү: ${name || 'кардар'}`,
 }

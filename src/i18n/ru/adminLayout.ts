@@ -22,6 +22,15 @@ export const adminLayout = {
   // Общие блоки
   back: 'Назад',
   noEvents: 'Событий пока нет',
+  notifyChannel: 'Заявки и сообщения',
+  notifyOrderTitle: (number: number) => `Новый заказ №${number}`,
+  notifyOrderBody: (product: string, quantity: number, total: string, name: string) =>
+    `${product} × ${quantity} — ${total}. ${name}`,
+  notifyTradeInTitle: (number: number) => `Заявка trade-in №${number}`,
+  notifyTradeInBody: (device: string, name: string) => `${device}. ${name}`,
+  notifyHandoffTitle: 'Клиент ждёт менеджера',
+  notifyHandoffBody: (name: string, reason: string) => [name || 'Клиент в Telegram', reason].filter(Boolean).join(': '),
+  notifyMessageTitle: (name: string) => `Сообщение: ${name || 'клиент'}`,
 }
 
 export type AdminLayoutMessages = typeof adminLayout

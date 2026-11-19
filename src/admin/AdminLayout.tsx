@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { SiteLink } from './components/SiteLink'
+import { useAdminNotifications } from './notifications/useAdminNotifications'
 import { listChats, listOrders, listTradeIns, logout } from '../api'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher'
@@ -40,6 +41,8 @@ export function AdminLayout() {
   const t = useT().adminLayout
   const shopInfo = useShopInfo()
   const { session } = useAdminSession()
+  // Системные уведомления о новых заявках и сообщениях (сайт, Windows, Android).
+  useAdminNotifications()
   const newOrders = useApiQuery(() => listOrders({ status: 'new' }), [], ['orders'])
   const newTradeIns = useApiQuery(() => listTradeIns({ status: 'new' }), [], ['tradeIns'])
   const chats = useApiQuery(() => listChats(), [], ['chats'])

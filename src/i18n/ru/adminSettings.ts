@@ -150,6 +150,16 @@ export const adminSettings = {
   shopEmailInvalid: 'Проверьте email',
   shopMapInvalid: 'Ссылка на карту должна начинаться с https://',
   shopSaveError: 'Не удалось сохранить контакты магазина',
+  deviceNotifyTitle: 'Уведомления на этом устройстве',
+  deviceNotifyHint: 'Новые заказы, заявки trade-in и сообщения клиентов в чатах менеджера — системным уведомлением, пока открыта админка (в приложении — и когда оно свёрнуто).',
+  deviceNotifyEnable: 'Показывать уведомления',
+  deviceNotifyAllow: 'Разрешить уведомления',
+  deviceNotifyDenied: 'Уведомления запрещены в настройках системы или браузера. Разрешите их для этого приложения и вернитесь сюда.',
+  deviceNotifyUnsupported: 'Это устройство или браузер не умеет показывать уведомления.',
+  deviceNotifyTest: 'Проверить',
+  deviceNotifyTestSent: 'Отправлено — уведомление должно появиться',
+  deviceNotifyTestTitle: 'Phone Market',
+  deviceNotifyTestBody: 'Уведомления работают. Так придёт новая заявка.',
 }
 
 export type AdminSettingsMessages = typeof adminSettings

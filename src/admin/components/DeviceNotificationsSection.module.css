@@ -1,0 +1,33 @@
+.body {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-text-secondary);
+}
+
+.warning {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--tone-amber-soft);
+  color: var(--tone-amber-text);
+  font-size: 14px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.success {
+  font-size: 14px;
+  color: var(--color-success-text);
+}

@@ -1,6 +1,6 @@
 // Electron-оболочка админки Phone Market (Windows). Показывает ту же админку из src/admin,
 // собранную отдельно (`npm run build:admin` → dist-admin → desktop/web). Данные — Supabase.
-const { app, BrowserWindow, Menu, session, shell } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, session, shell } = require('electron')
 const path = require('node:path')
 
 // Внешние ссылки (карта, Telegram, звонок, почта) открываем в системе, а не внутри окна.
@@ -22,6 +22,9 @@ function createWindow() {
       nodeIntegration: false,
       sandbox: true,
       spellcheck: true,
+      preload: path.join(__dirname, 'preload.cjs'),
+      // Свёрнутое окно не «засыпает»: подписка на новые заявки и уведомления продолжают работать.
+      backgroundThrottling: false,
     },
   })
 
@@ -58,6 +61,14 @@ if (!app.requestSingleInstanceLock()) {
       callback(ALLOWED_PERMISSIONS.has(permission))
     })
     session.defaultSession.setPermissionCheckHandler((_wc, permission) => ALLOWED_PERMISSIONS.has(permission))
+    // Нажатие на уведомление: развернуть и показать окно.
+    ipcMain.on('app:focus', () => {
+      const [win] = BrowserWindow.getAllWindows()
+      if (!win) return
+      if (win.isMinimized()) win.restore()
+      win.show()
+      win.focus()
+    })
     Menu.setApplicationMenu(null)
     app.setAppUserModelId('market.phone.admin')
     createWindow()

@@ -7,6 +7,8 @@ export { subscribe, type DbTable } from './client'
 export { login, logout, getSession, onAuthChange } from './auth'
 export { getShopStats } from './stats'
 export { getShopInfo, updateShopInfo, DEFAULT_SHOP_INFO } from './shop'
+export { subscribeAdminEvents } from './notifications'
+export type { AdminEvent } from './notifications'
 export { listExpenses, createExpense, deleteExpense } from './expenses'
 export {
   listCategories,
