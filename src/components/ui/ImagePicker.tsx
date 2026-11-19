@@ -12,6 +12,8 @@ interface ImagePickerProps {
   label?: string
   hint?: string
   markFirst?: boolean
+  /** Длинная сторона после сжатия, px (по умолчанию 1600; для широких баннеров — больше). */
+  maxSide?: number
   disabled?: boolean
 }
 
@@ -22,6 +24,7 @@ export function ImagePicker({
   label,
   hint,
   markFirst,
+  maxSide,
   disabled,
 }: ImagePickerProps) {
   const [busy, setBusy] = useState(false)
@@ -50,7 +53,7 @@ export function ImagePicker({
     const added: string[] = []
     for (const file of accepted) {
       try {
-        added.push(await compressImage(file))
+        added.push(await compressImage(file, { maxSide }))
       } catch (e) {
         message = e instanceof Error ? e.message : msg().ui.photoFailed
       }

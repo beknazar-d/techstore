@@ -134,7 +134,7 @@
 
 @media (min-width: 768px) {
   .card {
-    min-height: 280px;
+    min-height: 320px;
     align-items: center;
   }
 

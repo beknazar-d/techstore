@@ -165,7 +165,7 @@ export function BannerEditor({ banner, onClose, onSaved }: BannerEditorProps) {
           inputMode="url"
         />
 
-        <ImagePicker label={t.image} hint={t.imageHint} value={images} onChange={setImages} max={1} />
+        <ImagePicker label={t.image} hint={t.imageHint} value={images} onChange={setImages} max={1} maxSide={2400} />
 
         <div className={styles.row}>
           <Input label={t.startsAt} type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
