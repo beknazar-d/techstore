@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { SiteLink } from '../components/SiteLink'
 import { getErrorMessage, login } from '../../api'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
@@ -91,9 +92,9 @@ export function LoginPage() {
             {t.login}
           </Button>
         </form>
-        <Link to="/" className={styles.back}>
+        <SiteLink className={styles.back}>
           {t.backToSite}
-        </Link>
+        </SiteLink>
       </div>
     </div>
   )

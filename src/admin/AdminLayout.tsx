@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
+import { SiteLink } from './components/SiteLink'
 import { listChats, listOrders, listTradeIns, logout } from '../api'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { LanguageSwitcher } from '../components/ui/LanguageSwitcher'
@@ -111,12 +112,12 @@ export function AdminLayout() {
         </nav>
         <div className={styles.sideFooter}>
           {session && <div className={styles.email}>{session.email}</div>}
-          <Link to="/" className={styles.sideItem}>
+          <SiteLink className={styles.sideItem}>
             <span className={cn('material-symbols-outlined', styles.sideIcon)} aria-hidden="true">
               storefront
             </span>
             <span>{t.toSite}</span>
-          </Link>
+          </SiteLink>
           <button type="button" className={cn(styles.sideItem, styles.sideButton)} onClick={handleLogout}>
             <span className={cn('material-symbols-outlined', styles.sideIcon)} aria-hidden="true">
               logout

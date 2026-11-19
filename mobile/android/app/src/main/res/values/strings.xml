@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Phone Market Админка</string>
+    <string name="title_activity_main">Phone Market Админка</string>
+    <string name="package_name">market.phone.admin</string>
+    <string name="custom_url_scheme">market.phone.admin</string>
+</resources>

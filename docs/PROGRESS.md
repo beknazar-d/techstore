@@ -2,6 +2,15 @@
 
 Новые записи — сверху. Формат: дата, раздел, что сделано, ключевые файлы, решения, что дальше.
 
+## 2026-11-19 — Приложения админки: Windows (Electron) и Android (Capacitor)
+
+- Отдельный вход только для админки: `app/index.html` + `src/admin/standalone.tsx` (HashRouter), сборка `npm run build:admin` (`vite.admin.config.ts` → `dist-admin/`, флаг `VITE_ADMIN_APP`). Ссылка «На сайт» — `SiteLink` (в приложении открывает сайт в браузере).
+- Windows: `desktop/` (Electron 45, electron-builder). Внешние ссылки — в системе, разрешены микрофон и уведомления, одно окно. Собран и запущен установщик `desktop/release/PhoneMarketAdmin-Setup-1.0.0.exe` (121 МБ) — открывается экран входа, данные боевые. Не подписан (SmartScreen предупредит).
+- Android: `mobile/` (Capacitor 8.6). Права RECORD_AUDIO и POST_NOTIFICATIONS, запрос при первом запуске (`MainActivity.java`). Иконка и заставка из `resources/`. Собран debug-APK `mobile/android/app/build/outputs/apk/debug/app-debug.apk` (4,2 МБ). На устройстве не проверен — эмулятора и телефона нет.
+- Инструкция по сборке: `docs/APPS.md`.
+- Известное: уведомлений о новых заявках внутри приложений пока нет (бот шлёт в Telegram); для Google Play нужен release-ключ — создаёт владелец.
+- Дальше: несколько баннеров слайдером.
+
 ## 2026-11-19 — Цвета статусов, расходы, контакты магазина, демо-товары
 
 - Цвета: тоны `--tone-*` в `tokens.css` + `src/components/ui/Tone.module.css` и `src/config/tones.ts` (статусы заказов, trade-in, режимы чатов). Карточки заказов и trade-in окрашены по статусу, фильтры — цветные чипы `src/admin/components/ToneFilters`.

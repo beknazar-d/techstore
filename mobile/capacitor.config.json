@@ -1,0 +1,8 @@
+{
+  "appId": "market.phone.admin",
+  "appName": "Phone Market Админка",
+  "webDir": "web",
+  "android": {
+    "allowMixedContent": false
+  }
+}

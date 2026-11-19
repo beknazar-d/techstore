@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "build:admin": "vite build --config vite.admin.config.ts",
+    "desktop:start": "npm --prefix desktop run start",
+    "desktop:dist": "npm --prefix desktop run dist",
+    "android:sync": "npm --prefix mobile run sync",
+    "android:apk": "npm --prefix mobile run apk"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
