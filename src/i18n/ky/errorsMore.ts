@@ -27,7 +27,7 @@ export const errorsMore: ErrorsMoreMessages = {
   categorySave: 'Категорияны сактоо мүмкүн болгон жок',
   categoryNotFound: 'Категория табылган жок',
   categoryCheck: 'Категориянын товарларын текшерүү мүмкүн болгон жок',
-  bannerTitle: 'Баннердин аталышын жазыңыз',
+  bannerTitle: 'Аталышын жазыңыз же сүрөт кошуңуз',
   bannerImage: 'Баннердин сүрөтү өтө чоң, башкасын тандаңыз',
   bannerLink: 'Шилтеме — сайттагы жол (/ менен башталат) же https:// дареги',
   bannerPeriod: 'Бүтүү күнү башталуу күнүнөн кийин болушу керек',

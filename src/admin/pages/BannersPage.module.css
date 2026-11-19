@@ -148,3 +148,28 @@
     display: inline-flex;
   }
 }
+
+.hint {
+  margin: calc(var(--space-3) * -1) 0 0;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--color-text-secondary);
+}
+
+.notice,
+.error {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+}
+
+.notice {
+  background: var(--color-success-soft);
+  color: var(--color-success-text);
+}
+
+.error {
+  background: var(--color-error-soft);
+  color: var(--color-error-text);
+}

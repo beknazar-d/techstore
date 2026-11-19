@@ -29,6 +29,7 @@ export {
   listActiveBanners,
   listBanners,
   createBanner,
+  createBanners,
   updateBanner,
   deleteBanner,
   bannerText,

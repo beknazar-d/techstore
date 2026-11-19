@@ -50,7 +50,8 @@ function fromRow(row: BannerRow): PromoBanner {
 function toRow(input: PromoBannerInput): Record<string, unknown> {
   const e = msg().errorsMore
   const title = input.title.trim()
-  if (!title) throw new ApiError('validation', e.bannerTitle)
+  // Фото-слайд (текст уже на картинке) может быть без заголовка.
+  if (!title && !input.image) throw new ApiError('validation', e.bannerTitle)
   const link = input.link.trim()
   if (link && !/^(\/\S*|https:\/\/\S+)$/.test(link)) throw new ApiError('validation', e.bannerLink)
   if (input.startsAt && input.endsAt && new Date(input.endsAt) <= new Date(input.startsAt)) {
@@ -121,6 +122,17 @@ export async function createBanner(input: PromoBannerInput): Promise<PromoBanner
   ) as BannerRow
   emit(['banners'])
   return fromRow(row)
+}
+
+/** Несколько фото-слайдов за раз: каждый файл — отдельный баннер, по порядку. */
+export async function createBanners(inputs: PromoBannerInput[]): Promise<PromoBanner[]> {
+  if (inputs.length === 0) return []
+  const rows = unwrap(
+    await supabase.from('promo_banners').insert(inputs.map(toRow)).select(COLUMNS),
+    msg().errorsMore.bannerSave,
+  ) as BannerRow[]
+  emit(['banners'])
+  return rows.map(fromRow)
 }
 
 export async function updateBanner(id: string, input: PromoBannerInput): Promise<PromoBanner> {

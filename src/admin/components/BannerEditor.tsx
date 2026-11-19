@@ -76,7 +76,7 @@ export function BannerEditor({ banner, onClose, onSaved }: BannerEditorProps) {
   // Предпросмотр — тот же компонент, что на главной.
   const preview: PromoBanner = {
     ...input,
-    title: title.trim() || t.titleRu,
+    title: title.trim() || (images[0] ? '' : t.titleRu),
     id: banner?.id ?? 'preview',
     createdAt: '',
     updatedAt: '',
@@ -125,7 +125,14 @@ export function BannerEditor({ banner, onClose, onSaved }: BannerEditorProps) {
           <PromoBanners banners={[preview]} />
         </div>
 
-        <Input label={t.titleRu} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} required />
+        <Input
+          label={t.titleRu}
+          hint={t.titleHint}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={120}
+          required={images.length === 0}
+        />
         <Textarea label={t.subtitleRu} rows={2} value={subtitle} onChange={(e) => setSubtitle(e.target.value)} maxLength={300} />
         <Input
           label={t.buttonRu}

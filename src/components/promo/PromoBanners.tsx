@@ -119,6 +119,14 @@ export function PromoBanners({ banners }: PromoBannersProps) {
 
 function BannerSlide({ banner }: { banner: PromoBanner }) {
   const text = bannerText(banner)
+  // Фото-слайд: текст уже на картинке — показываем только её, без затемнения.
+  if (!text.title && banner.image) {
+    return (
+      <BannerLink link={banner.link}>
+        <img src={banner.image} alt={text.subtitle} className={styles.image} loading="lazy" />
+      </BannerLink>
+    )
+  }
   const content = (
     <>
       {banner.image && <img src={banner.image} alt="" className={styles.image} loading="lazy" />}
