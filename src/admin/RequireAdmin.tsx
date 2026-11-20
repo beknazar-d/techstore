@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAdminSession } from '../hooks/useAdminSession'
-import { msg } from '../i18n'
+import { PageLoader } from '../components/ui/Spinner'
 
 /**
  * Охрана маршрутов админки: без сессии отправляет на /admin/login
@@ -10,7 +10,7 @@ export function RequireAdmin() {
   const { session, loading } = useAdminSession()
   const location = useLocation()
 
-  if (loading) return <p>{msg().common.loading}</p>
+  if (loading) return <PageLoader />
   if (!session) {
     return <Navigate to="/admin/login" replace state={{ from: location.pathname + location.search }} />
   }

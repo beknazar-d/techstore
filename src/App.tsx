@@ -6,7 +6,7 @@ import { HomePage } from './pages/HomePage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ProductPage } from './pages/ProductPage'
 import { TradeInPage } from './pages/TradeInPage'
-import { msg } from './i18n'
+import { PageLoader } from './components/ui/Spinner'
 import { RouteErrorBoundary } from './components/ErrorBoundary'
 
 // Админка — отдельный чанк: клиенты её код не скачивают.
@@ -33,7 +33,7 @@ export default function App() {
         path="admin/*"
         element={
           <RouteErrorBoundary homePath="/admin/orders">
-            <Suspense fallback={<p>{msg().common.loading}</p>}>
+            <Suspense fallback={<PageLoader />}>
               <AdminApp />
             </Suspense>
           </RouteErrorBoundary>

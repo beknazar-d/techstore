@@ -3,6 +3,7 @@ import type { CommonMessages } from '../ru/common'
 export const common: CommonMessages = {
   language: 'Тил',
   switchLanguage: 'Тилди алмаштыруу',
+  introTagline: 'Смартфондор · ноутбуктар · гаджеттер',
   loading: 'Жүктөлүүдө…',
   close: 'Жабуу',
   cancel: 'Жокко чыгаруу',

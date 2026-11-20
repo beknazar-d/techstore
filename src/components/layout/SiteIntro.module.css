@@ -1,0 +1,362 @@
+/* Заставка при входе на сайт (~2,3 с). Тайминг:
+   0–0,45 с   телефон падает сверху;
+   0,45 с     «бух»: сплющивается, дрожит сцена, расходятся волны;
+   0,6 с      загорается экран с инициалами;
+   0,8 с      по буквам выезжает название, затем подпись;
+   1,8–2,3 с  заставка растворяется. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  background: var(--color-page);
+  cursor: pointer;
+  animation: overlayOut 0.5s ease-in 1.8s forwards;
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 160px;
+  height: 160px;
+  animation: shake 0.35s linear 0.45s;
+}
+
+.wave {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 72px;
+  height: 72px;
+  margin: -36px 0 0 -36px;
+  border: 3px solid var(--color-primary);
+  border-radius: var(--radius-full);
+  opacity: 0;
+  animation: wave 0.8s cubic-bezier(0.2, 0.7, 0.3, 1) 0.45s forwards;
+}
+
+.waveLate {
+  border-color: var(--color-sale);
+  animation-delay: 0.6s;
+}
+
+.phone {
+  --phone-w: 72px;
+  position: relative;
+  width: var(--phone-w);
+  height: calc(var(--phone-w) * 1.8);
+  padding: 6px;
+  border: 5px solid var(--color-primary);
+  border-radius: 20px;
+  background: var(--color-bg);
+  box-shadow: var(--shadow-primary);
+  transform-origin: 50% 100%;
+  animation:
+    drop 0.45s cubic-bezier(0.55, 0, 1, 0.45) both,
+    squash 0.4s ease-out 0.45s;
+}
+
+.notch {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  z-index: 1;
+  width: 26px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  transform: translateX(-50%);
+}
+
+.screen {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+}
+
+.screen::before {
+  content: '';
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  background: var(--gradient-promo);
+  opacity: 0;
+  animation: screenOn 0.35s ease-out 0.6s forwards;
+}
+
+.mark {
+  grid-area: 1 / 1;
+  z-index: 1;
+  color: var(--color-on-primary);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  opacity: 0;
+  transform: scale(0.6);
+  animation: pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) 0.7s forwards;
+}
+
+.name {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.letter {
+  display: inline-block;
+  white-space: pre;
+  opacity: 0;
+  transform: translateY(100%);
+  animation: letterIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
+}
+
+.letter:nth-child(1) {
+  animation-delay: 0.800s;
+}
+
+.letter:nth-child(2) {
+  animation-delay: 0.845s;
+}
+
+.letter:nth-child(3) {
+  animation-delay: 0.890s;
+}
+
+.letter:nth-child(4) {
+  animation-delay: 0.935s;
+}
+
+.letter:nth-child(5) {
+  animation-delay: 0.980s;
+}
+
+.letter:nth-child(6) {
+  animation-delay: 1.025s;
+}
+
+.letter:nth-child(7) {
+  animation-delay: 1.070s;
+}
+
+.letter:nth-child(8) {
+  animation-delay: 1.115s;
+}
+
+.letter:nth-child(9) {
+  animation-delay: 1.160s;
+}
+
+.letter:nth-child(10) {
+  animation-delay: 1.205s;
+}
+
+.letter:nth-child(11) {
+  animation-delay: 1.250s;
+}
+
+.letter:nth-child(12) {
+  animation-delay: 1.295s;
+}
+
+.letter:nth-child(13) {
+  animation-delay: 1.340s;
+}
+
+.letter:nth-child(14) {
+  animation-delay: 1.385s;
+}
+
+.letter:nth-child(15) {
+  animation-delay: 1.430s;
+}
+
+.letter:nth-child(16) {
+  animation-delay: 1.475s;
+}
+
+.letter:nth-child(17) {
+  animation-delay: 1.520s;
+}
+
+.letter:nth-child(18) {
+  animation-delay: 1.565s;
+}
+
+.letter:nth-child(19) {
+  animation-delay: 1.610s;
+}
+
+.letter:nth-child(20) {
+  animation-delay: 1.655s;
+}
+
+.letter:nth-child(21) {
+  animation-delay: 1.700s;
+}
+
+.letter:nth-child(22) {
+  animation-delay: 1.745s;
+}
+
+.letter:nth-child(23) {
+  animation-delay: 1.790s;
+}
+
+.letter:nth-child(24) {
+  animation-delay: 1.835s;
+}
+
+.letter:nth-child(25) {
+  animation-delay: 1.880s;
+}
+
+.letter:nth-child(26) {
+  animation-delay: 1.925s;
+}
+
+.letter:nth-child(27) {
+  animation-delay: 1.970s;
+}
+
+.letter:nth-child(28) {
+  animation-delay: 2.015s;
+}
+
+.letter:nth-child(29) {
+  animation-delay: 2.060s;
+}
+
+.letter:nth-child(30) {
+  animation-delay: 2.105s;
+}
+
+.tagline {
+  margin: calc(-1 * var(--space-3)) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0;
+  animation: fadeUp 0.5s ease-out 1.2s forwards;
+}
+
+@media (min-width: 768px) {
+  .name {
+    font-size: 48px;
+  }
+
+  .tagline {
+    font-size: 15px;
+  }
+}
+
+@keyframes drop {
+  from {
+    transform: translateY(-70vh) rotate(-14deg) scale(1.3);
+  }
+  to {
+    transform: translateY(0) rotate(0) scale(1);
+  }
+}
+
+@keyframes squash {
+  0% {
+    transform: scale(1.18, 0.8);
+  }
+  40% {
+    transform: scale(0.92, 1.08);
+  }
+  70% {
+    transform: scale(1.03, 0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-5px, 3px);
+  }
+  40% {
+    transform: translate(5px, -2px);
+  }
+  60% {
+    transform: translate(-3px, 2px);
+  }
+  80% {
+    transform: translate(2px, -1px);
+  }
+}
+
+@keyframes wave {
+  from {
+    opacity: 0.7;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 0;
+    transform: scale(4.5);
+  }
+}
+
+@keyframes screenOn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pop {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes letterIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes overlayOut {
+  to {
+    opacity: 0;
+    transform: scale(1.04);
+    visibility: hidden;
+  }
+}

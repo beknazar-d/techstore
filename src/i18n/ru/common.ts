@@ -2,6 +2,7 @@ export const common = {
   language: 'Язык',
   switchLanguage: 'Сменить язык',
   loading: 'Загрузка…',
+  introTagline: 'Смартфоны · ноутбуки · гаджеты',
   close: 'Закрыть',
   cancel: 'Отмена',
   save: 'Сохранить',

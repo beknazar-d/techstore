@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import styles from './ClientLayout.module.css'
 import { Footer } from './Footer'
 import { Header } from './Header'
+import { SiteIntro } from './SiteIntro'
 
 /** Каркас клиентских страниц: шапка, содержимое, подвал. Страницы сами задают свои отступы и ширину. */
 export function ClientLayout() {
@@ -20,6 +21,7 @@ export function ClientLayout() {
         <Outlet />
       </main>
       <Footer />
+      <SiteIntro />
     </div>
   )
 }
