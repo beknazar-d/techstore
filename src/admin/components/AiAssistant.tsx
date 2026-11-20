@@ -264,7 +264,7 @@ export function AiAssistant() {
             {!connected ? (
               <div className={styles.notConnected}>
                 <p>{t.notConnected}</p>
-                <Link to="/admin/settings" onClick={() => setIsOpen(false)}>{t.openSettings}</Link>
+                <Link to="/admin/settings?tab=ai" onClick={() => setIsOpen(false)}>{t.openSettings}</Link>
               </div>
             ) : allItems.length === 0 && !busy && !pendingText ? (
               <div className={styles.empty}>

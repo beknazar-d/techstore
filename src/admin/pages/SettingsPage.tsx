@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   getBotSettings,
   updateBotSettings,
@@ -9,7 +10,7 @@ import {
 } from '../../api'
 import type { BotSettings } from '../../types'
 import { msg } from '../../i18n'
-import { AiSettingsSection } from '../components/AiSettingsSection'
+import { AiKeysSection, AssistantSection, BotAiSection } from '../components/AiSettingsSection'
 import { ShopSettingsSection } from '../components/ShopSettingsSection'
 import { DeviceNotificationsSection } from '../components/DeviceNotificationsSection'
 import { AppDownloadSection } from '../components/AppDownloadSection'
@@ -22,9 +23,17 @@ import { Checkbox } from '../../components/ui/Checkbox'
 import { Badge } from '../../components/ui/Badge'
 import { Spinner } from '../../components/ui/Spinner'
 import { Modal } from '../../components/ui/Modal'
+import { Chips } from '../../components/ui/Chips'
 import styles from './SettingsPage.module.css'
 
-function BotBehaviorForm({ initial }: { initial: BotSettings }) {
+type SettingsTab = 'bot' | 'ai' | 'shop' | 'device'
+const TABS: SettingsTab[] = ['bot', 'ai', 'shop', 'device']
+
+/**
+ * Как бот отвечает клиентам и какие уведомления шлёт менеджерам. Обе части сохраняются одной кнопкой
+ * (она есть в каждой части); между ними — блоки модели и голоса (`between`).
+ */
+function BotBehaviorForm({ initial, between }: { initial: BotSettings; between: ReactNode }) {
   const t = msg().adminSettings
   const [groupId, setGroupId] = useState(initial.groupId)
   const [notify, setNotify] = useState(initial.notify)
@@ -82,56 +91,6 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
 
   return (
     <div className={styles.behaviorForm}>
-      <Section title={t.notifications}>
-        <div className={styles.behaviorBody}>
-          <Input
-            label={t.groupId}
-            value={groupId}
-            onChange={(e) => setGroupId(e.target.value)}
-            hint={t.groupIdHint}
-          />
-
-          <div className={styles.checkboxGroup}>
-            <Checkbox
-              label={t.notifyNewOrder}
-              checked={notify.newOrder}
-              onChange={(e) => setNotify((p) => ({ ...p, newOrder: e.target.checked }))}
-            />
-          </div>
-          <div className={styles.checkboxGroup}>
-            <Checkbox
-              label={t.notifyOrderStatus}
-              checked={notify.orderStatus}
-              onChange={(e) => setNotify((p) => ({ ...p, orderStatus: e.target.checked }))}
-            />
-          </div>
-          <div className={styles.checkboxGroup}>
-            <Checkbox
-              label={t.notifyNewTradeIn}
-              checked={notify.newTradeIn}
-              onChange={(e) => setNotify((p) => ({ ...p, newTradeIn: e.target.checked }))}
-            />
-          </div>
-          <div className={styles.checkboxGroup}>
-            <Checkbox
-              label={t.notifyLowStock}
-              checked={notify.lowStock}
-              onChange={(e) => setNotify((p) => ({ ...p, lowStock: e.target.checked }))}
-            />
-          </div>
-
-          <div className={styles.testRow}>
-            <Button variant="secondary" icon="send" onClick={handleTest} loading={testLoading}>
-              {t.sendTest}
-            </Button>
-            {testResult && (
-              <span className={testResult.ok ? styles.successText : styles.testError} role={testResult.ok ? undefined : 'alert'}>
-                {testResult.text}
-              </span>
-            )}
-          </div>
-        </div>
-      </Section>
 
       <Section title={t.aiReplies}>
         <div className={styles.behaviorBody}>
@@ -209,11 +168,114 @@ function BotBehaviorForm({ initial }: { initial: BotSettings }) {
           </div>
         </div>
       </Section>
+
+      {between}
+
+      <Section title={t.notifications}>
+        <div className={styles.behaviorBody}>
+          <Input
+            label={t.groupId}
+            value={groupId}
+            onChange={(e) => setGroupId(e.target.value)}
+            hint={t.groupIdHint}
+          />
+
+          <div className={styles.checkboxGroup}>
+            <Checkbox
+              label={t.notifyNewOrder}
+              checked={notify.newOrder}
+              onChange={(e) => setNotify((p) => ({ ...p, newOrder: e.target.checked }))}
+            />
+          </div>
+          <div className={styles.checkboxGroup}>
+            <Checkbox
+              label={t.notifyOrderStatus}
+              checked={notify.orderStatus}
+              onChange={(e) => setNotify((p) => ({ ...p, orderStatus: e.target.checked }))}
+            />
+          </div>
+          <div className={styles.checkboxGroup}>
+            <Checkbox
+              label={t.notifyNewTradeIn}
+              checked={notify.newTradeIn}
+              onChange={(e) => setNotify((p) => ({ ...p, newTradeIn: e.target.checked }))}
+            />
+          </div>
+          <div className={styles.checkboxGroup}>
+            <Checkbox
+              label={t.notifyLowStock}
+              checked={notify.lowStock}
+              onChange={(e) => setNotify((p) => ({ ...p, lowStock: e.target.checked }))}
+            />
+          </div>
+
+          <div className={styles.testRow}>
+            <Button variant="secondary" icon="send" onClick={handleTest} loading={testLoading}>
+              {t.sendTest}
+            </Button>
+            {testResult && (
+              <span className={testResult.ok ? styles.successText : styles.testError} role={testResult.ok ? undefined : 'alert'}>
+                {testResult.text}
+              </span>
+            )}
+          </div>
+
+          <div className={styles.formFooter}>
+            {error && (
+              <span className={styles.errorText} role="alert">
+                {error}
+              </span>
+            )}
+            <Button onClick={handleSave} loading={saving}>
+              {t.saveSettings}
+            </Button>
+            {saved && <span className={styles.successText}>{t.saved}</span>}
+          </div>
+        </div>
+      </Section>
     </div>
   )
 }
 
 export function SettingsPage() {
+  const t = msg().adminSettings
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab') as SettingsTab | null
+  const tab: SettingsTab = tabParam && TABS.includes(tabParam) ? tabParam : 'bot'
+
+  return (
+    <div className={styles.page}>
+      <PageHeader title={t.title} subtitle={t.subtitle} />
+
+      <Chips
+        ariaLabel={t.tabsAria}
+        options={TABS.map((value) => ({ value, label: t.tabs[value] }))}
+        value={tab}
+        onChange={(next) => setSearchParams(next === 'bot' ? {} : { tab: next }, { replace: true })}
+        className={styles.tabs}
+      />
+      <p className={styles.tabIntro}>{t.tabIntro[tab]}</p>
+
+      {tab === 'bot' && <BotTab />}
+      {tab === 'ai' && (
+        <>
+          <AiKeysSection />
+          <AssistantSection />
+        </>
+      )}
+      {tab === 'shop' && <ShopSettingsSection />}
+      {tab === 'device' && (
+        <>
+          <DeviceNotificationsSection />
+          <AppDownloadSection />
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Вкладка «Telegram-бот»: подключение, как отвечает (ИИ, модель, голос), уведомления менеджерам. */
+function BotTab() {
   const t = msg().adminSettings
   const { data, reload } = useApiQuery(() => getBotSettings(), [], ['botSettings'])
 
@@ -227,10 +289,8 @@ export function SettingsPage() {
 
   if (data === undefined) {
     return (
-      <div className={styles.page}>
-        <div className={styles.loader}>
-          <Spinner />
-        </div>
+      <div className={styles.loader}>
+        <Spinner />
       </div>
     )
   }
@@ -276,18 +336,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div className={styles.page}>
-      <PageHeader title={t.title} subtitle={t.subtitle} />
-
-      <DeviceNotificationsSection />
-
-      <AppDownloadSection />
-
-      <ShopSettingsSection />
-
-      <AiSettingsSection />
-
-      <Section title={t.bot}>
+    <>
+      <Section title={t.botConnection}>
         {!data.connected ? (
           <div className={styles.connectBlock}>
             <ol className={styles.stepsList}>
@@ -366,7 +416,7 @@ export function SettingsPage() {
         )}
       </Section>
 
-      <BotBehaviorForm initial={data} />
+      <BotBehaviorForm initial={data} between={<BotAiSection />} />
 
       <Modal
         open={showDisconnectModal}
@@ -387,7 +437,6 @@ export function SettingsPage() {
           {t.disconnectBotText}
         </p>
       </Modal>
-
-    </div>
+    </>
   )
 }

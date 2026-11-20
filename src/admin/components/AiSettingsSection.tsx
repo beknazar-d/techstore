@@ -27,36 +27,71 @@ import { Textarea } from '../../components/ui/Textarea'
 import { Section } from './AdminBlocks'
 import styles from './AiSettingsSection.module.css'
 
-/** «Искусственный интеллект» в настройках: ключи провайдеров, модели, голос бота. */
-export function AiSettingsSection() {
-  const t = msg().adminSettings
-  const { data } = useApiQuery(() => getAiSettings(), [], ['aiSettings'])
+/** Загружает настройки ИИ и показывает спиннер, пока их нет. */
+function useAiSettings() {
+  return useApiQuery(() => getAiSettings(), [], ['aiSettings']).data
+}
 
+/** Меняется только при подключении/отключении ключей. */
+function keysKey(data: AiSettings): string {
+  return JSON.stringify(data.keyHints)
+}
+
+function Loader() {
   return (
-    <Section title={t.ai}>
+    <div className={styles.loader}>
+      <Spinner />
+    </div>
+  )
+}
+
+/** Ключи ИИ-сервисов — общие для ассистента в админке и Telegram-бота. */
+export function AiKeysSection() {
+  const t = msg().adminSettings
+  const data = useAiSettings()
+  return (
+    <Section title={t.aiKeysTitle}>
       {data === undefined ? (
-        <div className={styles.loader}>
-          <Spinner />
-        </div>
+        <Loader />
       ) : (
         <div className={styles.body}>
           <p className={styles.intro}>{t.aiIntro}</p>
-
-          <div className={styles.group}>
-            <h3 className={styles.subTitle}>{t.keys}</h3>
-            <ul className={styles.keyList}>
-              {AI_SECRET_PROVIDERS.map((provider) => (
-                <KeyRow key={provider} provider={provider} hint={data.keyHints[provider]} />
-              ))}
-            </ul>
-          </div>
-
-          {/* key: после подключения ключа или сохранения форма берёт свежие значения. */}
-          <ModelsForm key={`models-${data.updatedAt}`} initial={data} />
-          <VoiceForm key={`voice-${data.updatedAt}`} initial={data} />
+          <ul className={styles.keyList}>
+            {AI_SECRET_PROVIDERS.map((provider) => (
+              <KeyRow key={provider} provider={provider} hint={data.keyHints[provider]} />
+            ))}
+          </ul>
         </div>
       )}
     </Section>
+  )
+}
+
+/** Модель и указания ИИ-ассистента в админке (кружок в углу). */
+export function AssistantSection() {
+  const t = msg().adminSettings
+  const data = useAiSettings()
+  return (
+    <Section title={t.assistantProvider}>
+      {/* key: подключили/отключили ключ — форма берёт свежие значения; после «Сохранить» остаётся (видно «Сохранено»). */}
+      {data === undefined ? <Loader /> : <RoleModelForm key={`assistant-${keysKey(data)}`} role="assistant" initial={data} />}
+    </Section>
+  )
+}
+
+/** Какая модель отвечает клиентам в Telegram и каким голосом. */
+export function BotAiSection() {
+  const t = msg().adminSettings
+  const data = useAiSettings()
+  return (
+    <>
+      <Section title={t.botProvider}>
+        {data === undefined ? <Loader /> : <RoleModelForm key={`bot-${keysKey(data)}`} role="bot" initial={data} />}
+      </Section>
+      <Section title={t.voice}>
+        {data === undefined ? <Loader /> : <VoiceForm key={`voice-${keysKey(data)}`} initial={data} />}
+      </Section>
+    </>
   )
 }
 
@@ -167,48 +202,39 @@ function modelOptions(settings: AiSettings, provider: AiProvider, current: strin
   return ids.map((id) => ({ value: id, label: id === list[0] ? `${id} — ${t.recommended}` : id }))
 }
 
-function ModelsForm({ initial }: { initial: AiSettings }) {
+function RoleModelForm({ initial, role }: { initial: AiSettings; role: 'assistant' | 'bot' }) {
   const t = msg().adminSettings
   const connected = AI_PROVIDERS.filter((p) => initial.keyHints[p])
-  const [assistantProvider, setAssistantProvider] = useState(initial.assistantProvider)
-  const [assistantModel, setAssistantModel] = useState(initial.assistantModel)
-  const [botProvider, setBotProvider] = useState(initial.botProvider)
-  const [botModel, setBotModel] = useState(initial.botModel)
+  const isBot = role === 'bot'
+  const [provider, setProvider] = useState(isBot ? initial.botProvider : initial.assistantProvider)
+  const [model, setModel] = useState(isBot ? initial.botModel : initial.assistantModel)
   const [instructions, setInstructions] = useState(initial.assistantInstructions)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
   if (connected.length === 0) {
-    return (
-      <div className={styles.group}>
-        <h3 className={styles.subTitle}>{t.models}</h3>
-        <p className={styles.note}>{t.noModelsYet}</p>
-      </div>
-    )
+    return <p className={styles.note}>{t.noModelsYet}</p>
   }
 
   const providerOptions = connected.map((p) => ({ value: p, label: AI_PROVIDER_NAMES[p] }))
   // Если выбранный раньше провайдер отключён, в списке его нет — показываем как есть, админ сменит.
-  if (!connected.includes(assistantProvider) || !connected.includes(botProvider)) {
-    for (const p of [assistantProvider, botProvider]) {
-      if (!connected.includes(p) && !providerOptions.some((o) => o.value === p)) {
-        providerOptions.push({ value: p, label: `${AI_PROVIDER_NAMES[p]} — ${t.keyNotConnected}` })
-      }
-    }
+  if (!connected.includes(provider)) {
+    providerOptions.push({ value: provider, label: `${AI_PROVIDER_NAMES[provider]} — ${t.keyNotConnected}` })
   }
   const firstModel = (p: AiProvider) => initial.models[p]?.[0] ?? ''
 
   async function handleSave() {
     setSaving(true)
+    setSaved(false)
     setError('')
     try {
-      await updateAiSettings({
-        assistantProvider,
-        assistantModel,
-        botProvider,
-        botModel,
-        assistantInstructions: instructions,
-      })
+      await updateAiSettings(
+        isBot
+          ? { botProvider: provider, botModel: model }
+          : { assistantProvider: provider, assistantModel: model, assistantInstructions: instructions },
+      )
+      setSaved(true)
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
@@ -218,29 +244,30 @@ function ModelsForm({ initial }: { initial: AiSettings }) {
 
   return (
     <div className={styles.group}>
-      <h3 className={styles.subTitle}>{t.models}</h3>
-
-      <fieldset className={styles.role}>
-        <legend className={styles.roleTitle}>{t.assistantProvider}</legend>
-        <p className={styles.roleHint}>{t.assistantHint}</p>
-        <div className={styles.pair}>
-          <Select
-            label={t.provider}
-            options={providerOptions}
-            value={assistantProvider}
-            onChange={(e) => {
-              const p = e.target.value as AiProvider
-              setAssistantProvider(p)
-              setAssistantModel(firstModel(p))
-            }}
-          />
-          <Select
-            label={t.model}
-            options={modelOptions(initial, assistantProvider, assistantModel)}
-            value={assistantModel}
-            onChange={(e) => setAssistantModel(e.target.value)}
-          />
-        </div>
+      <p className={styles.roleHint}>{isBot ? t.botHint : t.assistantHint}</p>
+      <div className={styles.pair}>
+        <Select
+          label={t.provider}
+          options={providerOptions}
+          value={provider}
+          onChange={(e) => {
+            const p = e.target.value as AiProvider
+            setProvider(p)
+            setModel(firstModel(p))
+            setSaved(false)
+          }}
+        />
+        <Select
+          label={t.model}
+          options={modelOptions(initial, provider, model)}
+          value={model}
+          onChange={(e) => {
+            setModel(e.target.value)
+            setSaved(false)
+          }}
+        />
+      </div>
+      {!isBot && (
         <Textarea
           label={t.assistantInstructions}
           rows={3}
@@ -248,35 +275,13 @@ function ModelsForm({ initial }: { initial: AiSettings }) {
           onChange={(e) => setInstructions(e.target.value)}
           hint={t.assistantInstructionsHint}
         />
-      </fieldset>
-
-      <fieldset className={styles.role}>
-        <legend className={styles.roleTitle}>{t.botProvider}</legend>
-        <p className={styles.roleHint}>{t.botHint}</p>
-        <div className={styles.pair}>
-          <Select
-            label={t.provider}
-            options={providerOptions}
-            value={botProvider}
-            onChange={(e) => {
-              const p = e.target.value as AiProvider
-              setBotProvider(p)
-              setBotModel(firstModel(p))
-            }}
-          />
-          <Select
-            label={t.model}
-            options={modelOptions(initial, botProvider, botModel)}
-            value={botModel}
-            onChange={(e) => setBotModel(e.target.value)}
-          />
-        </div>
-      </fieldset>
+      )}
 
       <div className={styles.footer}>
         <Button onClick={handleSave} loading={saving}>
           {t.save}
         </Button>
+        {saved && <p className={styles.savedText}>{t.saved}</p>}
         {error && (
           <p className={styles.error} role="alert">
             {error}
@@ -297,6 +302,7 @@ function VoiceForm({ initial }: { initial: AiSettings }) {
   const [voices, setVoices] = useState<ElevenLabsVoice[] | null>(null)
   const [voicesLoading, setVoicesLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
 
   const hasKey = Boolean(initial.keyHints[voiceProvider])
@@ -322,6 +328,7 @@ function VoiceForm({ initial }: { initial: AiSettings }) {
 
   async function handleSave() {
     setSaving(true)
+    setSaved(false)
     setError('')
     try {
       await updateAiSettings({
@@ -331,6 +338,7 @@ function VoiceForm({ initial }: { initial: AiSettings }) {
         elevenlabsModel: elevenModel,
         openaiVoice,
       })
+      setSaved(true)
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
@@ -340,7 +348,6 @@ function VoiceForm({ initial }: { initial: AiSettings }) {
 
   return (
     <div className={styles.group}>
-      <h3 className={styles.subTitle}>{t.voice}</h3>
       <div className={styles.group}>
         <Checkbox
           label={t.voiceReplies}
@@ -408,6 +415,7 @@ function VoiceForm({ initial }: { initial: AiSettings }) {
         <Button onClick={handleSave} loading={saving}>
           {t.save}
         </Button>
+        {saved && <p className={styles.savedText}>{t.saved}</p>}
         {error && (
           <p className={styles.error} role="alert">
             {error}

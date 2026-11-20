@@ -142,6 +142,13 @@
   flex-wrap: wrap;
 }
 
+.savedText {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-success-text);
+}
+
 .error {
   margin: 0;
   font-size: 14px;
