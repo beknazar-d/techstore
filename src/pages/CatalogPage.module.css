@@ -1,7 +1,9 @@
+/* Телефон: заголовок в одну строку, фильтры компактно — всё видно без прокрутки, товары сразу под ними. */
+
 .page {
   max-width: var(--container);
   margin: 0 auto;
-  padding: var(--space-8) var(--page-padding) var(--space-10);
+  padding: var(--space-4) var(--page-padding) var(--space-10);
 }
 
 .header {
@@ -9,10 +11,11 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-4);
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-3);
 }
 
 .kicker {
+  display: none;
   margin: 0;
   color: var(--color-text-muted);
   text-transform: uppercase;
@@ -22,12 +25,13 @@
 }
 
 .title {
-  margin: var(--space-2) 0 0;
-  font-size: 32px;
-  line-height: 38px;
+  margin: 0;
+  font-size: 24px;
+  line-height: 30px;
 }
 
 .subtitle {
+  display: none;
   margin: var(--space-2) 0 0;
   color: var(--color-text-secondary);
   font-size: 16px;
@@ -35,19 +39,24 @@
 }
 
 .backLink {
+  display: none;
   color: var(--color-primary);
   text-decoration: none;
   font-weight: 600;
 }
 
 .filterBar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-3);
 }
 
+/* Подпись «Состояние» на телефоне не нужна: переключатель говорит сам за себя (aria-label у группы есть). */
 .filterLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
   margin: 0;
   color: var(--color-text-secondary);
   font-size: 14px;
@@ -55,31 +64,57 @@
   font-weight: 600;
 }
 
+/* «Все / Новые / Б/У» — сегментированный переключатель на всю ширину. */
 .chips {
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-recessed);
+  overflow: visible;
 }
 
+.chips > button {
+  justify-content: center;
+  height: 36px;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.chips > button[aria-pressed='true'] {
+  background: var(--color-bg);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-card);
+}
+
+/* Категории — компактные «таблетки» в несколько строк, без горизонтальной прокрутки. */
 .categoryNav {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-bottom: var(--space-5);
+  gap: 6px;
+  margin-bottom: var(--space-4);
 }
 
 .categoryLink {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
+  min-height: 32px;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-full);
   border: 1px solid var(--color-border);
   background: var(--color-bg);
   color: var(--color-text-secondary);
   text-decoration: none;
-  font-size: 14px;
-  line-height: 20px;
+  font-size: 13px;
+  line-height: 18px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .categoryLink[data-active='true'] {
@@ -116,8 +151,71 @@
     margin-bottom: var(--space-8);
   }
 
+  .kicker,
+  .backLink {
+    display: block;
+  }
+
   .title {
+    margin-top: var(--space-2);
     font-size: 40px;
     line-height: 46px;
+  }
+
+  .subtitle {
+    display: block;
+  }
+
+  .filterBar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+  }
+
+  .filterLabel {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: var(--space-2);
+    padding: 0;
+    background: none;
+  }
+
+  .chips > button {
+    height: 36px;
+    padding: 0 var(--space-4);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-recessed);
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  .chips > button[aria-pressed='true'] {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    box-shadow: none;
+  }
+
+  .categoryNav {
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+  }
+
+  .categoryLink {
+    min-height: 40px;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    line-height: 20px;
   }
 }

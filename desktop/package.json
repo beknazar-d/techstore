@@ -1,7 +1,7 @@
 {
   "name": "phone-market-admin",
   "productName": "Phone Market Админка",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Phone Market — приложение администратора для Windows",
   "author": "Phone Market",
   "private": true,

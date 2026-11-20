@@ -35,32 +35,56 @@ export async function downloadTelegramFile(token: string, fileId: string): Promi
   return await file.blob()
 }
 
-/** Текст голосового сообщения. null — голос не подключён. */
+/** Клиенты говорят по-кыргызски или по-русски (часто вперемешку). Остальное — ошибка распознавания. */
+const EXPECTED_LANGS = ['kir', 'ky', 'rus', 'ru']
+
+async function elevenLabsStt(key: string, audio: Blob, language?: string): Promise<{ text: string; lang: string }> {
+  const form = new FormData()
+  form.append('file', audio, 'voice.ogg')
+  form.append('model_id', 'scribe_v1')
+  form.append('tag_audio_events', 'false')
+  if (language) form.append('language_code', language)
+  const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
+    method: 'POST',
+    headers: { 'xi-api-key': key },
+    body: form,
+    signal: AbortSignal.timeout(120_000),
+  })
+  if (!response.ok) throw new Error(`elevenlabs speech-to-text failed: ${response.status} ${await response.text()}`)
+  const data = (await response.json()) as { text?: string; language_code?: string }
+  return { text: String(data.text ?? '').trim(), lang: String(data.language_code ?? '').toLowerCase() }
+}
+
+/**
+ * Текст голосового сообщения. null — голос не подключён.
+ * Кыргызскую речь распознаватель путает с казахской и другими языками («Қандай», арабская вязь) —
+ * тогда распознаём ещё раз, явно указав кыргызский.
+ */
 export async function transcribe(settings: AiSettingsRow, audio: Blob): Promise<string | null> {
   const voice = await voiceKey(settings)
   if (!voice) return null
+
+  if (voice.provider === 'elevenlabs') {
+    const first = await elevenLabsStt(voice.key, audio)
+    // Арабская вязь или казахские буквы (в кыргызском их нет) — значит, язык определён неверно.
+    const suspicious = /[؀-ۿҚқҒғӘәҰұҺһІі]/.test(first.text)
+    if (!suspicious && (!first.lang || EXPECTED_LANGS.includes(first.lang))) return first.text
+    const retry = await elevenLabsStt(voice.key, audio, 'kir')
+    return retry.text || first.text
+  }
+
   const form = new FormData()
   form.append('file', audio, 'voice.ogg')
-
-  let response: Response
-  if (voice.provider === 'elevenlabs') {
-    form.append('model_id', 'scribe_v1')
-    response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', {
-      method: 'POST',
-      headers: { 'xi-api-key': voice.key },
-      body: form,
-      signal: AbortSignal.timeout(120_000),
-    })
-  } else {
-    form.append('model', 'gpt-4o-transcribe')
-    response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${voice.key}` },
-      body: form,
-      signal: AbortSignal.timeout(120_000),
-    })
-  }
-  if (!response.ok) throw new Error(`${voice.provider} speech-to-text failed: ${response.status} ${await response.text()}`)
+  form.append('model', 'gpt-4o-transcribe')
+  // Подсказка о языках: без неё кыргызскую речь иногда пишет казахскими буквами.
+  form.append('prompt', 'Разговор с магазином электроники на кыргызском или русском языке (кириллица). Саламатсызбы, телефон, айфон, баасы канча.')
+  const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${voice.key}` },
+    body: form,
+    signal: AbortSignal.timeout(120_000),
+  })
+  if (!response.ok) throw new Error(`openai speech-to-text failed: ${response.status} ${await response.text()}`)
   const data = (await response.json()) as { text?: string }
   return String(data.text ?? '').trim()
 }
@@ -101,10 +125,11 @@ export async function synthesize(settings: AiSettingsRow, text: string): Promise
   return new Blob([await response.arrayBuffer()], { type: 'audio/mpeg' })
 }
 
-/** Отправить голосовое сообщение (Telegram принимает MP3). */
-export async function sendTelegramVoice(token: string, chatId: number, audio: Blob): Promise<void> {
+/** Отправить голосовое сообщение (Telegram принимает MP3). caption — подпись под ним (ссылки). */
+export async function sendTelegramVoice(token: string, chatId: number, audio: Blob, caption?: string): Promise<void> {
   const form = new FormData()
   form.append('chat_id', String(chatId))
+  if (caption) form.append('caption', caption)
   form.append('voice', audio, 'reply.mp3')
   const response = await fetch(`https://api.telegram.org/bot${token}/sendVoice`, { method: 'POST', body: form })
   const data = (await response.json().catch(() => null)) as { ok?: boolean; description?: string } | null

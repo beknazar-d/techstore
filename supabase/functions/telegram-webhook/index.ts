@@ -58,31 +58,57 @@ function describe(message: TgMessage): string {
   return '[Сообщение]'
 }
 
-/** Голосовое → расшифровка (видна менеджеру в «Чатах») → ответ ИИ, на голосовое — голосом. */
+/** Клиент часто пишет несколькими сообщениями подряд — ждём и отвечаем один раз на все. */
+const BURST_MS = 3500
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Голосовое → расшифровка (видна менеджеру в «Чатах») → ответ ИИ, на голосовое — голосом.
+ * Если за время паузы клиент дописал ещё сообщение — отвечать будет обработчик того сообщения
+ * (он увидит всю переписку), а этот молчит.
+ */
 async function answer(token: string, chat: ChatInfo, behavior: BotBehavior, ai: BotAi, message: TgMessage) {
+  const db = adminDb()
+  const receivedAt = Date.now()
+  const { data: own } = await db
+    .from('bot_messages')
+    .select('id, created_at')
+    .eq('chat_id', chat.id)
+    .eq('sender', 'customer')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
   let voice = false
   if (message.voice?.file_id) {
+    void tg(token, 'sendChatAction', { chat_id: chat.telegram_chat_id, action: 'typing' }).catch(() => undefined)
     try {
       const audio = await downloadTelegramFile(token, message.voice.file_id)
       const transcript = await transcribe(ai.settings, audio)
       if (transcript) {
         const text = `[Голосовое] ${transcript}`.slice(0, 4096)
-        const db = adminDb()
-        const { data: last } = await db
-          .from('bot_messages')
-          .select('id')
-          .eq('chat_id', chat.id)
-          .eq('sender', 'customer')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-        if (last) await db.from('bot_messages').update({ text }).eq('id', last.id)
+        if (own) await db.from('bot_messages').update({ text }).eq('id', own.id)
         await db.from('bot_chats').update({ last_message_text: text }).eq('id', chat.id)
         voice = true
       }
     } catch (error) {
-      console.error('voice transcription failed', error) // ИИ попросит написать текстом
+      console.error('voice transcription failed', error) // ИИ попросит повторить или написать
     }
+  }
+
+  await sleep(Math.max(0, BURST_MS - (Date.now() - receivedAt)))
+  if (own) {
+    const { count } = await db
+      .from('bot_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('chat_id', chat.id)
+      .eq('sender', 'customer')
+      .gt('created_at', own.created_at)
+    if ((count ?? 0) > 0) return
+    // Пока ждали, менеджер мог взять чат себе.
+    const { data: current } = await db.from('bot_chats').select('mode').eq('id', chat.id).maybeSingle()
+    if (current?.mode === 'manager') return
   }
   await replyWithAi(token, chat, behavior, ai, { voice })
 }

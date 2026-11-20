@@ -1,8 +1,8 @@
 // ИИ-ответы Telegram-бота клиентам. Вызывается из telegram-webhook в фоне.
 // Модель — та, что админ выбрал для бота (Claude, ChatGPT или Gemini).
-// Данные о товарах модель берёт только из базы через инструменты, а не выдумывает.
+// Данные о товарах и магазине модель берёт только из базы (каталог в подсказке + инструменты), а не выдумывает.
 // Торг — не ниже min_price товара; заявку создаёт тот же RPC create_order, что и сайт.
-// Отвечает на языке клиента (русский или кыргызский); на голосовое — ещё и голосом.
+// Отвечает на языке клиента (русский или кыргызский); на голосовое — голосом.
 
 import { adminDb, tg } from './telegram.ts'
 import type { AiSettingsRow } from './ai.ts'
@@ -27,12 +27,18 @@ export interface BotAi {
   key: string
 }
 
+type Lang = 'ru' | 'ky'
+
 const SITE_URL = (Deno.env.get('SITE_URL') ?? 'https://techstore.sadyrbekov981-ae2.workers.dev').replace(/\/$/, '')
-const HISTORY_LIMIT = 30
+const CURRENCY = '₽' // как на сайте (src/config/shop.ts)
+const HISTORY_LIMIT = 40
 const MAX_STEPS = 6
-const FALLBACK_REPLY = {
-  ru: 'Передал ваш вопрос менеджеру — он скоро ответит.',
-  ky: 'Сурооңузду менеджерге өткөрүп бердим — ал жакында жооп берет.',
+const CATALOG_LIMIT = 80
+/** Пометка ответа, отправленного голосом, — видна менеджеру в «Чатах», модели не показывается. */
+export const VOICE_MARK = '[Голосом] '
+const FALLBACK_REPLY: Record<Lang, string> = {
+  ru: 'Минутку, уточню у менеджера — он скоро напишет вам здесь.',
+  ky: 'Бир мүнөт, менеджерден тактап берейин — ал жакында ушул жерге жазат.',
 }
 
 /** Буквы, которых нет в русском: ң, ө, ү. */
@@ -40,12 +46,193 @@ export function looksKyrgyz(text: string): boolean {
   return /[ңөүҢӨҮ]/.test(text)
 }
 
+function money(value: unknown): string | undefined {
+  if (value === null || value === undefined || value === '') return undefined
+  const digits = String(Math.round(Number(value))).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  return `${digits} ${CURRENCY}`
+}
+
+// ---------- Данные магазина ----------
+
+interface ProductRow {
+  id: string
+  name: string
+  slug: string
+  brand: string
+  description: string | null
+  condition: 'new' | 'used'
+  used_info: Record<string, unknown> | null
+  price: number
+  old_price: number | null
+  min_price?: number | null
+  stock: number
+  specs: Record<string, unknown> | null
+  category: { name: string; is_active: boolean } | null
+}
+
+async function loadProducts(bargaining: boolean): Promise<ProductRow[]> {
+  const columns = `id, name, slug, brand, description, condition, used_info, price, old_price, ${
+    bargaining ? 'min_price, ' : ''
+  }stock, specs, category:categories!inner(name, is_active)`
+  const { data, error } = await adminDb()
+    .from('products')
+    .select(columns)
+    .eq('is_active', true)
+    .eq('category.is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(300)
+  if (error) throw error
+  return (data ?? []) as unknown as ProductRow[]
+}
+
+function productCard(row: ProductRow, bargaining: boolean, full: boolean) {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category?.name,
+    condition: row.condition === 'used' ? 'Б/У' : 'новый',
+    price: money(row.price),
+    // Цена до скидки: можно сказать «сейчас со скидкой».
+    oldPrice: money(row.old_price),
+    minPrice: bargaining ? money(row.min_price) : undefined,
+    stock: row.stock,
+    inStock: row.stock > 0,
+    ...(full
+      ? {
+          brand: row.brand,
+          usedInfo: row.used_info ?? undefined,
+          specs: row.specs ?? undefined,
+          description: String(row.description ?? '').slice(0, 500),
+        }
+      : {}),
+    url: `${SITE_URL}/product/${row.slug}`,
+  }
+}
+
+interface ShopRow {
+  name: string
+  city: string
+  city_ky: string
+  address: string
+  address_ky: string
+  working_hours: string
+  working_hours_ky: string
+  phones: string[]
+  whatsapp: string
+  telegram: string
+  instagram: string
+  map_url: string
+}
+
+async function shopInfo(lang: Lang): Promise<string> {
+  const { data } = await adminDb()
+    .from('shop_settings')
+    .select('name, city, city_ky, address, address_ky, working_hours, working_hours_ky, phones, whatsapp, telegram, instagram, map_url')
+    .eq('id', true)
+    .maybeSingle()
+  const s = data as ShopRow | null
+  if (!s) return 'Нет данных — адрес и часы уточнит менеджер.'
+  const pick = (ru: string, ky: string) => (lang === 'ky' && ky.trim() ? ky : ru).trim()
+  const lines = [
+    `Название: ${s.name}`,
+    pick(s.city, s.city_ky) && `Город: ${pick(s.city, s.city_ky)}`,
+    pick(s.address, s.address_ky) && `Адрес: ${pick(s.address, s.address_ky)}`,
+    pick(s.working_hours, s.working_hours_ky) && `Часы работы: ${pick(s.working_hours, s.working_hours_ky)}`,
+    s.phones?.length && `Телефоны: ${s.phones.join(', ')}`,
+    s.whatsapp && `WhatsApp: +${s.whatsapp}`,
+    s.instagram && `Instagram: @${s.instagram}`,
+    s.map_url && `На карте: ${s.map_url}`,
+  ].filter(Boolean)
+  return lines.join('\n')
+}
+
+// ---------- Поиск ----------
+
+/** Разговорные и русские названия → как в каталоге. */
+const ALIASES: [RegExp, string][] = [
+  [/^(айфон|айфан|iphon)/, 'iphone'],
+  [/^(самсунг|самсун|samsun)/, 'samsung'],
+  [/^галакси/, 'galaxy'],
+  [/^(сяоми|ксиоми|шаоми|ксяоми|xiaom)/, 'xiaomi'],
+  [/^редми/, 'redmi'],
+  [/^поко/, 'poco'],
+  [/^макбук/, 'macbook'],
+  [/^айпад/, 'ipad'],
+  [/^(эйрподс|аирподс|эирподс|airpod)/, 'airpods'],
+  [/^(дайсон|дисон)/, 'dyson'],
+  [/^(эпл|эппл|апл|эпол)/, 'apple'],
+  [/^(хуавей|хуавэй)/, 'huawei'],
+  [/^хонор/, 'honor'],
+  [/^пиксел/, 'pixel'],
+  [/^гармин/, 'garmin'],
+  [/^(вотч|воч)/, 'watch'],
+  [/^ультра/, 'ultra'],
+  [/^(телефон|смартфон|телефондор)/, 'смартфон'],
+  [/^(наушник|кулакчын)/, 'наушник'],
+  [/^(часы|саат)/, 'час'],
+  [/^ноутбук/, 'ноутбук'],
+  [/^фен/, 'фен'],
+  [/^(чехол|чехл)/, 'чехл'],
+  [/^(зарядк|зарядн)/, 'заряд'],
+]
+
+function normalizeWord(word: string): string {
+  const w = word.toLowerCase().replace(/ё/g, 'е')
+  for (const [pattern, replacement] of ALIASES) if (pattern.test(w)) return replacement
+  // «гигов», «гб» → «гб»; «128гб» → «128» + «гб» разбирается выше
+  if (/^(гиг|gb|гб)/.test(w)) return 'гб'
+  // Русские окончания: «наушники», «наушниками» → основа.
+  return w.length > 6 ? w.slice(0, w.length - 2) : w
+}
+
+function searchIn(products: ProductRow[], query: string, condition?: string): ProductRow[] {
+  let list = products
+  if (condition === 'new' || condition === 'used') list = list.filter((p) => p.condition === condition)
+  const words = query
+    .toLowerCase()
+    .replace(/(\d)(гб|gb|tb|тб)/g, '$1 $2')
+    .split(/[^\p{L}\p{N}+]+/u)
+    .filter((w) => w.length > 1 || /\d/.test(w))
+    .map(normalizeWord)
+    .slice(0, 8)
+  if (words.length === 0) return list.slice(0, 15)
+
+  const scored = list.map((p) => {
+    const name = `${p.name} ${p.brand}`.toLowerCase().replace(/ё/g, 'е')
+    const extra = `${p.category?.name ?? ''} ${p.description ?? ''} ${JSON.stringify(p.specs ?? {})}`.toLowerCase()
+    let score = 0
+    for (const w of words) {
+      if (name.includes(w)) score += /\d/.test(w) ? 3 : 2
+      else if (extra.includes(w)) score += 1
+    }
+    if (p.stock > 0) score += 0.5
+    return { p, score }
+  })
+  const best = scored.filter((s) => s.score >= 1).sort((a, b) => b.score - a.score)
+  return best.slice(0, 12).map((s) => s.p)
+}
+
+/** Товар по ID, а если модель дала название вместо ID — по названию. */
+function resolveProduct(products: ProductRow[], idOrName: string): ProductRow | null {
+  const value = String(idOrName ?? '').trim()
+  if (!value) return null
+  const byId = products.find((p) => p.id === value)
+  if (byId) return byId
+  const lower = value.toLowerCase()
+  const exact = products.find((p) => p.name.toLowerCase() === lower)
+  if (exact) return exact
+  const found = searchIn(products, value)
+  return found[0] ?? null
+}
+
+// ---------- Инструменты и подсказка ----------
+
 function tools(behavior: BotBehavior): ToolDef[] {
   const list: ToolDef[] = [
     {
       name: 'search_products',
       description:
-        'Поиск товаров в наличии и под заказ в каталоге магазина. Пустой запрос — популярные товары. Возвращает цены, остаток, характеристики, ссылку. Запрос пиши так, как товар называется в каталоге (бренд, модель, по-русски или латиницей).',
+        'Подробности о товарах: характеристики, состояние Б/У, описание. Список всех товаров с ценами уже есть в подсказке — вызывай, когда нужны детали или сравнение.',
       parameters: {
         type: 'object',
         properties: {
@@ -59,19 +246,19 @@ function tools(behavior: BotBehavior): ToolDef[] {
     list.push({
       name: 'create_order',
       description:
-        'Оформить заявку на товар. Оплата при получении. Нужны имя и телефон клиента и способ получения; для доставки — адрес. Перед вызовом подтверди с клиентом товар, количество и цену.',
+        'Оформить заявку на один товар. Оплата при получении. Нужны имя и телефон клиента и способ получения; для доставки — адрес (или геолокация из чата). Вызывай, когда клиент согласился и дал данные.',
       parameters: {
         type: 'object',
         properties: {
-          productId: { type: 'string' },
+          productId: { type: 'string', description: 'ID товара из каталога в подсказке' },
           quantity: { type: 'integer', minimum: 1 },
           customerName: { type: 'string' },
-          customerPhone: { type: 'string', description: 'Телефон, например +79991234567' },
+          customerPhone: { type: 'string', description: 'Телефон, например +996555123456' },
           deliveryType: { type: 'string', enum: ['pickup', 'delivery'] },
-          address: { type: 'string' },
+          address: { type: 'string', description: 'Адрес доставки или ссылка на геолокацию из чата' },
           desiredDate: { type: 'string', description: 'YYYY-MM-DD, если клиент назвал' },
           desiredTime: { type: 'string', description: 'HH:MM, если клиент назвал' },
-          agreedPrice: { type: 'integer', description: 'Цена за штуку, если договорились о скидке' },
+          agreedPrice: { type: 'integer', description: 'Цена за штуку числом, если договорились о скидке' },
           comment: { type: 'string' },
         },
         required: ['productId', 'quantity', 'customerName', 'customerPhone', 'deliveryType'],
@@ -82,7 +269,7 @@ function tools(behavior: BotBehavior): ToolDef[] {
     list.push({
       name: 'handoff_to_manager',
       description:
-        'Передать разговор живому менеджеру: клиент просит человека, жалоба, сложный вопрос, нет нужных данных, trade-in-оценка. После этого бот в чате замолкает.',
+        'Передать разговор живому менеджеру: клиент прямо просит человека, жалоба, возврат/гарантийный случай, оценка trade-in, вопрос, на который в данных нет ответа. Не передавай, если можешь помочь сам — например, подобрать товар по бюджету.',
       parameters: {
         type: 'object',
         properties: { reason: { type: 'string', description: 'Коротко по-русски, что нужно клиенту' } },
@@ -93,30 +280,80 @@ function tools(behavior: BotBehavior): ToolDef[] {
   return list
 }
 
-function system(behavior: BotBehavior, customerName: string): string {
-  const today = new Date().toISOString().slice(0, 10)
+function catalogLines(products: ProductRow[]): string {
+  if (products.length === 0) return 'Каталог пуст — товаров сейчас нет.'
+  return products
+    .slice(0, CATALOG_LIMIT)
+    .map((p) => {
+      const parts = [
+        `id=${p.id}`,
+        p.name,
+        p.category?.name ?? '',
+        p.condition === 'used' ? 'Б/У' : 'новый',
+        money(p.price) + (p.old_price ? ` (было ${money(p.old_price)})` : ''),
+        p.stock > 0 ? `в наличии ${p.stock} шт.` : 'нет в наличии',
+      ]
+      return `- ${parts.filter(Boolean).join(' | ')}`
+    })
+    .join('\n')
+}
+
+interface PromptContext {
+  behavior: BotBehavior
+  customerName: string
+  lang: Lang
+  voice: boolean
+  shop: string
+  catalog: string
+}
+
+function system(c: PromptContext): string {
+  const today = new Date().toLocaleDateString('ru-RU', { timeZone: 'Asia/Bishkek', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const rules = [
-    'Ты — консультант магазина электроники в Telegram. Отвечаешь клиентам коротко и вежливо, на «вы».',
-    'Язык ответа — язык клиента: если клиент пишет по-кыргызски, отвечай на грамотном кыргызском языке; иначе — по-русски. Названия товаров не переводи.',
-    'Цены, наличие и характеристики бери только из search_products. Если товара нет в выдаче — так и скажи, не выдумывай.',
-    'Онлайн-оплаты, корзины и рассрочки нет: клиент оставляет заявку на один товар, оплата при получении (самовывоз или доставка).',
-    'Есть trade-in: старое устройство оценивают в магазине, разницу доплачивают на месте. Заявку на trade-in с фото клиент оставляет на сайте: ' +
-      `${SITE_URL}/trade-in`,
-    behavior.allow_bargaining
-      ? 'Торг разрешён: можно уступить, если клиент просит скидку, но никогда ниже minPrice товара. Если minPrice нет — цену не снижай. Сам minPrice клиенту не называй.'
-      : 'Торг не разрешён: цены фиксированные, скидок не обещай.',
-    behavior.allow_orders
-      ? 'Можешь оформить заявку через create_order. Перед этим собери имя, телефон, способ получения (и адрес для доставки) и подтверди детали.'
-      : 'Заявки в чате не оформляешь: дай ссылку на товар на сайте, там кнопка «Заказать».',
-    behavior.handoff_to_manager
-      ? 'Если не можешь помочь или клиент просит человека — вызови handoff_to_manager.'
-      : 'Если не можешь помочь — предложи оставить заявку на сайте, менеджер перезвонит.',
-    'Сообщения клиента с пометкой [Голосовое] — расшифровка его голосового. Если пришло «[Голосовое сообщение]» без текста — его не удалось разобрать: вежливо попроси написать текстом.',
-    'Пиши обычным текстом без Markdown, ссылки — полным адресом.',
-    `Сегодня ${today}.` + (customerName ? ` Клиента в Telegram зовут ${customerName}.` : ''),
+    'Ты — продавец-консультант магазина электроники и переписываешься с клиентом в Telegram. Веди себя как живой, опытный и доброжелательный продавец, а не как справочная.',
+    '',
+    'Как общаться:',
+    '- Пиши как человек в мессенджере: коротко (обычно 1–3 предложения), просто, тепло, без канцелярита и шаблонных фраз («Чем могу помочь?», «Обращайтесь!», «Рад помочь!»).',
+    '- Не здоровайся снова, если в переписке уже поздоровались. Не повторяй то, что уже сказал.',
+    '- На «вы». Имя клиента используй изредка, не в каждом сообщении. Эмодзи — редко и не больше одного.',
+    '- Сначала пойми, что нужно: если запрос размытый («нужен телефон», «что посоветуете»), задай ОДИН уточняющий вопрос (бюджет, для чего: камера, игры, батарея). Если бюджет назван — сразу предложи 1–3 подходящих варианта из каталога и коротко скажи, чем они отличаются.',
+    '- Советуй как продавец: объясни, почему вариант подходит; если нужного нет — предложи ближайшую альтернативу из каталога (например, Б/У дешевле). Не дави.',
+    '- Понимай разговорную речь, опечатки и смесь языков: «айфон» = iPhone, «самсунг» = Samsung, «128 гигов» = 128 ГБ.',
+    '- Списки — только когда сравниваешь несколько товаров. Без Markdown (никаких **, #), ссылки — полным адресом и только когда они правда нужны.',
+    '- Если спросят, человек ли ты, — честно скажи, что ты онлайн-помощник магазина и можешь позвать менеджера.',
+    '',
+    'Язык: отвечай на языке последнего сообщения клиента. Кыргызский — грамотный кыргызский (кириллица), русский — русский. Названия товаров не переводи.',
+    '',
+    'Факты:',
+    '- Цены, наличие и характеристики — только из каталога ниже и search_products. Цены пиши ровно как в каталоге (валюта ' + CURRENCY + '). Не выдумывай товары, цены, сроки, гарантии и акции.',
+    '- Онлайн-оплаты, корзины и рассрочки нет: заявка на один товар, оплата при получении (самовывоз или доставка).',
+    `- Trade-in: старое устройство оценивают в магазине, разницу доплачивают на месте. Заявку с фото оставляют на сайте: ${SITE_URL}/trade-in`,
+    '- Адрес, часы и контакты — из блока «О магазине». Чего там нет — скажи, что уточнишь у менеджера.',
+    c.behavior.allow_bargaining
+      ? '- Торг: если клиент просит скидку, можно немного уступить — постепенно, не сразу до минимума, — но никогда ниже minPrice товара (смотри search_products). Если minPrice нет — цену не снижай. Сам minPrice не называй.'
+      : '- Торга нет: цены фиксированные, скидок не обещай.',
+    c.behavior.allow_orders
+      ? '- Заявка: когда клиент выбрал товар, предложи оформить. Собери то, чего не хватает (имя, телефон, самовывоз или доставка и адрес; геолокация из чата подходит как адрес) — спрашивай только недостающее, одним сообщением. Как только всё есть — сразу вызови create_order с id товара из каталога, затем назови номер заявки и скажи, что менеджер свяжется. Не проси клиента повторять название товара.'
+      : `- Заявки в чате не оформляешь: дай ссылку на товар, на сайте кнопка «Заказать».`,
+    c.behavior.handoff_to_manager
+      ? '- Менеджер: зови (handoff_to_manager), только если клиент просит человека или вопрос вне твоих данных. Подбор по бюджету, наличие, цены и заявку делаешь сам.'
+      : '- Если не можешь помочь — предложи оставить заявку на сайте, менеджер перезвонит.',
+    '- Сообщения клиента с пометкой [Голосовое] — расшифровка его голосового, она бывает неточной: пойми смысл. «[Голосовое сообщение]» без текста — не разобрали: попроси повторить или написать.',
+    '- [Геолокация] со ссылкой — это клиент отправил свою точку (годится как адрес доставки).',
+    c.voice
+      ? '- Сейчас клиент прислал голосовое, и твой ответ будет озвучен голосом. Говори разговорно, как по телефону: без списков, ссылок и скобок, 1–3 предложения.'
+      : '',
+    '',
+    `Сегодня ${today}.` + (c.customerName ? ` Имя клиента в Telegram: ${c.customerName}.` : ''),
+    '',
+    'О магазине:',
+    c.shop,
+    '',
+    'Каталог сейчас (все товары; детали — через search_products):',
+    c.catalog,
   ]
-  const extra = behavior.ai_instructions.trim()
-  return rules.join('\n') + (extra ? `\n\nУказания магазина:\n${extra}` : '')
+  const extra = c.behavior.ai_instructions.trim()
+  return rules.filter((line) => line !== '').join('\n') + (extra ? `\n\nУказания владельца магазина:\n${extra}` : '')
 }
 
 async function history(chatId: string): Promise<ChatMessage[]> {
@@ -129,53 +366,24 @@ async function history(chatId: string): Promise<ChatMessage[]> {
   const rows = ((data ?? []) as { sender: string; text: string }[]).reverse()
   const messages: ChatMessage[] = []
   for (const row of rows) {
+    const text = row.text.startsWith(VOICE_MARK) ? row.text.slice(VOICE_MARK.length) : row.text
     if (row.sender === 'customer') {
-      messages.push({ role: 'user', text: row.text })
+      // Несколько сообщений клиента подряд — одним блоком (так пишут в мессенджерах).
+      const last = messages[messages.length - 1]
+      if (last?.role === 'user') last.text += `\n${text}`
+      else messages.push({ role: 'user', text })
     } else {
       if (messages.length === 0) continue // первым должен быть клиент
-      messages.push({ role: 'assistant', text: row.sender === 'manager' ? `[Менеджер] ${row.text}` : row.text })
+      const content = row.sender === 'manager' ? `[Менеджер] ${text}` : text
+      const last = messages[messages.length - 1]
+      if (last?.role === 'assistant') last.text += `\n${content}`
+      else messages.push({ role: 'assistant', text: content })
     }
   }
   return messages
 }
 
-async function searchProducts(input: { query?: string; condition?: string }, bargaining: boolean) {
-  const columns = `id, name, slug, brand, description, condition, used_info, price, old_price, ${
-    bargaining ? 'min_price, ' : ''
-  }stock, specs, category:categories!inner(name, is_active)`
-  let query = adminDb()
-    .from('products')
-    .select(columns)
-    .eq('is_active', true)
-    .eq('category.is_active', true)
-    .order('created_at', { ascending: false })
-    .limit(15)
-  const text = (input.query ?? '').trim().replace(/[%,()]/g, ' ')
-  if (text) {
-    const words = text.split(/\s+/).filter(Boolean).slice(0, 4)
-    for (const word of words) query = query.or(`name.ilike.%${word}%,brand.ilike.%${word}%`)
-  }
-  if (input.condition === 'new' || input.condition === 'used') query = query.eq('condition', input.condition)
-  const { data, error } = await query
-  if (error) throw error
-  return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
-    id: row.id,
-    name: row.name,
-    brand: row.brand,
-    category: (row.category as { name: string } | null)?.name,
-    condition: row.condition === 'used' ? 'Б/У' : 'новый',
-    usedInfo: row.used_info ?? undefined,
-    price: row.price,
-    // Цена до скидки: можно сказать клиенту «сейчас со скидкой».
-    oldPrice: row.old_price ?? undefined,
-    minPrice: bargaining ? (row.min_price ?? undefined) : undefined,
-    stock: row.stock,
-    inStock: Number(row.stock) > 0,
-    specs: row.specs,
-    description: String(row.description ?? '').slice(0, 400),
-    url: `${SITE_URL}/product/${row.slug}`,
-  }))
-}
+// ---------- Действия ----------
 
 interface OrderInput {
   productId: string
@@ -190,33 +398,36 @@ interface OrderInput {
   comment?: string
 }
 
-async function createOrder(input: OrderInput, chat: ChatInfo, bargaining: boolean) {
+async function createOrder(input: OrderInput, chat: ChatInfo, products: ProductRow[], bargaining: boolean) {
   const db = adminDb()
-  const { data: product } = await db
-    .from('products')
-    .select('price, min_price')
-    .eq('id', input.productId)
-    .maybeSingle()
-  if (!product) return { error: 'Товар не найден' }
+  const found = resolveProduct(products, input.productId)
+  if (!found) return { error: 'Товар не найден. Возьми id из каталога в подсказке.' }
+  const { data: product } = await db.from('products').select('id, price, min_price').eq('id', found.id).maybeSingle()
+  if (!product) return { error: 'Товар не найден. Возьми id из каталога в подсказке.' }
 
   const notes: string[] = []
-  if (input.agreedPrice !== undefined && input.agreedPrice !== product.price) {
+  const agreed = input.agreedPrice === undefined ? undefined : Math.round(Number(input.agreedPrice))
+  if (agreed !== undefined && Number.isFinite(agreed) && agreed !== product.price) {
     const floor = product.min_price ?? product.price
-    if (!bargaining || input.agreedPrice < floor) {
+    if (!bargaining || agreed < floor) {
       return { error: 'Такую цену дать нельзя. Предложите клиенту цену не ниже допустимой.' }
     }
-    notes.push(`Цена по договорённости в Telegram: ${input.agreedPrice} ₽ за шт. (на сайте ${product.price} ₽)`)
+    notes.push(`Цена по договорённости в Telegram: ${money(agreed)} за шт. (на сайте ${money(product.price)})`)
   }
   if (input.comment?.trim()) notes.push(input.comment.trim())
 
   const phone = String(input.customerPhone ?? '').replace(/[^\d+]/g, '')
+  if (phone.replace(/\D/g, '').length < 9) return { error: 'Нужен полный номер телефона клиента.' }
+  if (input.deliveryType === 'delivery' && !input.address?.trim()) {
+    return { error: 'Для доставки нужен адрес или геолокация.' }
+  }
   const { data, error } = await db.rpc('create_order', {
-    p_product_id: input.productId,
-    p_quantity: input.quantity,
-    p_customer_name: input.customerName,
+    p_product_id: product.id,
+    p_quantity: Math.max(1, Math.round(Number(input.quantity) || 1)),
+    p_customer_name: String(input.customerName ?? '').trim(),
     p_customer_phone: phone,
-    p_delivery_type: input.deliveryType,
-    p_address: input.address ?? '',
+    p_delivery_type: input.deliveryType === 'delivery' ? 'delivery' : 'pickup',
+    p_address: input.address?.trim() ?? '',
     p_desired_date: /^\d{4}-\d{2}-\d{2}$/.test(input.desiredDate ?? '') ? input.desiredDate : null,
     p_desired_time: /^\d{2}:\d{2}$/.test(input.desiredTime ?? '') ? input.desiredTime : null,
     p_comment: notes.join('\n').slice(0, 1000),
@@ -225,7 +436,7 @@ async function createOrder(input: OrderInput, chat: ChatInfo, bargaining: boolea
   if (error) return { error: error.message }
   const row = (Array.isArray(data) ? data[0] : data) as { order_id: string; order_number: number }
   await db.from('bot_chats').update({ order_id: row.order_id, customer_phone: phone }).eq('id', chat.id)
-  return { ok: true, orderNumber: row.order_number, payment: 'при получении' }
+  return { ok: true, orderNumber: row.order_number, product: found.name, payment: 'при получении' }
 }
 
 async function handoff(chat: ChatInfo, reason: string) {
@@ -233,16 +444,60 @@ async function handoff(chat: ChatInfo, reason: string) {
     .from('bot_chats')
     .update({ mode: 'manager', handoff_reason: String(reason || 'Нужен менеджер').slice(0, 300) })
     .eq('id', chat.id)
-  return { ok: true, note: 'Менеджер подключится к чату. Сообщи клиенту, что передал вопрос.' }
+  return { ok: true, note: 'Менеджер подключится к чату. Коротко и по-человечески скажи клиенту, что позвал менеджера.' }
 }
 
-/** Текст для озвучки: без ссылок — их клиент увидит в текстовом сообщении. */
+// ---------- Отправка ----------
+
+const URL_RE = /https?:\/\/\S+/g
+
+/** Убрать Markdown, если модель всё же его написала. */
+function plain(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$1 $2')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+/** Текст для озвучки: без ссылок и эмодзи, «₽» — словом. */
 function speakable(text: string): string {
-  return text.replace(/https?:\/\/\S+/g, '').replace(/[ \t]+\n/g, '\n').trim()
+  return text
+    .replace(URL_RE, '')
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/(\d)\s*₽/g, '$1 рублей')
+    .replace(/^\s*[-•]\s*/gm, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+/** «Печатает…» / «записывает голосовое…», пока бот думает (Telegram держит статус ~5 с). */
+function keepTyping(token: string, chatId: number, action: 'typing' | 'record_voice'): () => void {
+  let stopped = false
+  const send = () => {
+    if (!stopped) void tg(token, 'sendChatAction', { chat_id: chatId, action }).catch(() => undefined)
+  }
+  send()
+  const timer = setInterval(send, 4500)
+  return () => {
+    stopped = true
+    clearInterval(timer)
+  }
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** Пауза «как у человека»: чем длиннее ответ, тем дольше печатает (но не слишком). */
+function typingDelay(text: string, elapsedMs: number): number {
+  const wanted = Math.min(4000, 600 + text.length * 25)
+  return Math.max(0, wanted - elapsedMs)
 }
 
 export interface ReplyOptions {
-  /** Клиент прислал голосовое — ответить ещё и голосом. */
+  /** Клиент прислал голосовое — ответить голосом. */
   voice?: boolean
 }
 
@@ -258,11 +513,24 @@ export async function replyWithAi(
   options: ReplyOptions = {},
 ): Promise<void> {
   const db = adminDb()
+  const startedAt = Date.now()
+  const wantVoice = Boolean(options.voice && ai.settings.voice_replies)
+  const stopTyping = keepTyping(token, chat.telegram_chat_id, wantVoice ? 'record_voice' : 'typing')
+  let lang: Lang = 'ru'
   try {
     const messages = await history(chat.id)
     if (messages.length === 0) return
     const lastCustomer = [...messages].reverse().find((m) => m.role === 'user')
-    const lang = lastCustomer && looksKyrgyz(lastCustomer.text) ? 'ky' : 'ru'
+    lang = lastCustomer && looksKyrgyz(lastCustomer.text) ? 'ky' : 'ru'
+    const [products, shop] = await Promise.all([loadProducts(behavior.allow_bargaining), shopInfo(lang)])
+    const systemPrompt = system({
+      behavior,
+      customerName: chat.customer_name,
+      lang,
+      voice: wantVoice,
+      shop,
+      catalog: catalogLines(products),
+    })
     const toolList = tools(behavior)
     let reply = ''
     let handedOff = false
@@ -272,10 +540,10 @@ export async function replyWithAi(
         provider: ai.settings.bot_provider,
         apiKey: ai.key,
         model: ai.settings.bot_model,
-        system: system(behavior, chat.customer_name),
+        system: systemPrompt,
         tools: toolList,
         messages,
-        effort: 'low',
+        effort: 'medium',
         maxTokens: 8000,
       })
       if (response.stop === 'refusal') break
@@ -289,9 +557,12 @@ export async function replyWithAi(
         try {
           const input = call.input
           if (call.name === 'search_products') {
-            result = await searchProducts(input as { query?: string }, behavior.allow_bargaining)
+            const found = searchIn(products, String(input.query ?? ''), input.condition as string | undefined)
+            result = found.length
+              ? found.map((p) => productCard(p, behavior.allow_bargaining, true))
+              : { found: 0, note: 'По запросу ничего нет. Предложи похожее из каталога в подсказке.' }
           } else if (call.name === 'create_order' && behavior.allow_orders) {
-            result = await createOrder(input as unknown as OrderInput, chat, behavior.allow_bargaining)
+            result = await createOrder(input as unknown as OrderInput, chat, products, behavior.allow_bargaining)
           } else if (call.name === 'handoff_to_manager' && behavior.handoff_to_manager) {
             result = await handoff(chat, String(input.reason ?? ''))
             handedOff = true
@@ -308,17 +579,26 @@ export async function replyWithAi(
       reply = ''
     }
 
+    reply = plain(reply)
     if (!reply) {
       if (!handedOff) await handoff(chat, 'Бот не смог ответить — ответьте клиенту')
       reply = FALLBACK_REPLY[lang]
     }
 
-    if (options.voice && ai.settings.voice_replies) {
+    await sleep(typingDelay(reply, Date.now() - startedAt))
+
+    // На голосовое — только голос. Ссылки озвучить нельзя — они в подписи к голосовому.
+    if (wantVoice) {
       try {
         const audio = await synthesize(ai.settings, speakable(reply))
-        if (audio) await sendTelegramVoice(token, chat.telegram_chat_id, audio)
+        if (audio) {
+          const links = [...new Set(reply.match(URL_RE) ?? [])].join('\n').slice(0, 1000)
+          await sendTelegramVoice(token, chat.telegram_chat_id, audio, links || undefined)
+          await db.rpc('bot_record_outgoing', { p_chat_id: chat.id, p_sender: 'bot', p_text: VOICE_MARK + reply })
+          return
+        }
       } catch (voiceError) {
-        console.error('bot voice reply failed', voiceError) // текст всё равно уйдёт
+        console.error('bot voice reply failed', voiceError) // ответим текстом
       }
     }
     await tg(token, 'sendMessage', { chat_id: chat.telegram_chat_id, text: reply.slice(0, 4096) })
@@ -326,5 +606,11 @@ export async function replyWithAi(
   } catch (error) {
     console.error('bot ai reply failed', error)
     await handoff(chat, 'ИИ не ответил — ответьте клиенту').catch(() => undefined)
+    // Клиент не должен остаться в тишине.
+    await tg(token, 'sendMessage', { chat_id: chat.telegram_chat_id, text: FALLBACK_REPLY[lang] })
+      .then(() => db.rpc('bot_record_outgoing', { p_chat_id: chat.id, p_sender: 'bot', p_text: FALLBACK_REPLY[lang] }))
+      .catch(() => undefined)
+  } finally {
+    stopTyping()
   }
 }
