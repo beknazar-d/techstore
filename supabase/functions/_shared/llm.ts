@@ -57,6 +57,8 @@ export interface StepOptions {
   tools: ToolDef[]
   messages: ChatMessage[]
   effort: 'low' | 'medium' | 'high'
+  /** Длина ответа (OpenAI gpt-5+). Не задано — по умолчанию модели. */
+  verbosity?: 'low' | 'medium' | 'high'
   maxTokens?: number
 }
 
@@ -233,20 +235,29 @@ function toOpenAi(system: string, messages: ChatMessage[]): Json[] {
 }
 
 async function stepOpenAi(o: StepOptions): Promise<StepResult> {
-  const data = await postJson(
-    'openai',
-    'https://api.openai.com/v1/chat/completions',
-    { authorization: `Bearer ${o.apiKey}` },
-    {
-      model: o.model,
-      messages: toOpenAi(o.system, o.messages),
-      tools: o.tools.map((t) => ({
-        type: 'function',
-        function: { name: t.name, description: t.description, parameters: t.parameters },
-      })),
-      max_completion_tokens: o.maxTokens ?? 16000,
-    },
-  )
+  const body: Json = {
+    model: o.model,
+    messages: toOpenAi(o.system, o.messages),
+    tools: o.tools.map((t) => ({
+      type: 'function',
+      function: { name: t.name, description: t.description, parameters: t.parameters },
+    })),
+    max_completion_tokens: o.maxTokens ?? 16000,
+  }
+  // Рассуждающие модели (gpt-5+, o-серия): глубина размышления и длина ответа.
+  // Без reasoning_effort модель думает «по умолчанию» и в боте отвечает поверхностно.
+  const reasoning = /^(gpt-([5-9]|\d{2})|o\d)/.test(o.model) && !/-chat/.test(o.model)
+  const tuned: Json = reasoning
+    ? { ...body, reasoning_effort: o.effort, ...(o.verbosity ? { verbosity: o.verbosity } : {}) }
+    : body
+  let data: Json
+  try {
+    data = await postJson('openai', 'https://api.openai.com/v1/chat/completions', { authorization: `Bearer ${o.apiKey}` }, tuned)
+  } catch (error) {
+    // Модель не знает этих параметров — повторяем без них, а не роняем ответ.
+    if (!reasoning || !(error instanceof LlmError) || error.status !== 400) throw error
+    data = await postJson('openai', 'https://api.openai.com/v1/chat/completions', { authorization: `Bearer ${o.apiKey}` }, body)
+  }
   const choice = (data.choices as Json[] | undefined)?.[0] ?? {}
   const message = (choice.message ?? {}) as Json
   const toolCalls = ((message.tool_calls as Json[] | undefined) ?? []).map((c) => {

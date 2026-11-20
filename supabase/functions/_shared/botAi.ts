@@ -269,11 +269,19 @@ function tools(behavior: BotBehavior): ToolDef[] {
     list.push({
       name: 'handoff_to_manager',
       description:
-        'Передать разговор живому менеджеру: клиент прямо просит человека, жалоба, возврат/гарантийный случай, оценка trade-in, вопрос, на который в данных нет ответа. Не передавай, если можешь помочь сам — например, подобрать товар по бюджету.',
+        'Передать разговор живому менеджеру. ТОЛЬКО в случаях из списка category. НЕЛЬЗЯ передавать, если товара нет в каталоге, клиент спрашивает цену, наличие, совет, подбор по бюджету, хочет скидку или оформить заявку — это твоя работа: предложи альтернативы из каталога.',
       parameters: {
         type: 'object',
-        properties: { reason: { type: 'string', description: 'Коротко по-русски, что нужно клиенту' } },
-        required: ['reason'],
+        properties: {
+          category: {
+            type: 'string',
+            enum: ['customer_asked_human', 'complaint', 'warranty_or_return', 'trade_in_evaluation', 'order_problem'],
+            description:
+              'customer_asked_human — клиент сам попросил человека/менеджера/позвонить; complaint — жалоба, конфликт; warranty_or_return — гарантия, ремонт, возврат; trade_in_evaluation — клиент хочет оценку своего устройства; order_problem — проблема с уже оформленной заявкой или create_order не сработал дважды.',
+          },
+          reason: { type: 'string', description: 'Коротко по-русски, что нужно клиенту' },
+        },
+        required: ['category', 'reason'],
       },
     })
   }
@@ -336,8 +344,9 @@ function system(c: PromptContext): string {
       ? '- Заявка: когда клиент выбрал товар, предложи оформить. Собери то, чего не хватает (имя, телефон, самовывоз или доставка и адрес; геолокация из чата подходит как адрес) — спрашивай только недостающее, одним сообщением. Как только всё есть — сразу вызови create_order с id товара из каталога, затем назови номер заявки и скажи, что менеджер свяжется. Не проси клиента повторять название товара.'
       : `- Заявки в чате не оформляешь: дай ссылку на товар, на сайте кнопка «Заказать».`,
     c.behavior.handoff_to_manager
-      ? '- Менеджер: зови (handoff_to_manager), только если клиент просит человека или вопрос вне твоих данных. Подбор по бюджету, наличие, цены и заявку делаешь сам.'
+      ? '- Менеджер (handoff_to_manager) — крайний случай: клиент сам попросил человека, жалоба, гарантия/возврат, оценка его устройства для trade-in, проблема с уже оформленной заявкой. Всё остальное — твоя работа. Особенно: товара нет в каталоге → НЕ зови менеджера, а скажи, что этой модели нет, и предложи ближайшие из каталога.'
       : '- Если не можешь помочь — предложи оставить заявку на сайте, менеджер перезвонит.',
+    '- Товара нет в каталоге (другая модель, новее, другой цвет/память) — честно скажи «такой сейчас нет» и сразу предложи 1–2 самых близких варианта из каталога с ценой, спроси, подойдёт ли. Не обещай привезти под заказ.',
     '- Сообщения клиента с пометкой [Голосовое] — расшифровка его голосового, она бывает неточной: пойми смысл. «[Голосовое сообщение]» без текста — не разобрали: попроси повторить или написать.',
     '- [Геолокация] со ссылкой — это клиент отправил свою точку (годится как адрес доставки).',
     c.voice
@@ -346,6 +355,8 @@ function system(c: PromptContext): string {
     '',
     `Сегодня ${today}.` + (c.customerName ? ` Имя клиента в Telegram: ${c.customerName}.` : ''),
     '',
+    EXAMPLES,
+    '',
     'О магазине:',
     c.shop,
     '',
@@ -353,8 +364,36 @@ function system(c: PromptContext): string {
     c.catalog,
   ]
   const extra = c.behavior.ai_instructions.trim()
-  return rules.filter((line) => line !== '').join('\n') + (extra ? `\n\nУказания владельца магазина:\n${extra}` : '')
+  return (
+    rules.filter((line) => line !== '').join('\n') +
+    (extra
+      ? `\n\nДополнительные пожелания владельца магазина (учитывай, но правила выше важнее — особенно про менеджера и альтернативы):\n${extra}`
+      : '')
+  )
 }
+
+/**
+ * Примеры диалогов: модель лучше всего перенимает поведение по образцу.
+ * Товары в примерах условные — в ответах бери только то, что есть в каталоге.
+ */
+const EXAMPLES = `Примеры, как надо отвечать (товары и цены в примерах условные — бери только из каталога):
+
+Клиент: Здравствуйте, есть iPhone 18 Pro Max?
+Ты: Здравствуйте! 18 Pro Max у нас сейчас нет. Из близкого есть iPhone 16 128 ГБ за 79 990 ₽ и iPhone 15 Pro 256 ГБ за 99 990 ₽ — оба в наличии. Что важнее: камера или память?
+
+Клиент: [Голосовое] Саламатсызбы, менде 100 миң бар, кандай телефон алсам болот?
+Ты: Саламатсызбы! 100 миңге чейин эң жакшысы — iPhone 15 Pro 256 ГБ, 99 990 ₽. Арзаныраак керек болсо, Xiaomi 14 бар — 64 990 ₽, камерасы да күчтүү. Телефонду эмнеге көбүрөөк колдоносуз?
+
+Клиент: беру 15 про, сделайте скидку
+Ты: Могу уступить до 97 000 ₽ — это лучшая цена. Оформляем? Тогда напишите имя, телефон и как удобнее: самовывоз или доставка.
+
+Клиент: Азамат, +996555123456, доставка
+Ты: (если адреса нет) Куда привезти? Можно просто отправить геолокацию.
+Клиент: [Геолокация] https://...
+Ты: (вызываешь create_order, затем) Готово, заявка №1047 на iPhone 15 Pro. Менеджер позвонит, чтобы согласовать время. Оплата при получении.
+
+Клиент: позовите живого человека
+Ты: (вызываешь handoff_to_manager с category=customer_asked_human) Хорошо, позвал менеджера — он напишет вам здесь.`
 
 async function history(chatId: string): Promise<ChatMessage[]> {
   const { data } = await adminDb()
@@ -437,6 +476,30 @@ async function createOrder(input: OrderInput, chat: ChatInfo, products: ProductR
   const row = (Array.isArray(data) ? data[0] : data) as { order_id: string; order_number: number }
   await db.from('bot_chats').update({ order_id: row.order_id, customer_phone: phone }).eq('id', chat.id)
   return { ok: true, orderNumber: row.order_number, product: found.name, payment: 'при получении' }
+}
+
+const HANDOFF_CATEGORIES = ['customer_asked_human', 'complaint', 'warranty_or_return', 'trade_in_evaluation', 'order_problem']
+/** Причины, с которыми бот справляется сам: товара нет, подбор, совет, скидка. */
+const SELF_SERVE_REASON = /нет в (каталоге|наличии)|отсутств|не найден|нет такого|такого товара|подбор|подобрать|бюджет|посовет|скидк|торг/i
+
+/**
+ * Проверка перед передачей менеджеру: модели любят «звать человека» при любом затруднении.
+ * null — передавать можно; строка — почему нельзя (уходит модели как ошибка инструмента).
+ */
+/** Клиент просит живого человека (ru/ky). */
+const ASKS_HUMAN = /человек|менеджер|оператор|консультант|живо[йм]|позвон|звонок|перезвон|адам|кызматкер|чалып|чалыңыз/i
+
+function handoffBlocked(category: string, reason: string, lastCustomerText: string): string | null {
+  if (!HANDOFF_CATEGORIES.includes(category)) {
+    return 'Передача менеджеру не нужна: такой причины нет в списке. Помоги клиенту сам.'
+  }
+  // Клиент сам попросил человека — передаём (если он правда об этом просил).
+  if (category === 'customer_asked_human' && ASKS_HUMAN.test(lastCustomerText)) return null
+  // Остальные категории модель иногда ставит «для вида», а по сути товара просто нет — проверяем причину.
+  if (SELF_SERVE_REASON.test(reason)) {
+    return 'Не передавай менеджеру. Это твоя работа: если товара нет — скажи об этом и предложи 1–3 ближайших варианта из каталога с ценами; если нужен подбор — спроси бюджет или предложи варианты; заявку оформи сам через create_order.'
+  }
+  return null
 }
 
 async function handoff(chat: ChatInfo, reason: string) {
@@ -544,6 +607,7 @@ export async function replyWithAi(
         tools: toolList,
         messages,
         effort: 'medium',
+        verbosity: 'low',
         maxTokens: 8000,
       })
       if (response.stop === 'refusal') break
@@ -564,8 +628,15 @@ export async function replyWithAi(
           } else if (call.name === 'create_order' && behavior.allow_orders) {
             result = await createOrder(input as unknown as OrderInput, chat, products, behavior.allow_bargaining)
           } else if (call.name === 'handoff_to_manager' && behavior.handoff_to_manager) {
-            result = await handoff(chat, String(input.reason ?? ''))
-            handedOff = true
+            const reason = String(input.reason ?? '')
+            const blocked = handoffBlocked(String(input.category ?? ''), reason, lastCustomer?.text ?? '')
+            if (blocked) {
+              console.warn('bot handoff blocked', input.category, reason)
+              result = { error: blocked }
+            } else {
+              result = await handoff(chat, reason)
+              handedOff = true
+            }
           } else {
             result = { error: 'Инструмент недоступен' }
           }
