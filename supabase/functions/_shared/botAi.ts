@@ -525,12 +525,15 @@ function plain(text: string): string {
     .trim()
 }
 
-/** Текст для озвучки: без ссылок и эмодзи, «₽» — словом. */
-function speakable(text: string): string {
+/** Текст для озвучки: без ссылок и эмодзи, «₽», «ГБ» — словами на языке ответа (не русские слова в кыргызской речи). */
+function speakable(text: string, lang: Lang): string {
   return text
     .replace(URL_RE, '')
     .replace(/\p{Extended_Pictographic}/gu, '')
-    .replace(/(\d)\s*₽/g, '$1 рублей')
+    // «79 990 ₽» → «79990 рубль»: цельное число озвучивается одним числом, а не «79» и «990».
+    .replace(/(\d{1,3}(?:[  ]\d{3})*)\s*₽/g, (_m, num: string) => `${num.replace(/[  ]/g, '')} ${lang === 'ky' ? 'рубль' : 'рублей'}`)
+    .replace(/(\d)\s*(ГБ|Гб|GB)(?![\p{L}])/gu, '$1 гигабайт')
+    .replace(/(\d)\s*(ТБ|Тб|TB)(?![\p{L}])/gu, '$1 терабайт')
     .replace(/^\s*[-•]\s*/gm, '')
     .replace(/[ \t]+\n/g, '\n')
     .replace(/\s{2,}/g, ' ')
@@ -661,7 +664,9 @@ export async function replyWithAi(
     // На голосовое — только голос. Ссылки озвучить нельзя — они в подписи к голосовому.
     if (wantVoice) {
       try {
-        const audio = await synthesize(ai.settings, speakable(reply))
+        // Язык озвучки — язык ответа (бот отвечает на языке клиента).
+        const voiceLang: Lang = looksKyrgyz(reply) ? 'ky' : lang
+        const audio = await synthesize(ai.settings, speakable(reply, voiceLang), voiceLang)
         if (audio) {
           const links = [...new Set(reply.match(URL_RE) ?? [])].join('\n').slice(0, 1000)
           await sendTelegramVoice(token, chat.telegram_chat_id, audio, links || undefined)

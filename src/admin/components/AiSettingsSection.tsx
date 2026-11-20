@@ -301,6 +301,8 @@ function VoiceForm({ initial }: { initial: AiSettings }) {
 
   const hasKey = Boolean(initial.keyHints[voiceProvider])
   const elevenModelLabels: Record<string, string> = {
+    eleven_v4: t.voiceModelV4,
+    eleven_v4_turbo: t.voiceModelV4Turbo,
     eleven_v3: t.voiceModelV3,
     eleven_multilingual_v2: t.voiceModelMultilingual,
     eleven_flash_v2_5: t.voiceModelFlash,

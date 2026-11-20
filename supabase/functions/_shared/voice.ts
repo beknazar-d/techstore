@@ -89,8 +89,32 @@ export async function transcribe(settings: AiSettingsRow, audio: Blob): Promise<
   return String(data.text ?? '').trim()
 }
 
-/** Озвучить ответ (MP3). null — голос не подключён или для ElevenLabs не указан голос. */
-export async function synthesize(settings: AiSettingsRow, text: string): Promise<Blob | null> {
+/** Модели ElevenLabs, которые умеют кыргызский и принимают language_code. */
+const KY_MODELS = ['eleven_v4', 'eleven_v4_turbo', 'eleven_v3', 'eleven_v3_conversational']
+const FALLBACK_MODEL = 'eleven_v3'
+
+function elevenLabsTts(key: string, voiceId: string, model: string, text: string, lang: 'ru' | 'ky'): Promise<Response> {
+  return fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`, {
+    method: 'POST',
+    headers: { 'xi-api-key': key, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      text,
+      model_id: model,
+      // Без кода языка модель угадывает его сама и читает кыргызский с казахским/русским произношением.
+      // multilingual_v2 этот параметр не принимает.
+      ...(model === 'eleven_multilingual_v2' ? {} : { language_code: lang }),
+      // Числа и сокращения — словами на языке ответа.
+      apply_text_normalization: 'on',
+    }),
+    signal: AbortSignal.timeout(120_000),
+  })
+}
+
+/**
+ * Озвучить ответ (MP3) на языке lang. null — голос не подключён или для ElevenLabs не указан голос.
+ * Кыргызский ответ модели без кыргызского (multilingual, flash) озвучиваем через Eleven v3.
+ */
+export async function synthesize(settings: AiSettingsRow, text: string, lang: 'ru' | 'ky' = 'ru'): Promise<Blob | null> {
   const voice = await voiceKey(settings)
   if (!voice) return null
   const input = text.slice(0, MAX_TTS_CHARS)
@@ -99,15 +123,14 @@ export async function synthesize(settings: AiSettingsRow, text: string): Promise
   if (voice.provider === 'elevenlabs') {
     const voiceId = settings.elevenlabs_voice_id
     if (!voiceId) return null
-    response = await fetch(
-      `https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}?output_format=mp3_44100_128`,
-      {
-        method: 'POST',
-        headers: { 'xi-api-key': voice.key, 'content-type': 'application/json' },
-        body: JSON.stringify({ text: input, model_id: settings.elevenlabs_model || 'eleven_v3' }),
-        signal: AbortSignal.timeout(120_000),
-      },
-    )
+    let model = settings.elevenlabs_model || FALLBACK_MODEL
+    if (lang === 'ky' && !KY_MODELS.includes(model)) model = FALLBACK_MODEL
+    response = await elevenLabsTts(voice.key, voiceId, model, input, lang)
+    // Модель недоступна на тарифе или ещё не выпущена для ключа — пробуем проверенную v3.
+    if (!response.ok && response.status < 500 && model !== FALLBACK_MODEL) {
+      console.error('elevenlabs tts failed, retry with v3', model, response.status, await response.text())
+      response = await elevenLabsTts(voice.key, voiceId, FALLBACK_MODEL, input, lang)
+    }
   } else {
     response = await fetch('https://api.openai.com/v1/audio/speech', {
       method: 'POST',

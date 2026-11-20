@@ -62,7 +62,7 @@ const KEY_PATTERNS: Record<AiSecretProvider, RegExp> = {
 }
 
 export const OPENAI_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'nova', 'onyx', 'sage', 'shimmer', 'verse']
-export const ELEVENLABS_MODELS = ['eleven_v3', 'eleven_multilingual_v2', 'eleven_flash_v2_5']
+export const ELEVENLABS_MODELS = ['eleven_v4', 'eleven_v4_turbo', 'eleven_v3', 'eleven_multilingual_v2', 'eleven_flash_v2_5']
 
 const VOICE_ID_RE = /^[A-Za-z0-9_-]{5,64}$/
 const MAX_INSTRUCTIONS = 4000
