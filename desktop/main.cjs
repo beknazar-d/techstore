@@ -13,7 +13,7 @@ function createWindow() {
     height: 860,
     minWidth: 380,
     minHeight: 600,
-    title: 'Phone Market — админка',
+    title: 'A7 Store — админка',
     icon: path.join(__dirname, 'build', 'icon.png'),
     autoHideMenuBar: true,
     show: false,

@@ -1,6 +1,6 @@
 {
   "appId": "market.phone.admin",
-  "appName": "Phone Market Админка",
+  "appName": "A7 Store Админка",
   "webDir": "web",
   "android": {
     "allowMixedContent": false

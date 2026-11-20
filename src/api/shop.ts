@@ -27,7 +27,7 @@ interface ShopRow {
 
 /** Пока данные не загрузились (или база недоступна) — показываем это. */
 export const DEFAULT_SHOP_INFO: ShopInfo = {
-  name: 'Phone Market',
+  name: 'A7 Store',
   city: '',
   cityKy: '',
   address: '',

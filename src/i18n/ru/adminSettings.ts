@@ -175,14 +175,14 @@ export const adminSettings = {
   deviceNotifyUnsupported: 'Это устройство или браузер не умеет показывать уведомления.',
   deviceNotifyTest: 'Проверить',
   deviceNotifyTestSent: 'Отправлено — уведомление должно появиться',
-  deviceNotifyTestTitle: 'Phone Market',
+  deviceNotifyTestTitle: 'A7 Store',
   deviceNotifyTestBody: 'Уведомления работают. Так придёт новая заявка.',
   appTitle: 'Приложение для Android',
   appHint: 'Та же админка в приложении на телефоне: уведомления о новых заявках, вход тем же email и паролем.',
   appDownload: 'Скачать APK (4,5 МБ)',
   appStep1: 'Откройте эту страницу на телефоне и скачайте файл.',
   appStep2: 'Откройте скачанный файл и разрешите установку из этого источника, если телефон спросит.',
-  appStep3: 'Запустите «Phone Market Админка» и разрешите уведомления.',
+  appStep3: 'Запустите «A7 Store Админка» и разрешите уведомления.',
 }
 
 export type AdminSettingsMessages = typeof adminSettings
