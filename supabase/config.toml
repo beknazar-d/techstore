@@ -432,6 +432,10 @@ enabled = true
 [functions.telegram-webhook]
 verify_jwt = false
 
+# Wappi присылает вебхук без JWT — подлинность проверяется ключом ?key= в адресе.
+[functions.whatsapp-webhook]
+verify_jwt = false
+
 # Админ проверяется внутри функции (getUser + таблица admins).
 [functions.telegram-admin]
 verify_jwt = false

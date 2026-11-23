@@ -1,13 +1,14 @@
-// ИИ-ответы Telegram-бота клиентам. Вызывается из telegram-webhook в фоне.
+// ИИ-ответы бота клиентам в Telegram и WhatsApp. Вызывается из telegram-webhook и whatsapp-webhook в фоне.
 // Модель — та, что админ выбрал для бота (Claude, ChatGPT или Gemini).
 // Данные о товарах и магазине модель берёт только из базы (каталог в подсказке + инструменты), а не выдумывает.
 // Торг — не ниже min_price товара; заявку создаёт тот же RPC create_order, что и сайт.
 // Отвечает на языке клиента (русский или кыргызский); на голосовое — голосом.
 
-import { adminDb, tg } from './telegram.ts'
+import { adminDb } from './telegram.ts'
 import type { AiSettingsRow } from './ai.ts'
+import type { Channel } from './channels.ts'
 import { chatStep, type ChatMessage, type ToolDef, type ToolResult } from './llm.ts'
-import { sendTelegramVoice, synthesize } from './voice.ts'
+import { synthesize } from './voice.ts'
 
 export interface BotBehavior {
   ai_instructions: string
@@ -18,7 +19,6 @@ export interface BotBehavior {
 
 export interface ChatInfo {
   id: string
-  telegram_chat_id: number
   customer_name: string
 }
 
@@ -309,6 +309,8 @@ function catalogLines(products: ProductRow[]): string {
 interface PromptContext {
   behavior: BotBehavior
   customerName: string
+  /** «Telegram» или «WhatsApp» — где идёт переписка. */
+  channelName: string
   lang: Lang
   voice: boolean
   shop: string
@@ -318,7 +320,7 @@ interface PromptContext {
 function system(c: PromptContext): string {
   const today = new Date().toLocaleDateString('ru-RU', { timeZone: 'Asia/Bishkek', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
   const rules = [
-    'Ты — продавец-консультант магазина электроники и переписываешься с клиентом в Telegram. Веди себя как живой, опытный и доброжелательный продавец, а не как справочная.',
+    `Ты — продавец-консультант магазина электроники и переписываешься с клиентом в ${c.channelName}. Веди себя как живой, опытный и доброжелательный продавец, а не как справочная.`,
     '',
     'Как общаться:',
     '- Пиши как человек в мессенджере: коротко (обычно 1–3 предложения), просто, тепло, без канцелярита и шаблонных фраз («Чем могу помочь?», «Обращайтесь!», «Рад помочь!»).',
@@ -353,7 +355,7 @@ function system(c: PromptContext): string {
       ? '- Сейчас клиент прислал голосовое, и твой ответ будет озвучен голосом. Говори разговорно, как по телефону: без списков, ссылок и скобок, 1–3 предложения.'
       : '',
     '',
-    `Сегодня ${today}.` + (c.customerName ? ` Имя клиента в Telegram: ${c.customerName}.` : ''),
+    `Сегодня ${today}.` + (c.customerName ? ` Имя клиента в ${c.channelName}: ${c.customerName}.` : ''),
     '',
     EXAMPLES,
     '',
@@ -437,7 +439,13 @@ interface OrderInput {
   comment?: string
 }
 
-async function createOrder(input: OrderInput, chat: ChatInfo, products: ProductRow[], bargaining: boolean) {
+async function createOrder(
+  input: OrderInput,
+  chat: ChatInfo,
+  products: ProductRow[],
+  bargaining: boolean,
+  source: Channel['kind'],
+) {
   const db = adminDb()
   const found = resolveProduct(products, input.productId)
   if (!found) return { error: 'Товар не найден. Возьми id из каталога в подсказке.' }
@@ -451,7 +459,7 @@ async function createOrder(input: OrderInput, chat: ChatInfo, products: ProductR
     if (!bargaining || agreed < floor) {
       return { error: 'Такую цену дать нельзя. Предложите клиенту цену не ниже допустимой.' }
     }
-    notes.push(`Цена по договорённости в Telegram: ${money(agreed)} за шт. (на сайте ${money(product.price)})`)
+    notes.push(`Цена по договорённости в ${source === 'whatsapp' ? 'WhatsApp' : 'Telegram'}: ${money(agreed)} за шт. (на сайте ${money(product.price)})`)
   }
   if (input.comment?.trim()) notes.push(input.comment.trim())
 
@@ -470,7 +478,7 @@ async function createOrder(input: OrderInput, chat: ChatInfo, products: ProductR
     p_desired_date: /^\d{4}-\d{2}-\d{2}$/.test(input.desiredDate ?? '') ? input.desiredDate : null,
     p_desired_time: /^\d{2}:\d{2}$/.test(input.desiredTime ?? '') ? input.desiredTime : null,
     p_comment: notes.join('\n').slice(0, 1000),
-    p_source: 'telegram',
+    p_source: source,
   })
   if (error) return { error: error.message }
   const row = (Array.isArray(data) ? data[0] : data) as { order_id: string; order_number: number }
@@ -540,20 +548,6 @@ function speakable(text: string, lang: Lang): string {
     .trim()
 }
 
-/** «Печатает…» / «записывает голосовое…», пока бот думает (Telegram держит статус ~5 с). */
-function keepTyping(token: string, chatId: number, action: 'typing' | 'record_voice'): () => void {
-  let stopped = false
-  const send = () => {
-    if (!stopped) void tg(token, 'sendChatAction', { chat_id: chatId, action }).catch(() => undefined)
-  }
-  send()
-  const timer = setInterval(send, 4500)
-  return () => {
-    stopped = true
-    clearInterval(timer)
-  }
-}
-
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** Пауза «как у человека»: чем длиннее ответ, тем дольше печатает (но не слишком). */
@@ -572,7 +566,7 @@ export interface ReplyOptions {
  * клиент не остаётся без ответа.
  */
 export async function replyWithAi(
-  token: string,
+  channel: Channel,
   chat: ChatInfo,
   behavior: BotBehavior,
   ai: BotAi,
@@ -581,7 +575,7 @@ export async function replyWithAi(
   const db = adminDb()
   const startedAt = Date.now()
   const wantVoice = Boolean(options.voice && ai.settings.voice_replies)
-  const stopTyping = keepTyping(token, chat.telegram_chat_id, wantVoice ? 'record_voice' : 'typing')
+  const stopTyping = channel.typing(wantVoice)
   let lang: Lang = 'ru'
   try {
     const messages = await history(chat.id)
@@ -592,6 +586,7 @@ export async function replyWithAi(
     const systemPrompt = system({
       behavior,
       customerName: chat.customer_name,
+      channelName: channel.kind === 'whatsapp' ? 'WhatsApp' : 'Telegram',
       lang,
       voice: wantVoice,
       shop,
@@ -629,7 +624,7 @@ export async function replyWithAi(
               ? found.map((p) => productCard(p, behavior.allow_bargaining, true))
               : { found: 0, note: 'По запросу ничего нет. Предложи похожее из каталога в подсказке.' }
           } else if (call.name === 'create_order' && behavior.allow_orders) {
-            result = await createOrder(input as unknown as OrderInput, chat, products, behavior.allow_bargaining)
+            result = await createOrder(input as unknown as OrderInput, chat, products, behavior.allow_bargaining, channel.kind)
           } else if (call.name === 'handoff_to_manager' && behavior.handoff_to_manager) {
             const reason = String(input.reason ?? '')
             const blocked = handoffBlocked(String(input.category ?? ''), reason, lastCustomer?.text ?? '')
@@ -669,7 +664,7 @@ export async function replyWithAi(
         const audio = await synthesize(ai.settings, speakable(reply, voiceLang), voiceLang)
         if (audio) {
           const links = [...new Set(reply.match(URL_RE) ?? [])].join('\n').slice(0, 1000)
-          await sendTelegramVoice(token, chat.telegram_chat_id, audio, links || undefined)
+          await channel.sendVoice(audio, links || undefined)
           await db.rpc('bot_record_outgoing', { p_chat_id: chat.id, p_sender: 'bot', p_text: VOICE_MARK + reply })
           return
         }
@@ -677,13 +672,14 @@ export async function replyWithAi(
         console.error('bot voice reply failed', voiceError) // ответим текстом
       }
     }
-    await tg(token, 'sendMessage', { chat_id: chat.telegram_chat_id, text: reply.slice(0, 4096) })
+    await channel.sendText(reply)
     await db.rpc('bot_record_outgoing', { p_chat_id: chat.id, p_sender: 'bot', p_text: reply })
   } catch (error) {
     console.error('bot ai reply failed', error)
     await handoff(chat, 'ИИ не ответил — ответьте клиенту').catch(() => undefined)
     // Клиент не должен остаться в тишине.
-    await tg(token, 'sendMessage', { chat_id: chat.telegram_chat_id, text: FALLBACK_REPLY[lang] })
+    await channel
+      .sendText(FALLBACK_REPLY[lang])
       .then(() => db.rpc('bot_record_outgoing', { p_chat_id: chat.id, p_sender: 'bot', p_text: FALLBACK_REPLY[lang] }))
       .catch(() => undefined)
   } finally {

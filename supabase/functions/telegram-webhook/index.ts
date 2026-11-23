@@ -2,16 +2,16 @@
 // Сообщение сохраняется в bot_chats / bot_messages — админка видит его сразу (Realtime).
 //
 // На /start бот отвечает приветствием из настроек. Остальные сообщения:
-//   - ИИ включён и ключ Anthropic подключён, чат у бота → ответ ИИ (в фоне, Telegram не ждёт);
+//   - ИИ включён и ключ подключён, чат у бота → ответ ИИ (в фоне, Telegram не ждёт);
 //   - иначе сообщение передаётся менеджеру (чат в режиме «Ждёт менеджера»).
 //
 // Вход без JWT (verify_jwt = false в config.toml): Telegram не умеет его присылать.
 // Подлинность проверяем по заголовку X-Telegram-Bot-Api-Secret-Token.
 
 import { adminDb, botToken, safeEqual, tg, webhookSecret } from '../_shared/telegram.ts'
-import { aiSettings, botAiKey } from '../_shared/ai.ts'
-import { replyWithAi, type BotAi, type BotBehavior, type ChatInfo } from '../_shared/botAi.ts'
-import { downloadTelegramFile, transcribe } from '../_shared/voice.ts'
+import { telegramChannel } from '../_shared/channels.ts'
+import { answerAfterPause, HANDOFF_NO_AI, loadBotRuntime, reclaimFromManager } from '../_shared/botFlow.ts'
+import { downloadTelegramFile } from '../_shared/voice.ts'
 
 declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined
 
@@ -37,10 +37,6 @@ interface TgMessage {
   location?: { latitude: number; longitude: number }
 }
 
-const HANDOFF_NO_AI = 'Новое сообщение — ответьте клиенту'
-/** Менеджер писал в чат за это время — считаем, что он ведёт разговор, и бот не вмешивается. */
-const MANAGER_ACTIVE_MS = 2 * 60 * 60 * 1000
-
 /** Текст для переписки в админке, в том числе для фото, голосовых и т. п. */
 function describe(message: TgMessage): string {
   const caption = message.caption?.trim()
@@ -56,61 +52,6 @@ function describe(message: TgMessage): string {
     return `[Геолокация] https://yandex.ru/maps/?pt=${longitude},${latitude}&z=16`
   }
   return '[Сообщение]'
-}
-
-/** Клиент часто пишет несколькими сообщениями подряд — ждём и отвечаем один раз на все. */
-const BURST_MS = 3500
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-/**
- * Голосовое → расшифровка (видна менеджеру в «Чатах») → ответ ИИ, на голосовое — голосом.
- * Если за время паузы клиент дописал ещё сообщение — отвечать будет обработчик того сообщения
- * (он увидит всю переписку), а этот молчит.
- */
-async function answer(token: string, chat: ChatInfo, behavior: BotBehavior, ai: BotAi, message: TgMessage) {
-  const db = adminDb()
-  const receivedAt = Date.now()
-  const { data: own } = await db
-    .from('bot_messages')
-    .select('id, created_at')
-    .eq('chat_id', chat.id)
-    .eq('sender', 'customer')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
-  let voice = false
-  if (message.voice?.file_id) {
-    void tg(token, 'sendChatAction', { chat_id: chat.telegram_chat_id, action: 'typing' }).catch(() => undefined)
-    try {
-      const audio = await downloadTelegramFile(token, message.voice.file_id)
-      const transcript = await transcribe(ai.settings, audio)
-      if (transcript) {
-        const text = `[Голосовое] ${transcript}`.slice(0, 4096)
-        if (own) await db.from('bot_messages').update({ text }).eq('id', own.id)
-        await db.from('bot_chats').update({ last_message_text: text }).eq('id', chat.id)
-        voice = true
-      }
-    } catch (error) {
-      console.error('voice transcription failed', error) // ИИ попросит повторить или написать
-    }
-  }
-
-  await sleep(Math.max(0, BURST_MS - (Date.now() - receivedAt)))
-  if (own) {
-    const { count } = await db
-      .from('bot_messages')
-      .select('id', { count: 'exact', head: true })
-      .eq('chat_id', chat.id)
-      .eq('sender', 'customer')
-      .gt('created_at', own.created_at)
-    if ((count ?? 0) > 0) return
-    // Пока ждали, менеджер мог взять чат себе.
-    const { data: current } = await db.from('bot_chats').select('mode').eq('id', chat.id).maybeSingle()
-    if (current?.mode === 'manager') return
-  }
-  await replyWithAi(token, chat, behavior, ai, { voice })
 }
 
 Deno.serve(async (req) => {
@@ -131,21 +72,9 @@ Deno.serve(async (req) => {
   if (!message || message.chat.type !== 'private') return new Response('ok')
 
   const db = adminDb()
-  const { data: settings } = await db
-    .from('bot_settings')
-    .select('is_enabled, greeting, greeting_ky, ai_enabled, ai_instructions, allow_bargaining, allow_orders, handoff_to_manager')
-    .eq('id', true)
-    .maybeSingle()
-
+  const { settings, ai } = await loadBotRuntime()
   const text = describe(message)
   const isStart = /^\/start\b/.test(text)
-  let ai: BotAi | null = null
-  if (settings?.is_enabled && settings.ai_enabled) {
-    const aiRow = await aiSettings().catch(() => null)
-    const key = await botAiKey(aiRow).catch(() => null)
-    if (aiRow && key) ai = { settings: aiRow, key }
-  }
-  const aiReady = Boolean(ai)
   const name = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(' ')
 
   const { data: chat, error } = await db.rpc('bot_receive_message', {
@@ -153,7 +82,7 @@ Deno.serve(async (req) => {
     p_customer_name: name,
     p_telegram_username: message.from?.username ?? '',
     p_text: text,
-    p_handoff_reason: isStart || aiReady ? null : HANDOFF_NO_AI,
+    p_handoff_reason: isStart || ai ? null : HANDOFF_NO_AI,
   })
   if (error || !chat) {
     console.error('bot_receive_message failed', error)
@@ -173,25 +102,18 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Чат ушёл менеджеру только потому, что ИИ тогда не был подключён (например, сообщение пришло
-  // во время настройки). Теперь ИИ готов, а менеджер в чате давно не писал — бот забирает чат обратно.
-  if (!isStart && ai && chat.mode === 'manager' && chat.handoff_reason === HANDOFF_NO_AI) {
-    const since = new Date(Date.now() - MANAGER_ACTIVE_MS).toISOString()
-    const { count } = await db
-      .from('bot_messages')
-      .select('id', { count: 'exact', head: true })
-      .eq('chat_id', chat.id)
-      .eq('sender', 'manager')
-      .gte('created_at', since)
-    if (count === 0) {
-      await db.from('bot_chats').update({ mode: 'bot', handoff_reason: '' }).eq('id', chat.id)
-      chat.mode = 'bot'
-    }
-  }
+  if (!isStart && ai) await reclaimFromManager(chat)
 
   if (!isStart && ai && settings && chat.mode !== 'manager') {
     if (chat.mode === 'closed') await db.from('bot_chats').update({ mode: 'bot' }).eq('id', chat.id)
-    const work = answer(token, chat, settings, ai, message)
+    const fileId = message.voice?.file_id
+    const work = answerAfterPause(
+      telegramChannel(token, message.chat.id),
+      chat,
+      settings,
+      ai,
+      fileId ? () => downloadTelegramFile(token, fileId) : undefined,
+    )
     // Отвечаем Telegram сразу, ИИ работает в фоне — иначе долгий ответ вызовет повторную доставку.
     if (typeof EdgeRuntime !== 'undefined') EdgeRuntime.waitUntil(work)
     else await work

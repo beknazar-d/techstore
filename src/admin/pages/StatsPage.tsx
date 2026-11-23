@@ -112,7 +112,7 @@ export function StatsPage() {
         <div className={styles.kpiCard}>
           <div className={styles.kpiLabel}>{t.sources}</div>
           <div className={styles.kpiValue}>
-            {stats.ordersBySource.site} / {stats.ordersBySource.telegram}
+            {stats.ordersBySource.site} / {stats.ordersBySource.telegram} / {stats.ordersBySource.whatsapp ?? 0}
           </div>
           <div className={styles.kpiSub}>{t.sourcesSub}</div>
         </div>

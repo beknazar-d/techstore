@@ -15,7 +15,7 @@ export const adminStats: AdminStatsMessages = {
   inProgress: 'Иштелүүдө',
   inProgressValue: (sum: string) => `${sum} суммага`,
   tradeInAccepted: (count: number) => `макул болушту: ${count}`,
-  sources: 'Сайт / Telegram',
+  sources: 'Сайт / Telegram / WhatsApp',
   sourcesSub: 'булактар боюнча заявкалар',
   inStock: 'Кампада',
   inStockSub: (units: number) => `өздүк наркы боюнча, ${units} даана`,

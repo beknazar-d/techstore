@@ -76,6 +76,11 @@ Fable раздаёт задачи остальным агентам:
   (подключение, ответ менеджера, тест группы). Токен админ вставляет в «Настройках»,
   он хранится зашифрованным в Supabase Vault (RPC `bot_token_*`, только service_role).
   Уведомлений в группу о заказах пока нет — следующий шаг.
+- WhatsApp — через Wappi (wappi.pro, неофициальный API по QR). Edge Function `whatsapp-webhook` (ключ `?key=` =
+  HMAC токена), действия `wa_connect` / `wa_status` / `wa_disconnect` в `telegram-admin`. Токен Wappi — Vault
+  (RPC `wappi_token_*`), профиль и статус номера — `bot_settings.whatsapp_*`. Чаты WhatsApp — те же `bot_chats`
+  (`channel = 'whatsapp'`, `whatsapp_chat_id`), заявки — `orders.source = 'whatsapp'`. Отправка в канал —
+  `_shared/channels.ts`, общий ход ответа (голос, пауза, ИИ) — `_shared/botFlow.ts`; `botAi.ts` о канале не знает.
 - ИИ — на выбор Claude, ChatGPT или Gemini (отдельно для ассистента и для бота). Ключи провайдеров
   и ElevenLabs админ вставляет в «Настройках» → Vault (RPC `ai_secret_*(p_provider)`), провайдеры, модели,
   голос и указания — таблица `ai_settings`. Общий слой вызова моделей — `supabase/functions/_shared/llm.ts`

@@ -207,3 +207,20 @@
     font-size: 18px;
   }
 }
+.channel {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--tone-blue-border);
+  background: var(--tone-blue-soft);
+  color: var(--tone-blue-text);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.channelWhatsApp {
+  border-color: var(--tone-green-border);
+  background: var(--tone-green-soft);
+  color: var(--tone-green-text);
+}

@@ -13,7 +13,7 @@ export const adminStats = {
   inProgress: 'В работе',
   inProgressValue: (sum: string) => `на ${sum}`,
   tradeInAccepted: (count: number) => `согласились: ${count}`,
-  sources: 'Сайт / Telegram',
+  sources: 'Сайт / Telegram / WhatsApp',
   sourcesSub: 'заявок по источникам',
   inStock: 'На складе',
   inStockSub: (units: number) => `по себестоимости, ${units} шт.`,

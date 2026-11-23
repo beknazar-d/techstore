@@ -798,6 +798,13 @@ export function defaultBotSettings(now = new Date().toISOString()): BotSettings 
     allowBargaining: true,
     allowOrders: true,
     handoffToManager: true,
+    whatsappConnected: false,
+    whatsappEnabled: true,
+    whatsappProfileId: '',
+    whatsappTokenHint: '',
+    whatsappPhone: '',
+    whatsappStatus: '',
+    whatsappPaidUntil: null,
     updatedAt: now,
   }
 }
@@ -842,19 +849,19 @@ export function createBotSeed(orders: Order[], base = Date.now()) {
 
   const chats: BotChat[] = [
     {
-      id: 'chat-demo-1', telegramChatId: 500100201, customerName: 'Анна', telegramUsername: 'anna_m',
+      id: 'chat-demo-1', channel: 'telegram', telegramChatId: 500100201, whatsappChatId: null, customerName: 'Анна', telegramUsername: 'anna_m',
       customerPhone: '', mode: 'manager', handoffReason: 'Клиент просит скидку ниже допустимой и спрашивает про trade-in',
       orderId: null, unreadCount: 2,
       lastMessageText: last('chat-demo-1').text, lastMessageAt: last('chat-demo-1').createdAt, createdAt: ago(14),
     },
     {
-      id: 'chat-demo-2', telegramChatId: 500100202, customerName: 'Алексей Смирнов', telegramUsername: 'alex_smirnov',
+      id: 'chat-demo-2', channel: 'telegram', telegramChatId: 500100202, whatsappChatId: null, customerName: 'Алексей Смирнов', telegramUsername: 'alex_smirnov',
       customerPhone: '+79161234567', mode: 'bot', handoffReason: '',
       orderId: linkedOrder?.id ?? null, unreadCount: 0,
       lastMessageText: last('chat-demo-2').text, lastMessageAt: last('chat-demo-2').createdAt, createdAt: ago(40),
     },
     {
-      id: 'chat-demo-3', telegramChatId: 500100203, customerName: 'Виктор', telegramUsername: '',
+      id: 'chat-demo-3', channel: 'telegram', telegramChatId: 500100203, whatsappChatId: null, customerName: 'Виктор', telegramUsername: '',
       customerPhone: '', mode: 'closed', handoffReason: '',
       orderId: null, unreadCount: 0,
       lastMessageText: last('chat-demo-3').text, lastMessageAt: last('chat-demo-3').createdAt, createdAt: ago(1440),

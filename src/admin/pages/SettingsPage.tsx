@@ -6,9 +6,12 @@ import {
   connectBot,
   disconnectBot,
   sendTestNotification,
+  connectWhatsApp,
+  getWhatsAppStatus,
+  disconnectWhatsApp,
   getErrorMessage,
 } from '../../api'
-import type { BotSettings } from '../../types'
+import type { BotSettings, WhatsAppLiveStatus } from '../../types'
 import { msg } from '../../i18n'
 import { AiKeysSection, AssistantSection, BotAiSection } from '../components/AiSettingsSection'
 import { ShopSettingsSection } from '../components/ShopSettingsSection'
@@ -26,8 +29,11 @@ import { Modal } from '../../components/ui/Modal'
 import { Chips } from '../../components/ui/Chips'
 import styles from './SettingsPage.module.css'
 
-type SettingsTab = 'bot' | 'ai' | 'shop' | 'device'
-const TABS: SettingsTab[] = ['bot', 'ai', 'shop', 'device']
+type SettingsTab = 'bot' | 'whatsapp' | 'ai' | 'shop' | 'device'
+const TABS: SettingsTab[] = ['bot', 'whatsapp', 'ai', 'shop', 'device']
+const DAY_MS = 24 * 60 * 60 * 1000
+/** За сколько дней до конца оплаты Wappi предупреждать. */
+const PAY_WARN_DAYS = 5
 
 /**
  * Как бот отвечает клиентам и какие уведомления шлёт менеджерам. Обе части сохраняются одной кнопкой
@@ -257,6 +263,7 @@ export function SettingsPage() {
       <p className={styles.tabIntro}>{t.tabIntro[tab]}</p>
 
       {tab === 'bot' && <BotTab />}
+      {tab === 'whatsapp' && <WhatsAppTab />}
       {tab === 'ai' && (
         <>
           <AiKeysSection />
@@ -436,6 +443,185 @@ function BotTab() {
         <p className={styles.modalText}>
           {t.disconnectBotText}
         </p>
+      </Modal>
+    </>
+  )
+}
+
+/** Вкладка «WhatsApp»: номер магазина через Wappi. ИИ и правила ответа — общие с Telegram-ботом. */
+function WhatsAppTab() {
+  const t = msg().adminSettings
+  const { data, reload } = useApiQuery(() => getBotSettings(), [], ['botSettings'])
+
+  const [token, setToken] = useState('')
+  const [profileId, setProfileId] = useState('')
+  const [busy, setBusy] = useState<'connect' | 'check' | 'disconnect' | 'toggle' | null>(null)
+  const [error, setError] = useState('')
+  const [live, setLive] = useState<WhatsAppLiveStatus | null>(null)
+  // «Сейчас» — один раз при открытии вкладки: для подсчёта дней до конца оплаты этого хватает.
+  const [now] = useState(() => Date.now())
+  const [showDisconnectModal, setShowDisconnectModal] = useState(false)
+
+  if (data === undefined) {
+    return (
+      <div className={styles.loader}>
+        <Spinner />
+      </div>
+    )
+  }
+
+  async function run(kind: NonNullable<typeof busy>, action: () => Promise<unknown>) {
+    setBusy(kind)
+    setError('')
+    try {
+      await action()
+      await reload()
+    } catch (err) {
+      setError(getErrorMessage(err))
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleConnect = () =>
+    run('connect', async () => {
+      setLive(await connectWhatsApp({ token, profileId }))
+      setToken('')
+    })
+  const handleCheck = () => run('check', async () => setLive(await getWhatsAppStatus()))
+  const handleDisconnect = () => {
+    setShowDisconnectModal(false)
+    return run('disconnect', async () => {
+      await disconnectWhatsApp()
+      setLive(null)
+    })
+  }
+  const handleToggle = (checked: boolean) => run('toggle', () => updateBotSettings({ whatsappEnabled: checked }))
+
+  const online = live ? live.authorized : data.whatsappStatus === 'online'
+  const known = Boolean(live) || data.whatsappStatus !== ''
+  const phone = live?.phone || data.whatsappPhone
+  const paidUntil = live?.paidUntil ?? data.whatsappPaidUntil
+  const daysLeft = paidUntil ? Math.ceil((new Date(paidUntil).getTime() - now) / DAY_MS) : null
+
+  return (
+    <>
+      <Section title={t.waConnection}>
+        {!data.whatsappConnected ? (
+          <div className={styles.connectBlock}>
+            <ol className={styles.stepsList}>
+              <li>{t.waStep1}</li>
+              <li>{t.waStep2}</li>
+              <li>{t.waStep3}</li>
+            </ol>
+            <p className={styles.waRisk}>{t.waRisk}</p>
+
+            <div className={styles.connectForm}>
+              <Input
+                label={t.waToken}
+                type="password"
+                autoComplete="off"
+                hint={t.waTokenHint}
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+              />
+              <Input
+                label={t.waProfileId}
+                autoComplete="off"
+                hint={t.waProfileHint}
+                value={profileId}
+                onChange={(e) => setProfileId(e.target.value)}
+              />
+
+              {error && (
+                <p className={styles.connectError} role="alert">
+                  {error}
+                </p>
+              )}
+
+              <div>
+                <Button
+                  icon="link"
+                  onClick={handleConnect}
+                  loading={busy === 'connect'}
+                  disabled={!token.trim() || !profileId.trim()}
+                >
+                  {t.waConnect}
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className={styles.connectedBlock}>
+            <div className={styles.connectedHeader}>
+              <Badge tone={!known ? 'neutral' : online ? 'success' : 'warning'} dot>
+                {!known ? t.waUnknown : online ? t.waOnline : t.waOffline}
+              </Badge>
+              <Button variant="secondary" size="sm" icon="refresh" onClick={handleCheck} loading={busy === 'check'}>
+                {t.waCheck}
+              </Button>
+            </div>
+
+            {phone && <InfoRow label={t.waPhone}>+{phone}</InfoRow>}
+            <InfoRow label={t.waProfileShort}>{data.whatsappProfileId}</InfoRow>
+            <InfoRow label={t.tokenShort}>••••{data.whatsappTokenHint}</InfoRow>
+            {paidUntil && (
+              <InfoRow label={t.waPaidUntil}>{new Date(paidUntil).toLocaleDateString('ru-RU')}</InfoRow>
+            )}
+            {daysLeft !== null && daysLeft <= PAY_WARN_DAYS && (
+              <p className={styles.waWarning} role="alert">
+                {t.waPaySoon(daysLeft)}
+              </p>
+            )}
+
+            {live?.qr && !live.authorized && (
+              <div className={styles.waQr}>
+                <img src={live.qr} alt={t.waQrAlt} className={styles.waQrImage} />
+                <p className={styles.checkboxHint}>{t.waQr}</p>
+              </div>
+            )}
+
+            <div className={styles.checkboxGroup}>
+              <Checkbox
+                label={t.waEnabled}
+                checked={data.whatsappEnabled}
+                disabled={busy === 'toggle'}
+                onChange={(e) => handleToggle(e.target.checked)}
+              />
+              <p className={styles.checkboxHint}>{t.waEnabledHint}</p>
+            </div>
+            <p className={styles.checkboxHint}>{t.waShared}</p>
+
+            <div className={styles.connectedActions}>
+              <Button variant="secondary" onClick={() => setShowDisconnectModal(true)} loading={busy === 'disconnect'}>
+                {t.waDisconnect}
+              </Button>
+              {error && (
+                <span className={styles.connectError} role="alert">
+                  {error}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </Section>
+
+      <Modal
+        open={showDisconnectModal}
+        onClose={() => setShowDisconnectModal(false)}
+        title={t.waDisconnectTitle}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowDisconnectModal(false)}>
+              {t.cancel}
+            </Button>
+            <Button variant="danger" onClick={handleDisconnect}>
+              {t.disconnect}
+            </Button>
+          </>
+        }
+      >
+        <p className={styles.modalText}>{t.waDisconnectText}</p>
       </Modal>
     </>
   )

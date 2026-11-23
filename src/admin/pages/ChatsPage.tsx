@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listChats, getBotSettings } from '../../api'
-import { CHAT_MODE_LABELS, CHAT_MODES } from '../../config/labels'
+import { CHAT_CHANNEL_LABELS, CHAT_MODE_LABELS, CHAT_MODES } from '../../config/labels'
 import { ToneBadge } from '../../components/ui/StatusBadge'
 import { CHAT_MODE_TONES } from '../../config/tones'
 import { ToneFilters, type ToneFilterOption } from '../components/ToneFilters'
@@ -10,6 +10,8 @@ import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { useApiQuery } from '../../hooks/useApiQuery'
 import { formatDateTime } from '../../utils/date'
+import { formatPhone } from '../../utils/phone'
+import { cn } from '../../utils/cn'
 import { msg } from '../../i18n'
 import styles from './ChatsPage.module.css'
 
@@ -71,7 +73,7 @@ export function ChatsPage() {
         </div>
       </header>
 
-      {botSettings && !botSettings.connected && (
+      {botSettings && !botSettings.connected && !botSettings.whatsappConnected && (
         <div className={styles.botNotice}>
           <span className="material-symbols-outlined">smart_toy</span>
           <span>{t.notConnected}</span>
@@ -100,15 +102,20 @@ export function ChatsPage() {
               <div className={styles.topRow}>
                 <div className={styles.customerInfo}>
                   <div className={styles.avatar}>
-                    {chat.customerName.charAt(0).toUpperCase()}
+                    {(chat.customerName || '#').charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h2 className={styles.customerName}>{chat.customerName}</h2>
-                    {chat.telegramUsername && (
-                      <p className={styles.username}>
-                        @{chat.telegramUsername}
-                      </p>
-                    )}
+                    <h2 className={styles.customerName}>
+                      {chat.customerName || formatPhone(chat.customerPhone)}
+                    </h2>
+                    <p className={styles.username}>
+                      <span className={cn(styles.channel, chat.channel === 'whatsapp' && styles.channelWhatsApp)}>
+                        {CHAT_CHANNEL_LABELS[chat.channel]}
+                      </span>
+                      {chat.channel === 'whatsapp'
+                        ? chat.customerName && chat.customerPhone && ` ${formatPhone(chat.customerPhone)}`
+                        : chat.telegramUsername && ` @${chat.telegramUsername}`}
+                    </p>
                   </div>
                 </div>
                 <div className={styles.metadata}>

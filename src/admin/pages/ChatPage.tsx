@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getChat, listChatMessages, sendChatMessage, setChatMode, markChatRead, getErrorMessage } from '../../api'
-import { CHAT_MODE_LABELS, CHAT_SENDER_LABELS } from '../../config/labels'
+import { CHAT_CHANNEL_LABELS, CHAT_MODE_LABELS, CHAT_SENDER_LABELS } from '../../config/labels'
 import { PageHeader } from '../components/AdminBlocks'
 import { Button } from '../../components/ui/Button'
 import { Textarea } from '../../components/ui/Textarea'
@@ -104,10 +104,21 @@ export function ChatPage() {
       <PageHeader
         backTo="/admin/chats"
         backLabel={t.allChats}
-        title={chat.customerName}
+        title={chat.customerName || formatPhone(chat.customerPhone)}
         subtitle={
           <>
-            {chat.telegramUsername && (
+            <Badge tone={chat.channel === 'whatsapp' ? 'success' : 'info'}>{CHAT_CHANNEL_LABELS[chat.channel]}</Badge>{' '}
+            {chat.channel === 'whatsapp' && chat.customerPhone && (
+              <a
+                href={`https://wa.me/${chat.customerPhone.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noreferrer"
+                className={styles.telegramLink}
+              >
+                WhatsApp
+              </a>
+            )}
+            {chat.channel === 'telegram' && chat.telegramUsername && (
               <a
                 href={`https://t.me/${chat.telegramUsername}`}
                 target="_blank"

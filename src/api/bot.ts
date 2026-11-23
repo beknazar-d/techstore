@@ -1,10 +1,12 @@
-// Telegram-бот: настройки и переписка с клиентами. Всё доступно только администратору.
+// Telegram-бот и WhatsApp (Wappi): настройки и переписка с клиентами. Всё доступно только администратору.
 //
 //   - Токен бота админ вставляет в «Настройках». connectBot → Edge Function `telegram-admin`:
 //     проверяет токен (getMe), хранит его зашифрованным в Supabase Vault, ставит webhook.
 //     Обратно сайт получает только последние 4 символа.
 //   - Сообщения клиентов принимает Edge Function `telegram-webhook` и пишет в bot_chats / bot_messages.
-//   - sendChatMessage → `telegram-admin` (sendMessage в Telegram + запись в переписку).
+//   - WhatsApp: connectWhatsApp → `telegram-admin` (wa_connect): проверяет профиль Wappi, токен — в Vault,
+//     ставит вебхук `whatsapp-webhook`. Сообщения WhatsApp попадают в те же чаты с channel = 'whatsapp'.
+//   - sendChatMessage → `telegram-admin` (в Telegram или WhatsApp — по каналу чата + запись в переписку).
 
 import { FunctionsHttpError } from '@supabase/supabase-js'
 import type {
@@ -15,12 +17,16 @@ import type {
   ChatFilters,
   ChatMode,
   ConnectBotInput,
+  ConnectWhatsAppInput,
+  WhatsAppLiveStatus,
 } from '../types'
 import { emit, supabase, unwrap } from './client'
 import { ApiError, type ApiErrorCode } from './errors'
 import { msg } from '../i18n'
 
 const TOKEN_RE = /^\d{5,15}:[A-Za-z0-9_-]{30,}$/
+const WAPPI_TOKEN_RE = /^[A-Za-z0-9_.-]{20,200}$/
+const WAPPI_PROFILE_RE = /^[A-Za-z0-9-]{4,64}$/
 const USERNAME_RE = /^[A-Za-z][A-Za-z0-9_]{3,31}$/
 const GROUP_ID_RE = /^-?\d{5,20}$/
 const MAX_GREETING = 1000
@@ -28,9 +34,10 @@ const MAX_INSTRUCTIONS = 4000
 const MAX_MESSAGE = 4096 // предел Telegram на одно сообщение
 
 const SETTINGS_COLUMNS =
-  'connected, token_hint, bot_username, is_enabled, group_id, notify, ai_enabled, greeting, greeting_ky, ai_instructions, allow_bargaining, allow_orders, handoff_to_manager, updated_at'
+  'connected, token_hint, bot_username, is_enabled, group_id, notify, ai_enabled, greeting, greeting_ky, ai_instructions, allow_bargaining, allow_orders, handoff_to_manager, ' +
+  'whatsapp_connected, whatsapp_enabled, whatsapp_profile_id, whatsapp_token_hint, whatsapp_phone, whatsapp_status, whatsapp_paid_until, updated_at'
 const CHAT_COLUMNS =
-  'id, telegram_chat_id, customer_name, telegram_username, customer_phone, mode, handoff_reason, order_id, unread_count, last_message_text, last_message_at, created_at'
+  'id, channel, telegram_chat_id, whatsapp_chat_id, customer_name, telegram_username, customer_phone, mode, handoff_reason, order_id, unread_count, last_message_text, last_message_at, created_at'
 
 interface SettingsRow {
   connected: boolean
@@ -46,12 +53,21 @@ interface SettingsRow {
   allow_bargaining: boolean
   allow_orders: boolean
   handoff_to_manager: boolean
+  whatsapp_connected: boolean
+  whatsapp_enabled: boolean
+  whatsapp_profile_id: string
+  whatsapp_token_hint: string
+  whatsapp_phone: string
+  whatsapp_status: BotSettings['whatsappStatus']
+  whatsapp_paid_until: string | null
   updated_at: string
 }
 
 interface ChatRow {
   id: string
-  telegram_chat_id: number
+  channel: BotChat['channel']
+  telegram_chat_id: number | null
+  whatsapp_chat_id: string | null
   customer_name: string
   telegram_username: string
   customer_phone: string
@@ -87,6 +103,13 @@ function settingsFromRow(row: SettingsRow): BotSettings {
     allowBargaining: row.allow_bargaining,
     allowOrders: row.allow_orders,
     handoffToManager: row.handoff_to_manager,
+    whatsappConnected: row.whatsapp_connected ?? false,
+    whatsappEnabled: row.whatsapp_enabled ?? true,
+    whatsappProfileId: row.whatsapp_profile_id ?? '',
+    whatsappTokenHint: row.whatsapp_token_hint ?? '',
+    whatsappPhone: row.whatsapp_phone ?? '',
+    whatsappStatus: row.whatsapp_status ?? '',
+    whatsappPaidUntil: row.whatsapp_paid_until ?? null,
     updatedAt: row.updated_at,
   }
 }
@@ -94,7 +117,9 @@ function settingsFromRow(row: SettingsRow): BotSettings {
 function chatFromRow(row: ChatRow): BotChat {
   return {
     id: row.id,
+    channel: row.channel ?? 'telegram',
     telegramChatId: row.telegram_chat_id,
+    whatsappChatId: row.whatsapp_chat_id ?? null,
     customerName: row.customer_name,
     telegramUsername: row.telegram_username,
     customerPhone: row.customer_phone,
@@ -181,6 +206,7 @@ export async function updateBotSettings(input: BotSettingsInput): Promise<BotSet
   if (input.allowBargaining !== undefined) changes.allow_bargaining = input.allowBargaining
   if (input.allowOrders !== undefined) changes.allow_orders = input.allowOrders
   if (input.handoffToManager !== undefined) changes.handoff_to_manager = input.handoffToManager
+  if (input.whatsappEnabled !== undefined) changes.whatsapp_enabled = input.whatsappEnabled
   if (input.notify !== undefined) {
     const current = await getBotSettings()
     changes.notify = { ...current.notify, ...input.notify }
@@ -220,6 +246,45 @@ export async function sendTestNotification(): Promise<void> {
   await callBotFunction({ action: 'test' })
 }
 
+// ---------- WhatsApp (Wappi) ----------
+
+/**
+ * Подключает WhatsApp-номер через Wappi (или меняет токен/профиль). Сервер проверяет доступ к профилю,
+ * сохраняет токен в Vault и направляет входящие сообщения на сайт. Возвращает статус номера и QR, если нужен вход.
+ */
+export async function connectWhatsApp(input: ConnectWhatsAppInput): Promise<WhatsAppLiveStatus> {
+  const token = input.token.trim()
+  const profileId = input.profileId.trim()
+  if (!WAPPI_TOKEN_RE.test(token)) throw new ApiError('validation', msg().adminSettings.errWappiToken)
+  if (!WAPPI_PROFILE_RE.test(profileId)) throw new ApiError('validation', msg().adminSettings.errWappiProfile)
+  const result = await callBotFunction<WhatsAppLiveStatus>({ action: 'wa_connect', token, profileId })
+  emit(['botSettings'])
+  return liveStatus(result)
+}
+
+/** Проверяет номер в Wappi: вошёл ли он в WhatsApp, до какого числа оплачен; если не вошёл — QR для входа. */
+export async function getWhatsAppStatus(): Promise<WhatsAppLiveStatus> {
+  const result = await callBotFunction<WhatsAppLiveStatus>({ action: 'wa_status' })
+  emit(['botSettings'])
+  return liveStatus(result)
+}
+
+/** Отключает WhatsApp: токен удаляется с сервера, сообщения перестают приходить. Переписка остаётся. */
+export async function disconnectWhatsApp(): Promise<BotSettings> {
+  await callBotFunction({ action: 'wa_disconnect' })
+  emit(['botSettings'])
+  return getBotSettings()
+}
+
+function liveStatus(data: WhatsAppLiveStatus): WhatsAppLiveStatus {
+  return {
+    authorized: Boolean(data.authorized),
+    phone: data.phone ?? '',
+    paidUntil: data.paidUntil ?? null,
+    qr: data.qr ?? null,
+  }
+}
+
 // ---------- Чаты ----------
 
 /** Чаты, свежие сверху. Фильтр — кто отвечает (бот / нужен менеджер / закрыт). */
@@ -250,7 +315,7 @@ export async function listChatMessages(chatId: string): Promise<BotMessage[]> {
 }
 
 /**
- * Ответ менеджера клиенту в Telegram. Менеджер перехватывает разговор: бот в этом чате
+ * Ответ менеджера клиенту (в Telegram или WhatsApp — туда, откуда чат). Менеджер перехватывает разговор: бот в этом чате
  * замолкает (`mode: 'manager'`), пока его не вернут кнопкой (`setChatMode(id, 'bot')`).
  */
 export async function sendChatMessage(chatId: string, text: string): Promise<BotMessage> {

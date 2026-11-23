@@ -158,7 +158,7 @@ export type PromoBannerInput = Omit<PromoBanner, 'id' | 'createdAt' | 'updatedAt
 
 /** new → confirmed → completed, либо cancelled */
 export type OrderStatus = 'new' | 'confirmed' | 'completed' | 'cancelled'
-export type OrderSource = 'site' | 'telegram'
+export type OrderSource = 'site' | 'telegram' | 'whatsapp'
 export type DeliveryType = 'pickup' | 'delivery'
 
 export interface GeoPoint {
@@ -345,11 +345,55 @@ export interface BotSettings {
   allowOrders: boolean
   /** Отдавать разговор менеджеру, если клиент просит человека или ИИ не уверен. */
   handoffToManager: boolean
+  /** WhatsApp (Wappi) подключён: токен и ID профиля сохранены. */
+  whatsappConnected: boolean
+  /** Бот отвечает в WhatsApp (можно выключить, не отключая номер). */
+  whatsappEnabled: boolean
+  whatsappProfileId: string
+  /** Последние 4 символа токена Wappi. */
+  whatsappTokenHint: string
+  /** Номер WhatsApp магазина (цифры), когда вошли по QR. */
+  whatsappPhone: string
+  /** Номер на связи (online) или вышел из WhatsApp (offline); '' — ещё не проверяли. */
+  whatsappStatus: WhatsAppStatusValue
+  /** До какой даты оплачен тариф Wappi. */
+  whatsappPaidUntil: string | null
   updatedAt: string
 }
 
-/** Что админ меняет в настройках (без токена — он задаётся отдельно). */
-export type BotSettingsInput = Partial<Omit<BotSettings, 'connected' | 'tokenHint' | 'updatedAt'>>
+export type WhatsAppStatusValue = '' | 'online' | 'offline'
+
+/** Что админ меняет в настройках (без токенов — они задаются отдельно). */
+export type BotSettingsInput = Partial<
+  Omit<
+    BotSettings,
+    | 'connected'
+    | 'tokenHint'
+    | 'updatedAt'
+    | 'whatsappConnected'
+    | 'whatsappProfileId'
+    | 'whatsappTokenHint'
+    | 'whatsappPhone'
+    | 'whatsappStatus'
+    | 'whatsappPaidUntil'
+  >
+>
+
+export interface ConnectWhatsAppInput {
+  /** API-токен из личного кабинета wappi.pro. Уходит на сервер, обратно не возвращается. */
+  token: string
+  /** ID профиля Wappi (один профиль = один номер WhatsApp). */
+  profileId: string
+}
+
+/** Состояние номера в Wappi прямо сейчас. */
+export interface WhatsAppLiveStatus {
+  authorized: boolean
+  phone: string
+  paidUntil: string | null
+  /** QR-код (data URL) для входа, если номер ещё не вошёл в WhatsApp. */
+  qr: string | null
+}
 
 export interface ConnectBotInput {
   /** Токен от @BotFather: `123456789:AA...`. Уходит на сервер, обратно не возвращается. */
@@ -363,11 +407,17 @@ export type ChatMode = 'bot' | 'manager' | 'closed'
 
 export type ChatSender = 'customer' | 'bot' | 'manager'
 
+/** Где идёт переписка. */
+export type ChatChannel = 'telegram' | 'whatsapp'
+
 /** Переписка с клиентом в Telegram (таблица bot_chats). */
 export interface BotChat {
   id: string
-  /** chat_id в Telegram. */
-  telegramChatId: number
+  channel: ChatChannel
+  /** chat_id в Telegram (для чатов Telegram). */
+  telegramChatId: number | null
+  /** chat_id в WhatsApp, например `79991234567@c.us` (для чатов WhatsApp). */
+  whatsappChatId: string | null
   customerName: string
   /** username в Telegram без @, если есть. */
   telegramUsername: string

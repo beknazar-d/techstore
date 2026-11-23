@@ -31,6 +31,7 @@ interface ChatRow {
   id: string
   customer_name: string
   telegram_username: string
+  customer_phone: string
   mode: 'bot' | 'manager' | 'closed'
   handoff_reason: string
 }
@@ -41,9 +42,9 @@ interface MessageRow {
   text: string
 }
 
-function chatName(chat: Pick<ChatRow, 'customer_name' | 'telegram_username'> | undefined): string {
+function chatName(chat: Pick<ChatRow, 'customer_name' | 'telegram_username' | 'customer_phone'> | undefined): string {
   if (!chat) return ''
-  return chat.customer_name || (chat.telegram_username ? `@${chat.telegram_username}` : '')
+  return chat.customer_name || (chat.telegram_username ? `@${chat.telegram_username}` : chat.customer_phone ?? '')
 }
 
 /**
@@ -51,12 +52,12 @@ function chatName(chat: Pick<ChatRow, 'customer_name' | 'telegram_username'> | u
  * Режимы чатов запоминаем, чтобы понять момент передачи менеджеру (в событии нет старого значения).
  */
 export function subscribeAdminEvents(handler: (event: AdminEvent) => void): () => void {
-  const chats = new Map<string, Pick<ChatRow, 'customer_name' | 'telegram_username' | 'mode'>>()
+  const chats = new Map<string, Pick<ChatRow, 'customer_name' | 'telegram_username' | 'customer_phone' | 'mode'>>()
   let channel: RealtimeChannel | null = null
   let closed = false
 
   void (async () => {
-    const { data } = await supabase.from('bot_chats').select('id, customer_name, telegram_username, mode')
+    const { data } = await supabase.from('bot_chats').select('id, customer_name, telegram_username, customer_phone, mode')
     for (const chat of (data ?? []) as ChatRow[]) chats.set(chat.id, chat)
     if (closed) return
 
@@ -87,6 +88,7 @@ export function subscribeAdminEvents(handler: (event: AdminEvent) => void): () =
         chats.set(chat.id, {
           customer_name: chat.customer_name ?? '',
           telegram_username: chat.telegram_username ?? '',
+          customer_phone: chat.customer_phone ?? '',
           mode: chat.mode,
         })
         if (chat.mode === 'manager' && before?.mode !== 'manager') {

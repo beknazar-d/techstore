@@ -1,4 +1,5 @@
 import type {
+  ChatChannel,
   ChatMode,
   ChatSender,
   DeliveryType,
@@ -22,6 +23,8 @@ export const ORDER_STATUSES: OrderStatus[] = ['new', 'confirmed', 'completed', '
 export const DELIVERY_TYPE_LABELS: Record<DeliveryType, string> = live((m) => m.labels.deliveryType)
 
 export const ORDER_SOURCE_LABELS: Record<OrderSource, string> = live((m) => m.labels.orderSource)
+
+export const CHAT_CHANNEL_LABELS: Record<ChatChannel, string> = live((m) => m.labels.chatChannel)
 
 export const SPEC_FIELD_TYPE_LABELS: Record<SpecFieldType, string> = live((m) => m.labels.specFieldType)
 
