@@ -32,7 +32,9 @@ import { msg } from '../i18n'
 import { emit, supabase, unwrap } from './client'
 import { ApiError, getErrorMessage, type ApiErrorCode } from './errors'
 import { createCategory, listCategories, updateCategory } from './categories'
-import { adjustStock, createProduct, listProducts, updateProduct } from './products'
+import { adjustStock, createProduct, getProduct, listProducts, updateProduct } from './products'
+import { compressImage } from '../utils/compressImage'
+import { shop } from '../config/shop'
 import { listOrders, updateOrderStatus } from './orders'
 import { listTradeIns } from './tradeIns'
 import { getShopStats } from './stats'
@@ -272,8 +274,27 @@ function productPatch(input: Input): Partial<ProductInput> {
   return Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)) as Partial<ProductInput>
 }
 
+function strings(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string' && v.trim() !== '') : []
+}
+
+/** Картинка с чужого сайта: сервер скачивает (обходит CORS), браузер сжимает как при обычной загрузке. */
+async function downloadImage(url: string): Promise<string> {
+  const { base64, contentType } = await callAiFunction<{ base64: string; contentType: string }>({
+    action: 'fetch_image',
+    url,
+  })
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  const extension = contentType.split('/')[1] ?? 'jpg'
+  return compressImage(new File([bytes], `photo.${extension}`, { type: contentType }))
+}
+
+const productLink = (id: string) => `/admin/products/${id}`
+
 /** Выполняет один инструмент. Возвращает данные для модели и строку для админа. */
-async function runTool(name: string, input: Input): Promise<{ data: unknown; summary: string }> {
+async function runTool(name: string, input: Input): Promise<{ data: unknown; summary: string; link?: string }> {
   switch (name) {
     case 'list_categories': {
       const categories = await listCategories()
@@ -341,13 +362,59 @@ async function runTool(name: string, input: Input): Promise<{ data: unknown; sum
         stock: patch.stock ?? 0,
       })
       return {
-        data: { id: product.id, name: product.name, slug: product.slug },
-        summary: msg().assistant.createdProduct(product.name),
+        data: { id: product.id, name: product.name, slug: product.slug, isActive: product.isActive },
+        summary: product.isActive ? msg().assistant.createdProduct(product.name) : msg().assistant.createdDraft(product.name),
+        link: productLink(product.id),
       }
     }
     case 'update_product': {
       const product = await updateProduct(need(str(input.id), 'id'), productPatch(input))
-      return { data: { id: product.id, name: product.name }, summary: msg().assistant.updatedProduct(product.name) }
+      return {
+        data: { id: product.id, name: product.name, isActive: product.isActive },
+        summary: msg().assistant.updatedProduct(product.name),
+        link: productLink(product.id),
+      }
+    }
+    case 'research_product': {
+      const query = need(str(input.query), 'query')
+      const categoryId = str(input.categoryId)
+      let specHint = ''
+      if (categoryId) {
+        const category = (await listCategories()).find((c) => c.id === categoryId)
+        specHint = (category?.specFields ?? [])
+          .map((f) => `${f.key} — ${f.label}${f.unit ? `, ${f.unit}` : ''}${f.options?.length ? ` (варианты: ${f.options.join(', ')})` : ''}`)
+          .join('\n')
+      }
+      const result = await callAiFunction<{ found: unknown; sources: string[] }>({ action: 'research', query, specHint })
+      return { data: result, summary: msg().assistant.researched(query) }
+    }
+    case 'find_product_images': {
+      const query = need(str(input.query), 'query')
+      const result = await callAiFunction<{ images: string[] }>({ action: 'images', query, pages: strings(input.pages) })
+      return { data: { images: result.images }, summary: msg().assistant.foundImages(result.images.length) }
+    }
+    case 'attach_product_images': {
+      const id = need(str(input.productId), 'productId')
+      const product = await getProduct(id)
+      if (!product) throw new ApiError('not_found', msg().assistant.missingField('productId'))
+      const kept = bool(input.replace) ? [] : product.images
+      const room = shop.maxProductImages - kept.length
+      const added: string[] = []
+      const failed: { url: string; error: string }[] = []
+      for (const url of strings(input.imageUrls)) {
+        if (added.length >= room) break
+        try {
+          added.push(await downloadImage(url))
+        } catch (error) {
+          failed.push({ url, error: getErrorMessage(error) })
+        }
+      }
+      if (added.length > 0) await updateProduct(id, { images: [...kept, ...added] })
+      return {
+        data: { attached: added.length, total: kept.length + added.length, max: shop.maxProductImages, failed },
+        summary: msg().assistant.attachedImages(added.length, product.name),
+        link: productLink(id),
+      }
     }
     case 'adjust_stock': {
       const delta = int(input.delta) ?? Number.NaN
@@ -451,8 +518,8 @@ export async function askAssistant(
       const results: { id: string; name: string; content: string; isError?: boolean }[] = []
       for (const call of response.toolCalls) {
         try {
-          const { data, summary } = await runTool(call.name, call.input ?? {})
-          actions.push({ tool: call.name, summary, ok: true })
+          const { data, summary, link } = await runTool(call.name, call.input ?? {})
+          actions.push({ tool: call.name, summary, ok: true, ...(link ? { link } : {}) })
           results.push({ id: call.id, name: call.name, content: JSON.stringify(data) })
         } catch (error) {
           const message = getErrorMessage(error)

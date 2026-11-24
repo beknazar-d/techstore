@@ -93,7 +93,7 @@ function friendly(provider: Provider, status: number, detail: string): LlmError 
   return new LlmError(`${name} не принял запрос: ${detail.slice(0, 300)}`, 400)
 }
 
-async function postJson(provider: Provider, url: string, headers: Record<string, string>, body: unknown): Promise<Json> {
+export async function postJson(provider: Provider, url: string, headers: Record<string, string>, body: unknown): Promise<Json> {
   let response: Response
   try {
     response = await fetch(url, {

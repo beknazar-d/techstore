@@ -397,3 +397,13 @@
   font-size: 20px;
   line-height: 1;
 }
+.actionLink {
+  flex-shrink: 0;
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.actionLink:hover {
+  text-decoration: underline;
+}

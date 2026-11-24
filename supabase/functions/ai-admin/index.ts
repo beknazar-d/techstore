@@ -5,6 +5,9 @@
 // POST { action: 'disconnect', provider }   — удалить ключ
 // POST { action: 'voices' }                 — голоса ElevenLabs по сохранённому ключу
 // POST { action: 'chat', messages }         — один шаг ИИ-ассистента
+// POST { action: 'research', query, specHint } — найти товар в интернете (веб-поиск выбранного провайдера)
+// POST { action: 'images', query, pages }    — подобрать фото товара (страницы-источники + Wikimedia Commons)
+// POST { action: 'fetch_image', url }        — скачать одну картинку (base64) — браузер сожмёт и прикрепит
 //
 // Ассистент работает так: функция отправляет переписку выбранной модели вместе с фиксированным
 // набором инструментов и возвращает ответ. Вызовы инструментов (создать категорию, товар,
@@ -33,12 +36,16 @@ import {
   type Provider,
 } from '../_shared/llm.ts'
 import { ASSISTANT_TOOLS, assistantSystem } from './tools.ts'
+import { fetchImage, findImages, researchProduct } from './research.ts'
 
 type Body =
   | { action: 'connect'; provider: SecretProvider; key: string }
   | { action: 'disconnect'; provider: SecretProvider }
   | { action: 'voices' }
   | { action: 'chat'; messages: ChatMessage[] }
+  | { action: 'research'; query: string; specHint?: string }
+  | { action: 'images'; query: string; pages?: string[] }
+  | { action: 'fetch_image'; url: string }
 
 const MAX_MESSAGES = 300
 const MAX_BODY_CHARS = 600_000
@@ -49,6 +56,15 @@ function fail(message: string, code: string, status = 400): Response {
 }
 
 const NOT_CONNECTED = 'ИИ не подключён: вставьте API-ключ в «Настройках» → «Искусственный интеллект»'
+
+/** Провайдер, модель и ключ ассистента; null — ИИ для ассистента не подключён. */
+async function assistantKey(): Promise<{ settings: AiSettingsRow; provider: Provider; key: string } | null> {
+  const settings = await aiSettings()
+  const provider = settings?.assistant_provider
+  if (!settings || !provider || !PROVIDERS.includes(provider) || !settings.key_hints?.[provider]) return null
+  const key = await aiSecret(provider)
+  return key ? { settings, provider, key } : null
+}
 
 function isSecretProvider(value: unknown): value is SecretProvider {
   return SECRET_PROVIDERS.includes(value as SecretProvider)
@@ -161,16 +177,38 @@ Deno.serve(async (req) => {
         return json({ voices: await listElevenLabsVoices(key) })
       }
 
+      case 'research': {
+        const query = String(body.query ?? '').trim().slice(0, 300)
+        if (query.length < 2) return fail('Укажите, какой товар искать', 'validation')
+        const ready = await assistantKey()
+        if (!ready) return fail(NOT_CONNECTED, 'not_found', 409)
+        const result = await researchProduct(
+          ready.provider,
+          ready.key,
+          ready.settings.assistant_model,
+          query,
+          String(body.specHint ?? '').slice(0, 3000),
+        )
+        return json(result)
+      }
+
+      case 'images': {
+        const query = String(body.query ?? '').trim().slice(0, 300)
+        if (query.length < 2) return fail('Укажите, для какого товара искать фото', 'validation')
+        const pages = Array.isArray(body.pages) ? body.pages.filter((p): p is string => typeof p === 'string') : []
+        return json({ images: await findImages(query, pages) })
+      }
+
+      case 'fetch_image': {
+        return json(await fetchImage(String(body.url ?? '')))
+      }
+
       case 'chat': {
         if (!validMessages(body.messages)) return fail('Пустая или неверная переписка', 'validation')
 
-        const settings = await aiSettings()
-        const provider = settings?.assistant_provider
-        if (!settings || !provider || !PROVIDERS.includes(provider) || !settings.key_hints?.[provider]) {
-          return fail(NOT_CONNECTED, 'not_found', 409)
-        }
-        const key = await aiSecret(provider)
-        if (!key) return fail(NOT_CONNECTED, 'not_found', 409)
+        const ready = await assistantKey()
+        if (!ready) return fail(NOT_CONNECTED, 'not_found', 409)
+        const { settings, provider, key } = ready
 
         const step = await chatStep({
           provider,

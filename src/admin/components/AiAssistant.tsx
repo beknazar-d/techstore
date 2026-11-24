@@ -299,6 +299,11 @@ export function AiAssistant() {
                                 {action.ok ? 'check_circle' : 'error'}
                               </span>
                               <span className={styles.actionSummary}>{action.summary}</span>
+                              {action.link && (
+                                <Link to={action.link} className={styles.actionLink}>
+                                  {t.openCard}
+                                </Link>
+                              )}
                             </li>
                           ))}
                         </ul>

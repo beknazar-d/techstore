@@ -5,7 +5,8 @@ import { CHAT_CHANNEL_LABELS, CHAT_MODE_LABELS, CHAT_MODES } from '../../config/
 import { ToneBadge } from '../../components/ui/StatusBadge'
 import { CHAT_MODE_TONES } from '../../config/tones'
 import { ToneFilters, type ToneFilterOption } from '../components/ToneFilters'
-import type { BotChat, ChatMode } from '../../types'
+import type { BotChat, ChatChannel, ChatMode } from '../../types'
+import type { Tone } from '../../config/tones'
 import { Spinner } from '../../components/ui/Spinner'
 import { EmptyState } from '../../components/ui/EmptyState'
 import { useApiQuery } from '../../hooks/useApiQuery'
@@ -16,6 +17,23 @@ import { msg } from '../../i18n'
 import styles from './ChatsPage.module.css'
 
 type ModeFilter = ChatMode | 'all'
+type ChannelFilter = ChatChannel | 'all'
+
+const CHANNELS: ChatChannel[] = ['telegram', 'whatsapp']
+const CHANNEL_TONES: Record<ChatChannel, Tone> = { telegram: 'blue', whatsapp: 'green' }
+
+/** Фильтры по каналу (Telegram / WhatsApp) с числом чатов. */
+function getChannelFilters(chats: BotChat[]): ToneFilterOption<ChannelFilter>[] {
+  return [
+    { value: 'all', label: msg().adminChats.allChannels, tone: 'indigo', count: chats.length },
+    ...CHANNELS.map((channel) => ({
+      value: channel,
+      label: CHAT_CHANNEL_LABELS[channel],
+      tone: CHANNEL_TONES[channel],
+      count: chats.filter((chat) => chat.channel === channel).length,
+    })),
+  ]
+}
 
 /** Фильтры с числом чатов в каждом режиме. */
 function getModeFilters(chats: BotChat[]): ToneFilterOption<ModeFilter>[] {
@@ -33,14 +51,22 @@ function getModeFilters(chats: BotChat[]): ToneFilterOption<ModeFilter>[] {
 export function ChatsPage() {
   const t = msg().adminChats
   const [modeFilter, setModeFilter] = useState<ModeFilter>('all')
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all')
   const { data: botSettings } = useApiQuery(getBotSettings, [], ['botSettings'])
   // Все чаты одним запросом: фильтр — на месте, а на кнопках видно, сколько чатов в каждом режиме.
   const { data: allChats, loading } = useApiQuery(() => listChats(), [], ['chats'])
   const chatList = useMemo(() => allChats ?? [], [allChats])
-  const chats = useMemo(
-    () => (modeFilter === 'all' ? chatList : chatList.filter((chat) => chat.mode === modeFilter)),
-    [chatList, modeFilter],
+  // Сначала канал, потом режим: числа на кнопках режима — внутри выбранного канала.
+  const channelChats = useMemo(
+    () => (channelFilter === 'all' ? chatList : chatList.filter((chat) => chat.channel === channelFilter)),
+    [chatList, channelFilter],
   )
+  const chats = useMemo(
+    () => (modeFilter === 'all' ? channelChats : channelChats.filter((chat) => chat.mode === modeFilter)),
+    [channelChats, modeFilter],
+  )
+  // Фильтр каналов нужен, только когда есть WhatsApp.
+  const showChannels = Boolean(botSettings?.whatsappConnected) || chatList.some((chat) => chat.channel === 'whatsapp')
 
   const summary = useMemo(
     () => ({
@@ -82,7 +108,15 @@ export function ChatsPage() {
       )}
 
       <div className={styles.filters}>
-        <ToneFilters options={getModeFilters(chatList)} value={modeFilter} onChange={setModeFilter} ariaLabel={t.filterAria} />
+        {showChannels && (
+          <ToneFilters
+            options={getChannelFilters(chatList)}
+            value={channelFilter}
+            onChange={setChannelFilter}
+            ariaLabel={t.channelFilterAria}
+          />
+        )}
+        <ToneFilters options={getModeFilters(channelChats)} value={modeFilter} onChange={setModeFilter} ariaLabel={t.filterAria} />
       </div>
 
       <div className={styles.list}>

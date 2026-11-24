@@ -9,6 +9,8 @@ export const adminChats: AdminChatsMessages = {
   notConnected: 'Бот азырынча туташа элек. Төмөндө — демо кат алышуу.',
   connect: 'Ботту туташтыруу',
   filterAria: 'Чаттардын чыпкасы',
+  channelFilterAria: 'Канал: Telegram же WhatsApp',
+  allChannels: 'Бардык каналдар',
   emptyTitle: 'Азырынча чаттар жок',
   emptyText: 'Бул жерде кардарлардын Telegram боту менен сүйлөшүүлөрү пайда болот',
   notFound: 'Чат табылган жок',

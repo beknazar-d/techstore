@@ -103,7 +103,7 @@ export const ASSISTANT_TOOLS: Tool[] = [
   {
     name: 'create_product',
     description:
-      'Создать товар. Фото так не добавить — их загружают в карточке товара. Обязательны категория, название, цена, остаток.',
+      'Создать товар. Обязательны категория, название, цена, остаток. Фото — потом через attach_product_images.',
     parameters: {
       type: 'object',
       properties: productFields,
@@ -117,6 +117,46 @@ export const ASSISTANT_TOOLS: Tool[] = [
       type: 'object',
       properties: { id: { type: 'string' }, ...productFields },
       required: ['id'],
+    },
+  },
+  {
+    name: 'research_product',
+    description:
+      'Найти товар в интернете: точное название, бренд, описание, характеристики, варианты памяти/цвета, ориентировочная цена, страницы-источники и страницы с фото. Долго (до минуты) — вызывай один раз на товар.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Что искать: «Apple iPhone 17 Pro Max 256 ГБ»' },
+        categoryId: { type: 'string', description: 'id категории — чтобы найти именно её характеристики (specFields)' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'find_product_images',
+    description:
+      'Подобрать фото товара: с переданных страниц (imagePages и sources из research_product) и из Wikimedia Commons. Возвращает проверенные адреса картинок, лучшие — первыми.',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Название модели' },
+        pages: { type: 'array', items: { type: 'string' }, description: 'Адреса страниц, где есть фото' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'attach_product_images',
+    description:
+      'Скачать фото по адресам, сжать и прикрепить к товару (добавляются к уже имеющимся; первое фото товара — главное). 3–5 фото: сначала общий вид спереди/сзади.',
+    parameters: {
+      type: 'object',
+      properties: {
+        productId: { type: 'string' },
+        imageUrls: { type: 'array', items: { type: 'string' }, description: 'Адреса из find_product_images' },
+        replace: { type: 'boolean', description: 'true — заменить все текущие фото' },
+      },
+      required: ['productId', 'imageUrls'],
     },
   },
   {
@@ -178,8 +218,17 @@ export function assistantSystem(extra: string): string {
 - Перед созданием товара узнай id категории через list_categories и заполни specs по ключам её specFields. Если нужной категории нет — спроси, создать ли её.
 - Не выдумывай цену, остаток и характеристики, которых нет в поручении. Если без них не обойтись — спроси одним сообщением. Общеизвестные характеристики модели (экран, процессор) можно заполнить, если уверен.
 - Б/У товар: condition used, usedInfo.grade, в названии в конце «(Б/У)».
-- Новый товар по умолчанию виден на сайте (isActive: true).
-- Удалять ты не умеешь: удаление делается вручную в админке. Фото загружаются в карточке товара.
+- Новый товар по умолчанию виден на сайте (isActive: true) — кроме товаров, найденных в интернете (см. ниже).
+- Удалять ты не умеешь: удаление делается вручную в админке.
+
+Добавление товара по названию («добавь iPhone 17 Pro Max»):
+1. list_categories → подходящая категория (нет — спроси, создать ли).
+2. research_product с categoryId. Если notFound или данные сомнительные — скажи владельцу и не создавай.
+3. create_product ЧЕРНОВИКОМ: isActive: false; название, бренд, описание и specs по ключам specFields категории — из поиска.
+   Если владелец не назвал память/цвет — бери базовую версию и укажи это в названии. Цена: если владелец не назвал — priceRub из поиска (округли до сотен) как предварительную; остаток — тот, что назвал владелец, иначе 0.
+4. find_product_images (pages = imagePages + sources) → attach_product_images: 3–5 фото, первым — общий вид.
+5. Покажи на проверку: название, цену (предварительная или нет), остаток, сколько фото, главные характеристики, что не нашлось. Попроси проверить карточку и ответить «запускай» или что поправить.
+6. Только после согласия владельца — update_product с isActive: true (и ценой/остатком, если он их назвал).
 - Перед массовыми изменениями (больше 5 товаров или отмена заказов) коротко опиши план и дождись согласия.
 - После действий коротко отчитайся, что сделано. Пиши на языке администратора (по-русски или по-кыргызски — как он пишет), просто, без таблиц.`
   const trimmed = extra.trim()

@@ -7,6 +7,8 @@ export const adminChats = {
   notConnected: 'Бот ещё не подключён. Ниже — демо-переписка.',
   connect: 'Подключить бота',
   filterAria: 'Фильтр чатов',
+  channelFilterAria: 'Канал: Telegram или WhatsApp',
+  allChannels: 'Все каналы',
   emptyTitle: 'Чатов пока нет',
   emptyText: 'Здесь появятся разговоры клиентов с ботом в Telegram',
   notFound: 'Чат не найден',
