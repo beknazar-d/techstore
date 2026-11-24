@@ -323,10 +323,97 @@
 
 .form {
   display: flex;
+  flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border-top: 1px solid var(--color-border);
   flex-shrink: 0;
+}
+
+.formRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.micBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.micBtn:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+}
+
+.micBtn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.micBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.micRecording {
+  border-color: var(--tone-red-border);
+  background: var(--tone-red-soft);
+  color: var(--tone-red-text);
+  animation: micPulse 1.2s ease-in-out infinite;
+}
+
+.micRecording:hover:not(:disabled) {
+  background: var(--tone-red-soft);
+}
+
+@keyframes micPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--tone-red-border);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .micRecording {
+    animation: none;
+  }
+}
+
+.voiceStatus {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.voiceError {
+  color: var(--tone-red-text);
+}
+
+.voiceCancel {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-text-muted);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .input {

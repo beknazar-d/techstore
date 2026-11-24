@@ -8,10 +8,12 @@ import {
   getErrorMessage,
   isAssistantConversation,
   isAssistantReady,
+  transcribeVoice,
   type AssistantConversation,
 } from '../../api'
 import { msg } from '../../i18n'
 import { Spinner } from '../../components/ui/Spinner'
+import { isVoiceInputSupported, useVoiceRecorder } from './useVoiceRecorder'
 import { cn } from '../../utils/cn'
 import styles from './AiAssistant.module.css'
 
@@ -35,6 +37,8 @@ export function AiAssistant() {
   /** Сколько сообщений было в разговоре, когда отправили поручение (чтобы не задвоить его). */
   const [sentAt, setSentAt] = useState(0)
   const [inputValue, setInputValue] = useState('')
+  const [transcribing, setTranscribing] = useState(false)
+  const [voiceError, setVoiceError] = useState('')
   const drag = useRef<{ pointerId: number; startX: number; startY: number; startPosX: number; startPosY: number; moved: boolean } | null>(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -145,9 +149,10 @@ export function AiAssistant() {
   }
 
   // Send message
-  const handleSend = async () => {
-    const text = inputValue.trim()
+  const handleSend = async (spoken?: string) => {
+    const text = (spoken ?? inputValue).trim()
     if (!text || busy) return
+    setVoiceError('')
 
     // Add user message locally immediately
     setPendingText(text)
@@ -169,6 +174,24 @@ export function AiAssistant() {
       setBusy(false)
     }
   }
+
+  // Голосовое поручение: записали → распознали → сразу отправили (как будто написали).
+  const voice = useVoiceRecorder(
+    async (audio) => {
+      setTranscribing(true)
+      setVoiceError('')
+      try {
+        const text = await transcribeVoice(audio)
+        await handleSend(inputValue.trim() ? `${inputValue.trim()} ${text}` : text)
+      } catch (err) {
+        setVoiceError(getErrorMessage(err))
+      } finally {
+        setTranscribing(false)
+      }
+    },
+    setVoiceError,
+  )
+  const canSpeak = isVoiceInputSupported()
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -328,24 +351,54 @@ export function AiAssistant() {
 
           {connected && (
             <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
-              <textarea
-                className={styles.input}
-                placeholder={t.placeholder}
-                rows={2}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={busy}
-                aria-label={t.inputAria}
-              />
-              <button
-                type="submit"
-                className={styles.sendBtn}
-                disabled={busy || !inputValue.trim()}
-                aria-label={t.send}
-              >
-                <span className="material-symbols-outlined" aria-hidden="true">send</span>
-              </button>
+              {(voice.recording || transcribing || voiceError) && (
+                <p className={cn(styles.voiceStatus, voiceError && styles.voiceError)} role={voiceError ? 'alert' : 'status'}>
+                  {voice.recording ? t.recording(voice.seconds) : transcribing ? t.transcribing : voiceError}
+                  {voice.recording && (
+                    <button type="button" className={styles.voiceCancel} onClick={voice.cancel}>
+                      {t.micCancel}
+                    </button>
+                  )}
+                </p>
+              )}
+              <div className={styles.formRow}>
+                <textarea
+                  className={styles.input}
+                  placeholder={t.placeholder}
+                  rows={2}
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={busy || voice.recording || transcribing}
+                  aria-label={t.inputAria}
+                />
+                {canSpeak && (
+                  <button
+                    type="button"
+                    className={cn(styles.micBtn, voice.recording && styles.micRecording)}
+                    disabled={busy || transcribing}
+                    aria-label={voice.recording ? t.micStop : t.mic}
+                    aria-pressed={voice.recording}
+                    onClick={() => (voice.recording ? voice.stop() : void voice.start())}
+                  >
+                    {transcribing ? (
+                      <Spinner size="sm" />
+                    ) : (
+                      <span className="material-symbols-outlined" aria-hidden="true">
+                        {voice.recording ? 'stop' : 'mic'}
+                      </span>
+                    )}
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className={styles.sendBtn}
+                  disabled={busy || voice.recording || transcribing || !inputValue.trim()}
+                  aria-label={t.send}
+                >
+                  <span className="material-symbols-outlined" aria-hidden="true">send</span>
+                </button>
+              </div>
             </form>
           )}
         </div>

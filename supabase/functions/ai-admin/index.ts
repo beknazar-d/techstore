@@ -8,6 +8,7 @@
 // POST { action: 'research', query, specHint } — найти товар в интернете (веб-поиск выбранного провайдера)
 // POST { action: 'images', query, pages }    — подобрать фото товара (страницы-источники + Wikimedia Commons)
 // POST { action: 'fetch_image', url }        — скачать одну картинку (base64) — браузер сожмёт и прикрепит
+// POST { action: 'transcribe', audio, mimeType } — голосовое поручение ассистенту → текст (ElevenLabs или OpenAI)
 //
 // Ассистент работает так: функция отправляет переписку выбранной модели вместе с фиксированным
 // набором инструментов и возвращает ответ. Вызовы инструментов (создать категорию, товар,
@@ -37,6 +38,7 @@ import {
 } from '../_shared/llm.ts'
 import { ASSISTANT_TOOLS, assistantSystem } from './tools.ts'
 import { fetchImage, findImages, researchProduct } from './research.ts'
+import { transcribe } from '../_shared/voice.ts'
 
 type Body =
   | { action: 'connect'; provider: SecretProvider; key: string }
@@ -46,6 +48,7 @@ type Body =
   | { action: 'research'; query: string; specHint?: string }
   | { action: 'images'; query: string; pages?: string[] }
   | { action: 'fetch_image'; url: string }
+  | { action: 'transcribe'; audio: string; mimeType?: string }
 
 const MAX_MESSAGES = 300
 const MAX_BODY_CHARS = 600_000
@@ -55,6 +58,9 @@ function fail(message: string, code: string, status = 400): Response {
   return json({ error: message, code }, status)
 }
 
+/** ~2 минуты речи в webm/opus с запасом. */
+const MAX_AUDIO_BASE64 = 8_000_000
+const NO_VOICE_KEY = 'Для голоса нужен ключ ElevenLabs или OpenAI: «Настройки» → «ИИ: ключи и ассистент»'
 const NOT_CONNECTED = 'ИИ не подключён: вставьте API-ключ в «Настройках» → «Искусственный интеллект»'
 
 /** Провайдер, модель и ключ ассистента; null — ИИ для ассистента не подключён. */
@@ -197,6 +203,19 @@ Deno.serve(async (req) => {
         if (query.length < 2) return fail('Укажите, для какого товара искать фото', 'validation')
         const pages = Array.isArray(body.pages) ? body.pages.filter((p): p is string => typeof p === 'string') : []
         return json({ images: await findImages(query, pages) })
+      }
+
+      case 'transcribe': {
+        const audio = String(body.audio ?? '')
+        if (!audio) return fail('Пустая запись', 'validation')
+        if (audio.length > MAX_AUDIO_BASE64) return fail('Запись слишком длинная — не больше двух минут', 'validation')
+        const settings = await aiSettings()
+        if (!settings) return fail(NOT_CONNECTED, 'not_found', 409)
+        const mimeType = /^audio\/[a-z0-9.+-]+$/i.test(String(body.mimeType ?? '')) ? String(body.mimeType) : 'audio/webm'
+        const bytes = Uint8Array.from(atob(audio), (c) => c.charCodeAt(0))
+        const text = await transcribe(settings, new Blob([bytes], { type: mimeType }))
+        if (text === null) return fail(NO_VOICE_KEY, 'not_found', 409)
+        return json({ text })
       }
 
       case 'fetch_image': {

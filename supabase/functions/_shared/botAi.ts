@@ -246,7 +246,7 @@ function tools(behavior: BotBehavior): ToolDef[] {
     list.push({
       name: 'create_order',
       description:
-        'Оформить заявку на один товар. Оплата при получении. Нужны имя и телефон клиента и способ получения; для доставки — адрес (или геолокация из чата). Вызывай, когда клиент согласился и дал данные.',
+        'Оформить заявку на один товар. Оплата при получении. Нужны имя и телефон клиента и способ получения; для доставки — адрес (или геолокация из чата). Вызывай ТОЛЬКО после того, как в прошлом сообщении показал клиенту сводку заявки и он ответил «да» / «верно» / «оформляйте».',
       parameters: {
         type: 'object',
         properties: {
@@ -343,7 +343,8 @@ function system(c: PromptContext): string {
       ? '- Торг: если клиент просит скидку, можно немного уступить — постепенно, не сразу до минимума, — но никогда ниже minPrice товара (смотри search_products). Если minPrice нет — цену не снижай. Сам minPrice не называй.'
       : '- Торга нет: цены фиксированные, скидок не обещай.',
     c.behavior.allow_orders
-      ? '- Заявка: когда клиент выбрал товар, предложи оформить. Собери то, чего не хватает (имя, телефон, самовывоз или доставка и адрес; геолокация из чата подходит как адрес) — спрашивай только недостающее, одним сообщением. Как только всё есть — сразу вызови create_order с id товара из каталога, затем назови номер заявки и скажи, что менеджер свяжется. Не проси клиента повторять название товара.'
+      ? '- Заявка: когда клиент выбрал товар, предложи оформить. Собери то, чего не хватает (имя, телефон, самовывоз или доставка и адрес; геолокация из чата подходит как адрес) — спрашивай только недостающее, одним сообщением. Не проси клиента повторять название товара.\n' +
+        '- Перед оформлением ОБЯЗАТЕЛЬНО покажи сводку на сверку, каждое — с новой строки: товар, количество, цена за штуку, сумма, имя, телефон, самовывоз или доставка и адрес, желаемые дата и время (если назвал), «оплата при получении». В конце спроси: «Всё верно? Оформляю?». create_order вызывай только после явного «да». Если клиент что-то поправил — покажи сводку заново. После оформления назови номер заявки и скажи, что менеджер свяжется.'
       : `- Заявки в чате не оформляешь: дай ссылку на товар, на сайте кнопка «Заказать».`,
     c.behavior.handoff_to_manager
       ? '- Менеджер (handoff_to_manager) — крайний случай: клиент сам попросил человека, жалоба, гарантия/возврат, оценка его устройства для trade-in, проблема с уже оформленной заявкой. Всё остальное — твоя работа. Особенно: товара нет в каталоге → НЕ зови менеджера, а скажи, что этой модели нет, и предложи ближайшие из каталога.'
@@ -392,7 +393,17 @@ const EXAMPLES = `Примеры, как надо отвечать (товары
 Клиент: Азамат, +996555123456, доставка
 Ты: (если адреса нет) Куда привезти? Можно просто отправить геолокацию.
 Клиент: [Геолокация] https://...
-Ты: (вызываешь create_order, затем) Готово, заявка №1047 на iPhone 15 Pro. Менеджер позвонит, чтобы согласовать время. Оплата при получении.
+Ты: Проверьте, пожалуйста:
+Товар: iPhone 15 Pro 256 ГБ
+Количество: 1
+Цена: 97 000 ₽ (сумма 97 000 ₽)
+Имя: Азамат
+Телефон: +996555123456
+Доставка: по геолокации
+Оплата при получении.
+Всё верно? Оформляю?
+Клиент: да
+Ты: (вызываешь create_order, затем) Готово, заявка №1047 на iPhone 15 Pro. Менеджер позвонит, чтобы согласовать время.
 
 Клиент: позовите живого человека
 Ты: (вызываешь handoff_to_manager с category=customer_asked_human) Хорошо, позвал менеджера — он напишет вам здесь.`
@@ -484,6 +495,27 @@ async function createOrder(
   const row = (Array.isArray(data) ? data[0] : data) as { order_id: string; order_number: number }
   await db.from('bot_chats').update({ order_id: row.order_id, customer_phone: phone }).eq('id', chat.id)
   return { ok: true, orderNumber: row.order_number, product: found.name, payment: 'при получении' }
+}
+
+/** Клиент согласился (ru/ky). */
+// \b не работает с кириллицей — границы слов через \p{L}.
+const CONFIRMS =
+  /^(да|ага|угу|верно|всё верно|все верно|правильно|подтверждаю|оформляй|оформляйте|давай|давайте|согласен|согласна|ok|ок|окей|yes|ооба|туура|макул|болот|жарайт|ырас|👍)(?![\p{L}])/iu
+const NEGATES = /(^|[^\p{L}])(нет|жок)(?![\p{L}])|не так|не верно|неверно|ошиб|исправ|помен|туура эмес|өзгөрт/iu
+
+/**
+ * Заявку можно оформить, только если прошлый ответ бота был сводкой (с телефоном клиента)
+ * и клиент после него ответил согласием. null — можно; строка — что сделать модели.
+ */
+function orderConfirmBlocked(lastBotText: string, lastCustomerText: string, phone: string): string | null {
+  const digits = phone.replace(/\D/g, '')
+  const botDigits = lastBotText.replace(/\D/g, '')
+  const summaryShown = digits.length >= 6 && botDigits.includes(digits.slice(-6)) && /\?/.test(lastBotText)
+  // Подряд идущие сообщения клиента склеены — смотрим последнее.
+  const lines = lastCustomerText.split('\n').map((l) => l.trim()).filter(Boolean)
+  const answer = (lines[lines.length - 1] ?? '').toLowerCase().replace(/^\[голосовое\]\s*/, '')
+  if (summaryShown && CONFIRMS.test(answer) && !NEGATES.test(answer)) return null
+  return 'Заявка НЕ оформлена. Сначала покажи клиенту сводку (товар, количество, цена, сумма, имя, телефон, получение и адрес, дата и время) и спроси «Всё верно? Оформляю?». Вызывай create_order только после его «да».'
 }
 
 const HANDOFF_CATEGORIES = ['customer_asked_human', 'complaint', 'warranty_or_return', 'trade_in_evaluation', 'order_problem']
@@ -581,6 +613,10 @@ export async function replyWithAi(
     const messages = await history(chat.id)
     if (messages.length === 0) return
     const lastCustomer = [...messages].reverse().find((m) => m.role === 'user')
+    // Последний ответ бота перед последним сообщением клиента — была ли там сводка заявки.
+    const lastCustomerIndex = lastCustomer ? messages.lastIndexOf(lastCustomer) : -1
+    const lastBot = messages.slice(0, Math.max(0, lastCustomerIndex)).reverse().find((m) => m.role === 'assistant')
+    const lastBotText = lastBot && 'text' in lastBot ? String(lastBot.text ?? '') : ''
     lang = lastCustomer && looksKyrgyz(lastCustomer.text) ? 'ky' : 'ru'
     const [products, shop] = await Promise.all([loadProducts(behavior.allow_bargaining), shopInfo(lang)])
     const systemPrompt = system({
@@ -624,7 +660,11 @@ export async function replyWithAi(
               ? found.map((p) => productCard(p, behavior.allow_bargaining, true))
               : { found: 0, note: 'По запросу ничего нет. Предложи похожее из каталога в подсказке.' }
           } else if (call.name === 'create_order' && behavior.allow_orders) {
-            result = await createOrder(input as unknown as OrderInput, chat, products, behavior.allow_bargaining, channel.kind)
+            const notConfirmed = orderConfirmBlocked(lastBotText, lastCustomer?.text ?? '', String(input.customerPhone ?? ''))
+            if (notConfirmed) {
+              console.warn('bot order blocked: not confirmed by customer')
+              result = { error: notConfirmed }
+            } else result = await createOrder(input as unknown as OrderInput, chat, products, behavior.allow_bargaining, channel.kind)
           } else if (call.name === 'handoff_to_manager' && behavior.handoff_to_manager) {
             const reason = String(input.reason ?? '')
             const blocked = handoffBlocked(String(input.category ?? ''), reason, lastCustomer?.text ?? '')

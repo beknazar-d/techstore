@@ -46,6 +46,7 @@ export {
   setOrderAdminNote,
   getAllowedOrderStatuses,
 } from './orders'
+export { transcribeVoice } from './ai'
 export {
   getBotSettings,
   updateBotSettings,

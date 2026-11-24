@@ -180,6 +180,17 @@ export async function disconnectAiKey(provider: AiSecretProvider): Promise<void>
   emit(['aiSettings'])
 }
 
+/** Голосовое поручение ассистенту → текст. Распознаёт сервер (ElevenLabs или OpenAI — как у бота). */
+export async function transcribeVoice(audio: Blob): Promise<string> {
+  const bytes = new Uint8Array(await audio.arrayBuffer())
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  const result = await callAiFunction<{ text?: string }>({ action: 'transcribe', audio: btoa(binary), mimeType: audio.type })
+  const text = String(result.text ?? '').trim()
+  if (!text) throw new ApiError('validation', msg().assistant.voiceEmpty)
+  return text
+}
+
 /** Голоса из аккаунта ElevenLabs (по сохранённому ключу). */
 export async function listElevenLabsVoices(): Promise<ElevenLabsVoice[]> {
   const result = await callAiFunction<{ voices?: ElevenLabsVoice[] }>({ action: 'voices' })

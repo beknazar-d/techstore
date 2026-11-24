@@ -38,9 +38,19 @@ export async function downloadTelegramFile(token: string, fileId: string): Promi
 /** Клиенты говорят по-кыргызски или по-русски (часто вперемешку). Остальное — ошибка распознавания. */
 const EXPECTED_LANGS = ['kir', 'ky', 'rus', 'ru']
 
+/** Имя файла с расширением по формату: по нему сервисы распознавания определяют кодек. */
+function audioFileName(audio: Blob): string {
+  const type = audio.type.toLowerCase()
+  if (type.includes('webm')) return 'voice.webm'
+  if (type.includes('mp4') || type.includes('m4a') || type.includes('aac')) return 'voice.m4a'
+  if (type.includes('mpeg') || type.includes('mp3')) return 'voice.mp3'
+  if (type.includes('wav')) return 'voice.wav'
+  return 'voice.ogg'
+}
+
 async function elevenLabsStt(key: string, audio: Blob, language?: string): Promise<{ text: string; lang: string }> {
   const form = new FormData()
-  form.append('file', audio, 'voice.ogg')
+  form.append('file', audio, audioFileName(audio))
   form.append('model_id', 'scribe_v1')
   form.append('tag_audio_events', 'false')
   if (language) form.append('language_code', language)
@@ -74,7 +84,7 @@ export async function transcribe(settings: AiSettingsRow, audio: Blob): Promise<
   }
 
   const form = new FormData()
-  form.append('file', audio, 'voice.ogg')
+  form.append('file', audio, audioFileName(audio))
   form.append('model', 'gpt-4o-transcribe')
   // Подсказка о языках: без неё кыргызскую речь иногда пишет казахскими буквами.
   form.append('prompt', 'Разговор с магазином электроники на кыргызском или русском языке (кириллица). Саламатсызбы, телефон, айфон, баасы канча.')
