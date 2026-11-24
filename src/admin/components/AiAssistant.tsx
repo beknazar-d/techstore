@@ -14,6 +14,7 @@ import {
 import { msg } from '../../i18n'
 import { Spinner } from '../../components/ui/Spinner'
 import { isVoiceInputSupported, useVoiceRecorder } from './useVoiceRecorder'
+import { VoiceWave } from './VoiceWave'
 import { cn } from '../../utils/cn'
 import styles from './AiAssistant.module.css'
 
@@ -351,6 +352,7 @@ export function AiAssistant() {
 
           {connected && (
             <form className={styles.form} onSubmit={(e) => { e.preventDefault(); handleSend(); }}>
+              {voice.recording && <VoiceWave analyser={voice.analyser} />}
               {(voice.recording || transcribing || voiceError) && (
                 <p className={cn(styles.voiceStatus, voiceError && styles.voiceError)} role={voiceError ? 'alert' : 'status'}>
                   {voice.recording ? t.recording(voice.seconds) : transcribing ? t.transcribing : voiceError}

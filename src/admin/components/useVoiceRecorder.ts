@@ -21,6 +21,9 @@ export function isVoiceInputSupported(): boolean {
 export function useVoiceRecorder(onDone: (audio: Blob) => void, onError: (message: string) => void) {
   const [recording, setRecording] = useState(false)
   const [seconds, setSeconds] = useState(0)
+  /** Анализатор громкости/спектра — для анимации, которая откликается на голос. */
+  const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
+  const audioContext = useRef<AudioContext | null>(null)
   const recorder = useRef<MediaRecorder | null>(null)
   const cancelled = useRef(false)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -30,6 +33,9 @@ export function useVoiceRecorder(onDone: (audio: Blob) => void, onError: (messag
     timer.current = null
     recorder.current?.stream.getTracks().forEach((track) => track.stop())
     recorder.current = null
+    void audioContext.current?.close().catch(() => undefined)
+    audioContext.current = null
+    setAnalyser(null)
     setRecording(false)
   }, [])
 
@@ -65,6 +71,18 @@ export function useVoiceRecorder(onDone: (audio: Blob) => void, onError: (messag
       onDone(new Blob(chunks, { type: type.split(';')[0] }))
     }
     recorder.current = media
+    // Анимация — необязательная: без Web Audio запись всё равно работает.
+    try {
+      const context = new AudioContext()
+      const node = context.createAnalyser()
+      node.fftSize = 128
+      node.smoothingTimeConstant = 0.6
+      context.createMediaStreamSource(stream).connect(node)
+      audioContext.current = context
+      setAnalyser(node)
+    } catch {
+      setAnalyser(null)
+    }
     media.start()
     setSeconds(0)
     setRecording(true)
@@ -86,5 +104,5 @@ export function useVoiceRecorder(onDone: (audio: Blob) => void, onError: (messag
     [cleanup],
   )
 
-  return { recording, seconds, start, stop, cancel }
+  return { recording, seconds, analyser, start, stop, cancel }
 }
